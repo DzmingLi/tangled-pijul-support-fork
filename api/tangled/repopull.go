@@ -17,15 +17,18 @@ func init() {
 } //
 // RECORDTYPE: RepoPull
 type RepoPull struct {
-	LexiconTypeID string           `json:"$type,const=sh.tangled.repo.pull" cborgen:"$type,const=sh.tangled.repo.pull"`
-	Body          *string          `json:"body,omitempty" cborgen:"body,omitempty"`
-	CreatedAt     string           `json:"createdAt" cborgen:"createdAt"`
-	Mentions      []string         `json:"mentions,omitempty" cborgen:"mentions,omitempty"`
-	Patch         string           `json:"patch" cborgen:"patch"`
-	References    []string         `json:"references,omitempty" cborgen:"references,omitempty"`
-	Source        *RepoPull_Source `json:"source,omitempty" cborgen:"source,omitempty"`
-	Target        *RepoPull_Target `json:"target" cborgen:"target"`
-	Title         string           `json:"title" cborgen:"title"`
+	LexiconTypeID string   `json:"$type,const=sh.tangled.repo.pull" cborgen:"$type,const=sh.tangled.repo.pull"`
+	Body          *string  `json:"body,omitempty" cborgen:"body,omitempty"`
+	CreatedAt     string   `json:"createdAt" cborgen:"createdAt"`
+	Mentions      []string `json:"mentions,omitempty" cborgen:"mentions,omitempty"`
+	// patch: (deprecated) use patchBlob instead
+	Patch *string `json:"patch,omitempty" cborgen:"patch,omitempty"`
+	// patchBlob: patch content
+	PatchBlob  *util.LexBlob    `json:"patchBlob" cborgen:"patchBlob"`
+	References []string         `json:"references,omitempty" cborgen:"references,omitempty"`
+	Source     *RepoPull_Source `json:"source,omitempty" cborgen:"source,omitempty"`
+	Target     *RepoPull_Target `json:"target" cborgen:"target"`
+	Title      string           `json:"title" cborgen:"title"`
 }
 
 // RepoPull_Source is a "source" in the sh.tangled.repo.pull schema.

@@ -83,6 +83,7 @@ type Pull struct {
 	Repo   *Repo
 }
 
+// NOTE: This method does not include patch blob in returned atproto record
 func (p Pull) AsRecord() tangled.RepoPull {
 	var source *tangled.RepoPull_Source
 	if p.PullSource != nil {
@@ -113,7 +114,6 @@ func (p Pull) AsRecord() tangled.RepoPull {
 			Repo:   p.RepoAt.String(),
 			Branch: p.TargetBranch,
 		},
-		Patch:  p.LatestPatch(),
 		Source: source,
 	}
 	return record

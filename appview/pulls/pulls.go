@@ -1241,6 +1241,13 @@ func (s *Pulls) createPullRequest(
 		return
 	}
 
+	blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+	if err != nil {
+		log.Println("failed to upload patch", err)
+		s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
+		return
+	}
+
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoPullNSID,
 		Repo:       user.Did,
@@ -1252,7 +1259,7 @@ func (s *Pulls) createPullRequest(
 					Repo:   string(repo.RepoAt()),
 					Branch: targetBranch,
 				},
-				Patch:     patch,
+				PatchBlob: blob.Blob,
 				Source:    recordPullSource,
 				CreatedAt: time.Now().Format(time.RFC3339),
 			},
@@ -1328,8 +1335,16 @@ func (s *Pulls) createStackedPullRequest(
 	// apply all record creations at once
 	var writes []*comatproto.RepoApplyWrites_Input_Writes_Elem
 	for _, p := range stack {
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(p.LatestPatch()))
+		if err != nil {
+			log.Println("failed to upload patch blob", err)
+			s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
+			return
+		}
+
 		record := p.AsRecord()
-		write := comatproto.RepoApplyWrites_Input_Writes_Elem{
+		record.PatchBlob = blob.Blob
+		writes = append(writes, &comatproto.RepoApplyWrites_Input_Writes_Elem{
 			RepoApplyWrites_Create: &comatproto.RepoApplyWrites_Create{
 				Collection: tangled.RepoPullNSID,
 				Rkey:       &p.Rkey,
@@ -1337,8 +1352,7 @@ func (s *Pulls) createStackedPullRequest(
 					Val: &record,
 				},
 			},
-		}
-		writes = append(writes, &write)
+		})
 	}
 	_, err = comatproto.RepoApplyWrites(r.Context(), client, &comatproto.RepoApplyWrites_Input{
 		Repo:   user.Did,
@@ -1871,21 +1885,15 @@ func (s *Pulls) resubmitPullHelper(
 		return
 	}
 
-	var recordPullSource *tangled.RepoPull_Source
-	if pull.IsBranchBased() {
-		recordPullSource = &tangled.RepoPull_Source{
-			Branch: pull.PullSource.Branch,
-			Sha:    sourceRev,
-		}
+	blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+	if err != nil {
+		log.Println("failed to upload patch blob", err)
+		s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
+		return
 	}
-	if pull.IsForkBased() {
-		repoAt := pull.PullSource.RepoAt.String()
-		recordPullSource = &tangled.RepoPull_Source{
-			Branch: pull.PullSource.Branch,
-			Repo:   &repoAt,
-			Sha:    sourceRev,
-		}
-	}
+	record := pull.AsRecord()
+	record.PatchBlob = blob.Blob
+	record.CreatedAt = time.Now().Format(time.RFC3339)
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoPullNSID,
@@ -1893,16 +1901,7 @@ func (s *Pulls) resubmitPullHelper(
 		Rkey:       pull.Rkey,
 		SwapRecord: ex.Cid,
 		Record: &lexutil.LexiconTypeDecoder{
-			Val: &tangled.RepoPull{
-				Title: pull.Title,
-				Target: &tangled.RepoPull_Target{
-					Repo:   string(repo.RepoAt()),
-					Branch: pull.TargetBranch,
-				},
-				Patch:     patch, // new patch
-				Source:    recordPullSource,
-				CreatedAt: time.Now().Format(time.RFC3339),
-			},
+			Val: &record,
 		},
 	})
 	if err != nil {
@@ -1988,6 +1987,13 @@ func (s *Pulls) resubmitStackedPullHelper(
 	}
 	defer tx.Rollback()
 
+	client, err := s.oauth.AuthorizedClient(r)
+	if err != nil {
+		log.Println("failed to authorize client")
+		s.pages.Notice(w, "resubmit-error", "Failed to create pull request. Try again later.")
+		return
+	}
+
 	// pds updates to make
 	var writes []*comatproto.RepoApplyWrites_Input_Writes_Elem
 
@@ -2021,7 +2027,14 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+		if err != nil {
+			log.Println("failed to upload patch blob", err)
+			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
+			return
+		}
 		record := p.AsRecord()
+		record.PatchBlob = blob.Blob
 		writes = append(writes, &comatproto.RepoApplyWrites_Input_Writes_Elem{
 			RepoApplyWrites_Create: &comatproto.RepoApplyWrites_Create{
 				Collection: tangled.RepoPullNSID,
@@ -2056,8 +2069,14 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+		if err != nil {
+			log.Println("failed to upload patch blob", err)
+			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
+			return
+		}
 		record := np.AsRecord()
-
+		record.PatchBlob = blob.Blob
 		writes = append(writes, &comatproto.RepoApplyWrites_Input_Writes_Elem{
 			RepoApplyWrites_Update: &comatproto.RepoApplyWrites_Update{
 				Collection: tangled.RepoPullNSID,
@@ -2091,13 +2110,6 @@ func (s *Pulls) resubmitStackedPullHelper(
 	if err != nil {
 		log.Println("failed to resubmit pull", err)
 		s.pages.Notice(w, "pull-resubmit-error", "Failed to resubmit pull request. Try again later.")
-		return
-	}
-
-	client, err := s.oauth.AuthorizedClient(r)
-	if err != nil {
-		log.Println("failed to authorize client")
-		s.pages.Notice(w, "resubmit-error", "Failed to create pull request. Try again later.")
 		return
 	}
 
