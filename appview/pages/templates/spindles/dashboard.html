@@ -1,9 +1,25 @@
-{{ define "title" }}{{.Spindle.Instance}} &middot; spindles{{ end }}
+{{ define "title" }}{{.Spindle.Instance}} &middot; {{ .Tab }} settings{{ end }}
 
 {{ define "content" }}
-<div class="px-6 py-4">
+  <div class="p-6">
+    <p class="text-xl font-bold dark:text-white">Settings</p>
+  </div>
+  <div class="bg-white dark:bg-gray-800 p-6 rounded relative w-full mx-auto drop-shadow-sm dark:text-white">
+    <section class="w-full grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="col-span-1">
+        {{ template "user/settings/fragments/sidebar" . }}
+      </div>
+      <div class="col-span-1 md:col-span-3 flex flex-col gap-6">
+        {{ template "spindleDash" . }}
+      </div>
+    </section>
+  </div>
+{{ end }}
+
+{{ define "spindleDash" }}
+<div>
   <div class="flex justify-between items-center">
-    <h1 class="text-xl font-bold dark:text-white">{{ .Spindle.Instance }}</h1>
+    <h2 class="text-sm pb-2 uppercase font-bold">{{ .Tab }} &middot; {{ .Spindle.Instance }}</h2>
     <div id="right-side" class="flex gap-2">
       {{ $style := "px-2 py-1 rounded flex items-center flex-shrink-0 gap-2" }}
       {{ $isOwner := and .LoggedInUser (eq .LoggedInUser.Did .Spindle.Owner)  }}
@@ -71,7 +87,7 @@
   <button
     class="btn text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 gap-2 group"
     title="Delete spindle"
-    hx-delete="/spindles/{{ .Instance }}"
+    hx-delete="/settings/spindles/{{ .Instance }}"
     hx-swap="outerHTML"
     hx-confirm="Are you sure you want to delete the spindle '{{ .Instance }}'?"
     hx-headers='{"shouldRedirect": "true"}'
@@ -87,7 +103,7 @@
   <button
     class="btn gap-2 group"
     title="Retry spindle verification"
-    hx-post="/spindles/{{ .Instance }}/retry"
+    hx-post="/settings/spindles/{{ .Instance }}/retry"
     hx-swap="none"
     hx-headers='{"shouldRefresh": "true"}'
   >
@@ -104,7 +120,7 @@
     <button
       class="btn text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 gap-2 group"
       title="Remove member"
-      hx-post="/spindles/{{ $root.Spindle.Instance }}/remove"
+      hx-post="/settings/spindles/{{ $root.Spindle.Instance }}/remove"
       hx-swap="none"
       hx-vals='{"member": "{{$member}}" }'
       hx-confirm="Are you sure you want to remove {{ resolve $member }} from this instance?"

@@ -121,7 +121,7 @@ This starts a knot on port 6444, a spindle on port 6555
 with `ssh` exposed on port 2222.
 
 Once the services are running, head to
-http://localhost:3000/knots and hit verify. It should
+http://localhost:3000/settings/knots and hit verify. It should
 verify the ownership of the services instantly if everything
 went smoothly.
 
@@ -146,7 +146,7 @@ git push local-dev main
 ### running a spindle
 
 The above VM should already be running a spindle on
-`localhost:6555`. Head to http://localhost:3000/spindles and
+`localhost:6555`. Head to http://localhost:3000/settings/spindles and
 hit verify. You can then configure each repository to use
 this spindle and run CI jobs.
 

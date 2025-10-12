@@ -7,7 +7,7 @@
 
 {{ define "knotLeftSide" }}
   {{ if .Registered }}
-  <a href="/knots/{{ .Domain }}" class="hover:no-underline flex items-center gap-2 min-w-0 max-w-[60%]">
+  <a href="/settings/knots/{{ .Domain }}" class="hover:no-underline flex items-center gap-2 min-w-0 max-w-[60%]">
     {{ i "hard-drive" "w-4 h-4" }}
     <span class="hover:underline">
       {{ .Domain }}
@@ -56,7 +56,7 @@
   <button
     class="btn text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 gap-2 group"
     title="Delete knot"
-    hx-delete="/knots/{{ .Domain }}"
+    hx-delete="/settings/knots/{{ .Domain }}"
     hx-swap="outerHTML"
     hx-target="#knot-{{.Id}}"
     hx-confirm="Are you sure you want to delete the knot '{{ .Domain }}'?"
@@ -72,7 +72,7 @@
   <button
     class="btn gap-2 group"
     title="Retry knot verification"
-    hx-post="/knots/{{ .Domain }}/retry"
+    hx-post="/settings/knots/{{ .Domain }}/retry"
     hx-swap="none"
     hx-target="#knot-{{.Id}}"
   >

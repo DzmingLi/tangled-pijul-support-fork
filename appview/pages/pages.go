@@ -407,6 +407,8 @@ func (p *Pages) UpgradeBanner(w io.Writer, params UpgradeBannerParams) error {
 type KnotsParams struct {
 	LoggedInUser  *oauth.User
 	Registrations []models.Registration
+	Tabs          []map[string]any
+	Tab           string
 }
 
 func (p *Pages) Knots(w io.Writer, params KnotsParams) error {
@@ -419,6 +421,8 @@ type KnotParams struct {
 	Members      []string
 	Repos        map[string][]models.Repo
 	IsOwner      bool
+	Tabs         []map[string]any
+	Tab          string
 }
 
 func (p *Pages) Knot(w io.Writer, params KnotParams) error {
@@ -436,6 +440,8 @@ func (p *Pages) KnotListing(w io.Writer, params KnotListingParams) error {
 type SpindlesParams struct {
 	LoggedInUser *oauth.User
 	Spindles     []models.Spindle
+	Tabs         []map[string]any
+	Tab          string
 }
 
 func (p *Pages) Spindles(w io.Writer, params SpindlesParams) error {
@@ -444,6 +450,8 @@ func (p *Pages) Spindles(w io.Writer, params SpindlesParams) error {
 
 type SpindleListingParams struct {
 	models.Spindle
+	Tabs []map[string]any
+	Tab  string
 }
 
 func (p *Pages) SpindleListing(w io.Writer, params SpindleListingParams) error {
@@ -455,6 +463,8 @@ type SpindleDashboardParams struct {
 	Spindle      models.Spindle
 	Members      []string
 	Repos        map[string][]models.Repo
+	Tabs         []map[string]any
+	Tab          string
 }
 
 func (p *Pages) SpindleDashboard(w io.Writer, params SpindleDashboardParams) error {

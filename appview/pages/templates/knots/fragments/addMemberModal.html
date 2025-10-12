@@ -22,7 +22,7 @@
 
 {{ define "addKnotMemberPopover" }}
 <form
-  hx-post="/knots/{{ .Domain }}/add"
+  hx-post="/settings/knots/{{ .Domain }}/add"
   hx-indicator="#spinner"
   hx-swap="none"
   class="flex flex-col gap-2"

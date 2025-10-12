@@ -43,6 +43,8 @@ var (
 		{"Name": "keys", "Icon": "key"},
 		{"Name": "emails", "Icon": "mail"},
 		{"Name": "notifications", "Icon": "bell"},
+		{"Name": "knots", "Icon": "volleyball"},
+		{"Name": "spindles", "Icon": "spool"},
 	}
 )
 

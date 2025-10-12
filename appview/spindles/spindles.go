@@ -38,6 +38,19 @@ type Spindles struct {
 	Logger     *slog.Logger
 }
 
+type tab = map[string]any
+
+var (
+	spindlesTabs []tab = []tab{
+		{"Name": "profile", "Icon": "user"},
+		{"Name": "keys", "Icon": "key"},
+		{"Name": "emails", "Icon": "mail"},
+		{"Name": "notifications", "Icon": "bell"},
+		{"Name": "knots", "Icon": "volleyball"},
+		{"Name": "spindles", "Icon": "spool"},
+	}
+)
+
 func (s *Spindles) Router() http.Handler {
 	r := chi.NewRouter()
 
@@ -69,6 +82,8 @@ func (s *Spindles) spindles(w http.ResponseWriter, r *http.Request) {
 	s.Pages.Spindles(w, pages.SpindlesParams{
 		LoggedInUser: user,
 		Spindles:     all,
+		Tabs:         spindlesTabs,
+		Tab:          "spindles",
 	})
 }
 
@@ -127,6 +142,8 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 		Spindle:      spindle,
 		Members:      members,
 		Repos:        repoMap,
+		Tabs:         spindlesTabs,
+		Tab:          "spindles",
 	})
 }
 
@@ -365,7 +382,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	shouldRedirect := r.Header.Get("shouldRedirect")
 	if shouldRedirect == "true" {
-		s.Pages.HxRedirect(w, "/spindles")
+		s.Pages.HxRedirect(w, "/settings/spindles")
 		return
 	}
 
@@ -581,7 +598,7 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// success
-	s.Pages.HxRedirect(w, fmt.Sprintf("/spindles/%s", instance))
+	s.Pages.HxRedirect(w, fmt.Sprintf("/settings/spindles/%s", instance))
 }
 
 func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {

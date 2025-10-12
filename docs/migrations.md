@@ -14,14 +14,14 @@ straightforward however.
 For knots:
 
 - Upgrade to latest tag (v1.9.0 or above)
-- Head to the [knot dashboard](https://tangled.org/knots) and
+- Head to the [knot dashboard](https://tangled.org/settings/knots) and
   hit the "retry" button to verify your knot
 
 For spindles:
 
 - Upgrade to latest tag (v1.9.0 or above)
 - Head to the [spindle
-  dashboard](https://tangled.org/spindles) and hit the
+  dashboard](https://tangled.org/settings/spindles) and hit the
   "retry" button to verify your spindle
 
 ## Upgrading from v1.7.x
@@ -41,7 +41,7 @@ Upgrading is quite easy, in essence:
   [settings](https://tangled.org/settings) page.
 - Restart your knot once you have replaced the environment
   variable
-- Head to the [knot dashboard](https://tangled.org/knots) and
+- Head to the [knot dashboard](https://tangled.org/settings/knots) and
   hit the "retry" button to verify your knot. This simply
   writes a `sh.tangled.knot` record to your PDS.
 

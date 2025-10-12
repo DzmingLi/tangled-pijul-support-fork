@@ -7,7 +7,7 @@
 
 {{ define "spindleLeftSide" }}
   {{ if .Verified }}
-  <a href="/spindles/{{ .Instance }}" class="hover:no-underline flex items-center gap-2 min-w-0 max-w-[60%]">
+  <a href="/settings/spindles/{{ .Instance }}" class="hover:no-underline flex items-center gap-2 min-w-0 max-w-[60%]">
     {{ i "hard-drive" "w-4 h-4" }}
     <span class="hover:underline">
       {{ .Instance }}
@@ -50,7 +50,7 @@
   <button
     class="btn text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 gap-2 group"
     title="Delete spindle"
-    hx-delete="/spindles/{{ .Instance }}"
+    hx-delete="/settings/spindles/{{ .Instance }}"
     hx-swap="outerHTML"
     hx-target="#spindle-{{.Id}}"
     hx-confirm="Are you sure you want to delete the spindle '{{ .Instance }}'?"
@@ -66,7 +66,7 @@
   <button
     class="btn gap-2 group"
     title="Retry spindle verification"
-    hx-post="/spindles/{{ .Instance }}/retry"
+    hx-post="/settings/spindles/{{ .Instance }}/retry"
     hx-swap="none"
     hx-target="#spindle-{{.Id}}"
   >
