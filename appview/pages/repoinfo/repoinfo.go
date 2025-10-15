@@ -1,6 +1,7 @@
 package repoinfo
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 	"slices"
@@ -116,4 +117,49 @@ func (r RolesInRepo) IsCollaborator() bool {
 
 func (r RolesInRepo) IsPushAllowed() bool {
 	return slices.Contains(r.Roles, "repo:push")
+}
+
+// PrimaryLanguage returns the first (most used) language from a list, or empty string if none
+func PrimaryLanguage(languages []interface{}) string {
+	if len(languages) == 0 {
+		return ""
+	}
+
+	// Languages are already sorted by percentage in descending order
+	// Just get the first one
+	if firstLang, ok := languages[0].(map[string]interface{}); ok {
+		if name, ok := firstLang["Name"].(string); ok {
+			return name
+		}
+	}
+
+	return ""
+}
+
+// StructuredData generates Schema.org JSON-LD structured data for the repository
+func (r RepoInfo) StructuredData(primaryLanguage string) string {
+	data := map[string]interface{}{
+		"@context":       "https://schema.org",
+		"@type":          "SoftwareSourceCode",
+		"name":           r.Name,
+		"description":    r.Description,
+		"codeRepository": "https://tangled.org/" + r.FullName(),
+		"url":            "https://tangled.org/" + r.FullName(),
+		"author": map[string]interface{}{
+			"@type": "Person",
+			"name":  r.owner(),
+			"url":   "https://tangled.org/" + r.owner(),
+		},
+	}
+
+	// Add programming language if available
+	if primaryLanguage != "" {
+		data["programmingLanguage"] = primaryLanguage
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return "{}"
+	}
+	return string(jsonBytes)
 }
