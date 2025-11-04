@@ -24,6 +24,7 @@ import (
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/appview/pages/repoinfo"
+	"tangled.org/core/appview/refresolver"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/appview/xrpcclient"
@@ -46,6 +47,7 @@ type Pulls struct {
 	repoResolver *reporesolver.RepoResolver
 	pages        *pages.Pages
 	idResolver   *idresolver.Resolver
+	refResolver  *refresolver.Resolver
 	db           *db.DB
 	config       *config.Config
 	notifier     notify.Notifier
@@ -60,6 +62,7 @@ func New(
 	repoResolver *reporesolver.RepoResolver,
 	pages *pages.Pages,
 	resolver *idresolver.Resolver,
+	refResolver *refresolver.Resolver,
 	db *db.DB,
 	config *config.Config,
 	notifier notify.Notifier,
@@ -73,6 +76,7 @@ func New(
 		repoResolver: repoResolver,
 		pages:        pages,
 		idResolver:   resolver,
+		refResolver:  refResolver,
 		db:           db,
 		config:       config,
 		notifier:     notifier,
@@ -678,7 +682,6 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
-	l := s.logger.With("handler", "PullComment")
 	user := s.oauth.GetUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
@@ -716,6 +719,8 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 			s.pages.Notice(w, "pull", "Comment body is required")
 			return
 		}
+
+		mentions, _ := s.refResolver.Resolve(r.Context(), body)
 
 		// Start a transaction
 		tx, err := s.db.BeginTx(r.Context(), nil)
@@ -776,15 +781,6 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rawMentions := markup.FindUserMentions(comment.Body)
-		idents := s.idResolver.ResolveIdents(r.Context(), rawMentions)
-		l.Debug("parsed mentions", "raw", rawMentions, "idents", idents)
-		var mentions []syntax.DID
-		for _, ident := range idents {
-			if ident != nil && !ident.Handle.IsInvalidHandle() {
-				mentions = append(mentions, ident.DID)
-			}
-		}
 		s.notifier.NewPullComment(r.Context(), comment, mentions)
 
 		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)

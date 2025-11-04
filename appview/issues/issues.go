@@ -23,9 +23,9 @@ import (
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
-	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/appview/pages/repoinfo"
 	"tangled.org/core/appview/pagination"
+	"tangled.org/core/appview/refresolver"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/idresolver"
@@ -39,6 +39,7 @@ type Issues struct {
 	enforcer     *rbac.Enforcer
 	pages        *pages.Pages
 	idResolver   *idresolver.Resolver
+	refResolver  *refresolver.Resolver
 	db           *db.DB
 	config       *config.Config
 	notifier     notify.Notifier
@@ -53,6 +54,7 @@ func New(
 	enforcer *rbac.Enforcer,
 	pages *pages.Pages,
 	idResolver *idresolver.Resolver,
+	refResolver *refresolver.Resolver,
 	db *db.DB,
 	config *config.Config,
 	notifier notify.Notifier,
@@ -66,6 +68,7 @@ func New(
 		enforcer:     enforcer,
 		pages:        pages,
 		idResolver:   idResolver,
+		refResolver:  refResolver,
 		db:           db,
 		config:       config,
 		notifier:     notifier,
@@ -391,6 +394,8 @@ func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 		replyTo = &replyToUri
 	}
 
+	mentions, _ := rp.refResolver.Resolve(r.Context(), body)
+
 	comment := models.IssueComment{
 		Did:     user.Did,
 		Rkey:    tid.TID(),
@@ -447,15 +452,6 @@ func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 	// notify about the new comment
 	comment.Id = commentId
 
-	rawMentions := markup.FindUserMentions(comment.Body)
-	idents := rp.idResolver.ResolveIdents(r.Context(), rawMentions)
-	l.Debug("parsed mentions", "raw", rawMentions, "idents", idents)
-	var mentions []syntax.DID
-	for _, ident := range idents {
-		if ident != nil && !ident.Handle.IsInvalidHandle() {
-			mentions = append(mentions, ident.DID)
-		}
-	}
 	rp.notifier.NewIssueComment(r.Context(), &comment, mentions)
 
 	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
@@ -870,11 +866,14 @@ func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 			RepoInfo:     rp.repoResolver.GetRepoInfo(r, user),
 		})
 	case http.MethodPost:
+		body := r.FormValue("body")
+		mentions, _ := rp.refResolver.Resolve(r.Context(), body)
+
 		issue := &models.Issue{
 			RepoAt:  f.RepoAt(),
 			Rkey:    tid.TID(),
 			Title:   r.FormValue("title"),
-			Body:    r.FormValue("body"),
+			Body:    body,
 			Open:    true,
 			Did:     user.Did,
 			Created: time.Now(),
@@ -946,15 +945,6 @@ func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 		// everything is successful, do not rollback the atproto record
 		atUri = ""
 
-		rawMentions := markup.FindUserMentions(issue.Body)
-		idents := rp.idResolver.ResolveIdents(r.Context(), rawMentions)
-		l.Debug("parsed mentions", "raw", rawMentions, "idents", idents)
-		var mentions []syntax.DID
-		for _, ident := range idents {
-			if ident != nil && !ident.Handle.IsInvalidHandle() {
-				mentions = append(mentions, ident.DID)
-			}
-		}
 		rp.notifier.NewIssue(r.Context(), issue, mentions)
 
 		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
