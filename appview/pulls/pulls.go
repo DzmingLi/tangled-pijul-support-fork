@@ -1,6 +1,7 @@
 package pulls
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -155,6 +156,13 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	backlinks, err := db.GetBacklinks(s.db, pull.AtUri())
+	if err != nil {
+		log.Println("failed to get pull backlinks", err)
+		s.pages.Notice(w, "pull-error", "Failed to get pull. Try again later.")
+		return
+	}
+
 	// can be nil  if this pull is not stacked
 	stack, _ := r.Context().Value("stack").(models.Stack)
 	abandonedPulls, _ := r.Context().Value("abandonedPulls").([]*models.Pull)
@@ -229,6 +237,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		Pull:               pull,
 		Stack:              stack,
 		AbandonedPulls:     abandonedPulls,
+		Backlinks:          backlinks,
 		BranchDeleteStatus: branchDeleteStatus,
 		MergeCheck:         mergeCheckResponse,
 		ResubmitCheck:      resubmitResult,
@@ -1196,6 +1205,8 @@ func (s *Pulls) createPullRequest(
 		}
 	}
 
+	mentions, references := s.refResolver.Resolve(r.Context(), body)
+
 	rkey := tid.TID()
 	initialSubmission := models.PullSubmission{
 		Patch:     patch,
@@ -1209,6 +1220,8 @@ func (s *Pulls) createPullRequest(
 		OwnerDid:     user.Did,
 		RepoAt:       repo.RepoAt(),
 		Rkey:         rkey,
+		Mentions:     mentions,
+		References:   references,
 		Submissions: []*models.PullSubmission{
 			&initialSubmission,
 		},
@@ -1297,7 +1310,7 @@ func (s *Pulls) createStackedPullRequest(
 
 	// build a stack out of this patch
 	stackId := uuid.New()
-	stack, err := newStack(repo, user, targetBranch, patch, pullSource, stackId.String())
+	stack, err := s.newStack(r.Context(), repo, user, targetBranch, patch, pullSource, stackId.String())
 	if err != nil {
 		log.Println("failed to create stack", err)
 		s.pages.Notice(w, "pull", fmt.Sprintf("Failed to create stack: %v", err))
@@ -1911,7 +1924,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 	targetBranch := pull.TargetBranch
 
 	origStack, _ := r.Context().Value("stack").(models.Stack)
-	newStack, err := newStack(repo, user, targetBranch, patch, pull.PullSource, stackId)
+	newStack, err := s.newStack(r.Context(), repo, user, targetBranch, patch, pull.PullSource, stackId)
 	if err != nil {
 		log.Println("failed to create resubmitted stack", err)
 		s.pages.Notice(w, "pull-merge-error", "Failed to merge pull request. Try again later.")
@@ -2359,7 +2372,7 @@ func (s *Pulls) ReopenPull(w http.ResponseWriter, r *http.Request) {
 	s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d", ownerSlashRepo, pull.PullId))
 }
 
-func newStack(repo *models.Repo, user *oauth.User, targetBranch, patch string, pullSource *models.PullSource, stackId string) (models.Stack, error) {
+func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.User, targetBranch, patch string, pullSource *models.PullSource, stackId string) (models.Stack, error) {
 	formatPatches, err := patchutil.ExtractPatches(patch)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to extract patches: %v", err)
@@ -2384,6 +2397,8 @@ func newStack(repo *models.Repo, user *oauth.User, targetBranch, patch string, p
 		body := fp.Body
 		rkey := tid.TID()
 
+		mentions, references := s.refResolver.Resolve(ctx, body)
+
 		initialSubmission := models.PullSubmission{
 			Patch:     fp.Raw,
 			SourceRev: fp.SHA,
@@ -2396,6 +2411,8 @@ func newStack(repo *models.Repo, user *oauth.User, targetBranch, patch string, p
 			OwnerDid:     user.Did,
 			RepoAt:       repo.RepoAt(),
 			Rkey:         rkey,
+			Mentions:     mentions,
+			References:   references,
 			Submissions: []*models.PullSubmission{
 				&initialSubmission,
 			},
