@@ -877,7 +877,8 @@ func (s *Pulls) NewPull(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Determine PR type based on input parameters
-		isPushAllowed := f.RepoInfo(user).Roles.IsPushAllowed()
+		roles := f.RolesInRepo(user)
+		isPushAllowed := roles.IsPushAllowed()
 		isBranchBased := isPushAllowed && sourceBranch != "" && fromFork == ""
 		isForkBased := fromFork != "" && sourceBranch != ""
 		isPatchBased := patch != "" && !isBranchBased && !isForkBased
@@ -1673,7 +1674,8 @@ func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !f.RepoInfo(user).Roles.IsPushAllowed() {
+	roles := f.RolesInRepo(user)
+	if !roles.IsPushAllowed() {
 		log.Println("unauthorized user")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
