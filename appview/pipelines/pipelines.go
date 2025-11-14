@@ -78,14 +78,12 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repoInfo := f.RepoInfo(user)
-
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		30,
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", f.Did),
+		db.FilterEq("repo_name", f.Name),
+		db.FilterEq("knot", f.Knot),
 	)
 	if err != nil {
 		l.Error("failed to query db", "err", err)
@@ -94,7 +92,7 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 
 	p.pages.Pipelines(w, pages.PipelinesParams{
 		LoggedInUser: user,
-		RepoInfo:     repoInfo,
+		RepoInfo:     f.RepoInfo(user),
 		Pipelines:    ps,
 	})
 }
@@ -108,8 +106,6 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to get repo and knot", "err", err)
 		return
 	}
-
-	repoInfo := f.RepoInfo(user)
 
 	pipelineId := chi.URLParam(r, "pipeline")
 	if pipelineId == "" {
@@ -126,9 +122,9 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", f.Did),
+		db.FilterEq("repo_name", f.Name),
+		db.FilterEq("knot", f.Knot),
 		db.FilterEq("id", pipelineId),
 	)
 	if err != nil {
@@ -145,7 +141,7 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 
 	p.pages.Workflow(w, pages.WorkflowParams{
 		LoggedInUser: user,
-		RepoInfo:     repoInfo,
+		RepoInfo:     f.RepoInfo(user),
 		Pipeline:     singlePipeline,
 		Workflow:     workflow,
 	})
@@ -176,15 +172,12 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	user := p.oauth.GetUser(r)
 	f, err := p.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
 		http.Error(w, "bad repo/knot", http.StatusBadRequest)
 		return
 	}
-
-	repoInfo := f.RepoInfo(user)
 
 	pipelineId := chi.URLParam(r, "pipeline")
 	workflow := chi.URLParam(r, "workflow")
@@ -196,9 +189,9 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", f.Did),
+		db.FilterEq("repo_name", f.Name),
+		db.FilterEq("knot", f.Knot),
 		db.FilterEq("id", pipelineId),
 	)
 	if err != nil || len(ps) != 1 {
@@ -208,8 +201,8 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	singlePipeline := ps[0]
-	spindle := repoInfo.Spindle
-	knot := repoInfo.Knot
+	spindle := f.Spindle
+	knot := f.Knot
 	rkey := singlePipeline.Rkey
 
 	if spindle == "" || knot == "" || rkey == "" {

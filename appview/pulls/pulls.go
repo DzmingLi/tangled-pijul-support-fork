@@ -162,8 +162,6 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		resubmitResult = s.resubmitCheck(r, f, pull, stack)
 	}
 
-	repoInfo := f.RepoInfo(user)
-
 	m := make(map[string]models.Pipeline)
 
 	var shas []string
@@ -180,9 +178,9 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", f.Did),
+		db.FilterEq("repo_name", f.Name),
+		db.FilterEq("knot", f.Knot),
 		db.FilterIn("sha", shas),
 	)
 	if err != nil {
@@ -223,7 +221,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
 		LoggedInUser:       user,
-		RepoInfo:           repoInfo,
+		RepoInfo:           f.RepoInfo(user),
 		Pull:               pull,
 		Stack:              stack,
 		AbandonedPulls:     abandonedPulls,
@@ -647,13 +645,12 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 	}
 	pulls = pulls[:n]
 
-	repoInfo := f.RepoInfo(user)
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", f.Did),
+		db.FilterEq("repo_name", f.Name),
+		db.FilterEq("knot", f.Knot),
 		db.FilterIn("sha", shas),
 	)
 	if err != nil {

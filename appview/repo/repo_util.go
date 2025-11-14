@@ -7,7 +7,6 @@ import (
 
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
-	"tangled.org/core/appview/pages/repoinfo"
 	"tangled.org/core/types"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -93,7 +92,7 @@ func balanceIndexItems(commitCount, branchCount, tagCount, fileCount int) (commi
 // golang is so blessed that it requires 35 lines of imperative code for this
 func getPipelineStatuses(
 	d *db.DB,
-	repoInfo repoinfo.RepoInfo,
+	repo *models.Repo,
 	shas []string,
 ) (map[string]models.Pipeline, error) {
 	m := make(map[string]models.Pipeline)
@@ -105,9 +104,9 @@ func getPipelineStatuses(
 	ps, err := db.GetPipelineStatuses(
 		d,
 		len(shas),
-		db.FilterEq("repo_owner", repoInfo.OwnerDid),
-		db.FilterEq("repo_name", repoInfo.Name),
-		db.FilterEq("knot", repoInfo.Knot),
+		db.FilterEq("repo_owner", repo.Did),
+		db.FilterEq("repo_name", repo.Name),
+		db.FilterEq("knot", repo.Knot),
 		db.FilterIn("sha", shas),
 	)
 	if err != nil {
