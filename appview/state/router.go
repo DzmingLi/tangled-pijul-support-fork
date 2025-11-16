@@ -263,6 +263,7 @@ func (s *State) IssuesRouter(mw *middleware.Middleware) http.Handler {
 	issues := issues.New(
 		s.oauth,
 		s.repoResolver,
+		s.enforcer,
 		s.pages,
 		s.idResolver,
 		s.db,
