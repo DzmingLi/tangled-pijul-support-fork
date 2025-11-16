@@ -124,7 +124,7 @@ func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 
 		s.pages.PullActionsFragment(w, pages.PullActionsParams{
 			LoggedInUser:       user,
-			RepoInfo:           f.RepoInfo(user),
+			RepoInfo:           s.repoResolver.GetRepoInfo(r, user),
 			Pull:               pull,
 			RoundNumber:        roundNumber,
 			MergeCheck:         mergeCheckResponse,
@@ -221,7 +221,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
 		LoggedInUser:       user,
-		RepoInfo:           f.RepoInfo(user),
+		RepoInfo:           s.repoResolver.GetRepoInfo(r, user),
 		Pull:               pull,
 		Stack:              stack,
 		AbandonedPulls:     abandonedPulls,
@@ -421,11 +421,6 @@ func (s *Pulls) resubmitCheck(r *http.Request, repo *models.Repo, pull *models.P
 
 func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
-	f, err := s.repoResolver.Resolve(r)
-	if err != nil {
-		log.Println("failed to get repo and knot", err)
-		return
-	}
 
 	var diffOpts types.DiffOpts
 	if d := r.URL.Query().Get("diff"); d == "split" {
@@ -454,7 +449,7 @@ func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoPullPatchPage(w, pages.RepoPullPatchParams{
 		LoggedInUser: user,
-		RepoInfo:     f.RepoInfo(user),
+		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 		Pull:         pull,
 		Stack:        stack,
 		Round:        roundIdInt,
@@ -467,12 +462,6 @@ func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Pulls) RepoPullInterdiff(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
-
-	f, err := s.repoResolver.Resolve(r)
-	if err != nil {
-		log.Println("failed to get repo and knot", err)
-		return
-	}
 
 	var diffOpts types.DiffOpts
 	if d := r.URL.Query().Get("diff"); d == "split" {
@@ -518,7 +507,7 @@ func (s *Pulls) RepoPullInterdiff(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoPullInterdiffPage(w, pages.RepoPullInterdiffParams{
 		LoggedInUser: s.oauth.GetUser(r),
-		RepoInfo:     f.RepoInfo(user),
+		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 		Pull:         pull,
 		Round:        roundIdInt,
 		Interdiff:    interdiff,
@@ -678,7 +667,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoPulls(w, pages.RepoPullsParams{
 		LoggedInUser: s.oauth.GetUser(r),
-		RepoInfo:     f.RepoInfo(user),
+		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 		Pulls:        pulls,
 		LabelDefs:    defs,
 		FilteringBy:  state,
@@ -716,7 +705,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.pages.PullNewCommentFragment(w, pages.PullNewCommentParams{
 			LoggedInUser: user,
-			RepoInfo:     f.RepoInfo(user),
+			RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 			Pull:         pull,
 			RoundNumber:  roundNumber,
 		})
@@ -850,7 +839,7 @@ func (s *Pulls) NewPull(w http.ResponseWriter, r *http.Request) {
 
 		s.pages.RepoNewPull(w, pages.RepoNewPullParams{
 			LoggedInUser: user,
-			RepoInfo:     f.RepoInfo(user),
+			RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 			Branches:     result.Branches,
 			Strategy:     strategy,
 			SourceBranch: sourceBranch,
@@ -1405,14 +1394,9 @@ func (s *Pulls) ValidatePatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Pulls) PatchUploadFragment(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
-	f, err := s.repoResolver.Resolve(r)
-	if err != nil {
-		log.Println("failed to get repo and knot", err)
-		return
-	}
 
 	s.pages.PullPatchUploadFragment(w, pages.PullPatchUploadParams{
-		RepoInfo: f.RepoInfo(user),
+		RepoInfo: s.repoResolver.GetRepoInfo(r, user),
 	})
 }
 
@@ -1466,18 +1450,13 @@ func (s *Pulls) CompareBranchesFragment(w http.ResponseWriter, r *http.Request) 
 	}
 
 	s.pages.PullCompareBranchesFragment(w, pages.PullCompareBranchesParams{
-		RepoInfo: f.RepoInfo(user),
+		RepoInfo: s.repoResolver.GetRepoInfo(r, user),
 		Branches: withoutDefault,
 	})
 }
 
 func (s *Pulls) CompareForksFragment(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
-	f, err := s.repoResolver.Resolve(r)
-	if err != nil {
-		log.Println("failed to get repo and knot", err)
-		return
-	}
 
 	forks, err := db.GetForksByDid(s.db, user.Did)
 	if err != nil {
@@ -1486,7 +1465,7 @@ func (s *Pulls) CompareForksFragment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pages.PullCompareForkFragment(w, pages.PullCompareForkParams{
-		RepoInfo: f.RepoInfo(user),
+		RepoInfo: s.repoResolver.GetRepoInfo(r, user),
 		Forks:    forks,
 		Selected: r.URL.Query().Get("fork"),
 	})
@@ -1579,7 +1558,7 @@ func (s *Pulls) CompareForksBranchesFragment(w http.ResponseWriter, r *http.Requ
 	})
 
 	s.pages.PullCompareForkBranchesFragment(w, pages.PullCompareForkBranchesParams{
-		RepoInfo:       f.RepoInfo(user),
+		RepoInfo:       s.repoResolver.GetRepoInfo(r, user),
 		SourceBranches: sourceBranches.Branches,
 		TargetBranches: targetBranches.Branches,
 	})
@@ -1587,11 +1566,6 @@ func (s *Pulls) CompareForksBranchesFragment(w http.ResponseWriter, r *http.Requ
 
 func (s *Pulls) ResubmitPull(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
-	f, err := s.repoResolver.Resolve(r)
-	if err != nil {
-		log.Println("failed to get repo and knot", err)
-		return
-	}
 
 	pull, ok := r.Context().Value("pull").(*models.Pull)
 	if !ok {
@@ -1603,7 +1577,7 @@ func (s *Pulls) ResubmitPull(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		s.pages.PullResubmitFragment(w, pages.PullResubmitParams{
-			RepoInfo: f.RepoInfo(user),
+			RepoInfo: s.repoResolver.GetRepoInfo(r, user),
 			Pull:     pull,
 		})
 		return

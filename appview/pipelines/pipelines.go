@@ -92,7 +92,7 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 
 	p.pages.Pipelines(w, pages.PipelinesParams{
 		LoggedInUser: user,
-		RepoInfo:     f.RepoInfo(user),
+		RepoInfo:     p.repoResolver.GetRepoInfo(r, user),
 		Pipelines:    ps,
 	})
 }
@@ -141,7 +141,7 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 
 	p.pages.Workflow(w, pages.WorkflowParams{
 		LoggedInUser: user,
-		RepoInfo:     f.RepoInfo(user),
+		RepoInfo:     p.repoResolver.GetRepoInfo(r, user),
 		Pipeline:     singlePipeline,
 		Workflow:     workflow,
 	})
