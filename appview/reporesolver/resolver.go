@@ -18,10 +18,6 @@ import (
 	"tangled.org/core/rbac"
 )
 
-type ResolvedRepo struct {
-	models.Repo
-}
-
 type RepoResolver struct {
 	config   *config.Config
 	enforcer *rbac.Enforcer
@@ -45,21 +41,19 @@ func GetBaseRepoPath(r *http.Request, repo *models.Repo) string {
 }
 
 // TODO: move this out of `RepoResolver` struct
-func (rr *RepoResolver) Resolve(r *http.Request) (*ResolvedRepo, error) {
+func (rr *RepoResolver) Resolve(r *http.Request) (*models.Repo, error) {
 	repo, ok := r.Context().Value("repo").(*models.Repo)
 	if !ok {
 		log.Println("malformed middleware: `repo` not exist in context")
 		return nil, fmt.Errorf("malformed middleware")
 	}
 
-	return &ResolvedRepo{
-		Repo: *repo,
-	}, nil
+	return repo, nil
 }
 
 // 1. [x] replace `RepoInfo` to `reporesolver.GetRepoInfo(r *http.Request, repo, user)`
 // 2. [x] remove `rr`, `CurrentDir`, `Ref` fields from `ResolvedRepo`
-// 3. [ ] remove `ResolvedRepo`
+// 3. [x] remove `ResolvedRepo`
 // 4. [ ] replace reporesolver to reposervice
 func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.User) repoinfo.RepoInfo {
 	ownerId, ook := r.Context().Value("resolvedId").(identity.Identity)

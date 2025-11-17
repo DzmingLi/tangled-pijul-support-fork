@@ -115,11 +115,11 @@ func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		mergeCheckResponse := s.mergeCheck(r, &f.Repo, pull, stack)
-		branchDeleteStatus := s.branchDeleteStatus(r, &f.Repo, pull)
+		mergeCheckResponse := s.mergeCheck(r, f, pull, stack)
+		branchDeleteStatus := s.branchDeleteStatus(r, f, pull)
 		resubmitResult := pages.Unknown
 		if user.Did == pull.OwnerDid {
-			resubmitResult = s.resubmitCheck(r, &f.Repo, pull, stack)
+			resubmitResult = s.resubmitCheck(r, f, pull, stack)
 		}
 
 		s.pages.PullActionsFragment(w, pages.PullActionsParams{
@@ -155,11 +155,11 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 	stack, _ := r.Context().Value("stack").(models.Stack)
 	abandonedPulls, _ := r.Context().Value("abandonedPulls").([]*models.Pull)
 
-	mergeCheckResponse := s.mergeCheck(r, &f.Repo, pull, stack)
-	branchDeleteStatus := s.branchDeleteStatus(r, &f.Repo, pull)
+	mergeCheckResponse := s.mergeCheck(r, f, pull, stack)
+	branchDeleteStatus := s.branchDeleteStatus(r, f, pull)
 	resubmitResult := pages.Unknown
 	if user != nil && user.Did == pull.OwnerDid {
-		resubmitResult = s.resubmitCheck(r, &f.Repo, pull, stack)
+		resubmitResult = s.resubmitCheck(r, f, pull, stack)
 	}
 
 	m := make(map[string]models.Pipeline)
@@ -205,7 +205,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		s.db,
-		db.FilterIn("at_uri", f.Repo.Labels),
+		db.FilterIn("at_uri", f.Labels),
 		db.FilterContains("scope", tangled.RepoPullNSID),
 	)
 	if err != nil {
@@ -651,7 +651,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		s.db,
-		db.FilterIn("at_uri", f.Repo.Labels),
+		db.FilterIn("at_uri", f.Labels),
 		db.FilterContains("scope", tangled.RepoPullNSID),
 	)
 	if err != nil {
@@ -787,7 +787,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 		}
 		s.notifier.NewPullComment(r.Context(), comment, mentions)
 
-		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, &f.Repo)
+		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 		s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d#comment-%d", ownerSlashRepo, pull.PullId, commentId))
 		return
 	}
@@ -940,19 +940,19 @@ func (s *Pulls) NewPull(w http.ResponseWriter, r *http.Request) {
 				s.pages.Notice(w, "pull", "This knot doesn't support branch-based pull requests. Try another way?")
 				return
 			}
-			s.handleBranchBasedPull(w, r, &f.Repo, user, title, body, targetBranch, sourceBranch, isStacked)
+			s.handleBranchBasedPull(w, r, f, user, title, body, targetBranch, sourceBranch, isStacked)
 		} else if isForkBased {
 			if !caps.PullRequests.ForkSubmissions {
 				s.pages.Notice(w, "pull", "This knot doesn't support fork-based pull requests. Try another way?")
 				return
 			}
-			s.handleForkBasedPull(w, r, &f.Repo, user, fromFork, title, body, targetBranch, sourceBranch, isStacked)
+			s.handleForkBasedPull(w, r, f, user, fromFork, title, body, targetBranch, sourceBranch, isStacked)
 		} else if isPatchBased {
 			if !caps.PullRequests.PatchSubmissions {
 				s.pages.Notice(w, "pull", "This knot doesn't support patch-based pull requests. Send your patch over email.")
 				return
 			}
-			s.handlePatchBasedPull(w, r, &f.Repo, user, title, body, targetBranch, patch, isStacked)
+			s.handlePatchBasedPull(w, r, f, user, title, body, targetBranch, patch, isStacked)
 		}
 		return
 	}
@@ -1619,7 +1619,7 @@ func (s *Pulls) resubmitPatch(w http.ResponseWriter, r *http.Request) {
 
 	patch := r.FormValue("patch")
 
-	s.resubmitPullHelper(w, r, &f.Repo, user, pull, patch, "", "")
+	s.resubmitPullHelper(w, r, f, user, pull, patch, "", "")
 }
 
 func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
@@ -1684,7 +1684,7 @@ func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
 	patch := comparison.FormatPatchRaw
 	combined := comparison.CombinedPatchRaw
 
-	s.resubmitPullHelper(w, r, &f.Repo, user, pull, patch, combined, sourceRev)
+	s.resubmitPullHelper(w, r, f, user, pull, patch, combined, sourceRev)
 }
 
 func (s *Pulls) resubmitFork(w http.ResponseWriter, r *http.Request) {
@@ -1781,7 +1781,7 @@ func (s *Pulls) resubmitFork(w http.ResponseWriter, r *http.Request) {
 	patch := comparison.FormatPatchRaw
 	combined := comparison.CombinedPatchRaw
 
-	s.resubmitPullHelper(w, r, &f.Repo, user, pull, patch, combined, sourceRev)
+	s.resubmitPullHelper(w, r, f, user, pull, patch, combined, sourceRev)
 }
 
 func (s *Pulls) resubmitPullHelper(
@@ -2210,7 +2210,7 @@ func (s *Pulls) MergePull(w http.ResponseWriter, r *http.Request) {
 		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
 	}
 
-	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, &f.Repo)
+	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 	s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d", ownerSlashRepo, pull.PullId))
 }
 
@@ -2283,7 +2283,7 @@ func (s *Pulls) ClosePull(w http.ResponseWriter, r *http.Request) {
 		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
 	}
 
-	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, &f.Repo)
+	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 	s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d", ownerSlashRepo, pull.PullId))
 }
 
@@ -2357,7 +2357,7 @@ func (s *Pulls) ReopenPull(w http.ResponseWriter, r *http.Request) {
 		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
 	}
 
-	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, &f.Repo)
+	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 	s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d", ownerSlashRepo, pull.PullId))
 }
 
