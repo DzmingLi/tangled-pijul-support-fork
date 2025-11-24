@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -311,6 +312,9 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 
 		workflows := make(map[models.Engine][]models.Workflow)
 
+		// Build pipeline environment variables once for all workflows
+		pipelineEnv := models.PipelineEnvVars(tpl.TriggerMetadata, pipelineId, s.cfg.Server.Dev)
+
 		for _, w := range tpl.Workflows {
 			if w != nil {
 				if _, ok := s.engs[w.Engine]; !ok {
@@ -335,6 +339,13 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 				if err != nil {
 					return err
 				}
+
+				// inject TANGLED_* env vars after InitWorkflow
+				// This prevents user-defined env vars from overriding them
+				if ewf.Environment == nil {
+					ewf.Environment = make(map[string]string)
+				}
+				maps.Copy(ewf.Environment, pipelineEnv)
 
 				workflows[eng] = append(workflows[eng], *ewf)
 

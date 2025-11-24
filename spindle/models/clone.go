@@ -55,7 +55,7 @@ func BuildCloneStep(twf tangled.Pipeline_Workflow, tr tangled.Pipeline_TriggerMe
 		}
 	}
 
-	repoURL := buildRepoURL(tr, dev)
+	repoURL := BuildRepoURL(tr.Repo, dev)
 
 	var cloneOpts tangled.Pipeline_CloneOpts
 	if twf.Clone != nil {
@@ -101,20 +101,19 @@ func extractCommitSHA(tr tangled.Pipeline_TriggerMetadata) (string, error) {
 	}
 }
 
-// buildRepoURL constructs the repository URL from trigger metadata
-func buildRepoURL(tr tangled.Pipeline_TriggerMetadata, devMode bool) string {
-	if tr.Repo == nil {
+// BuildRepoURL constructs the repository URL from repo metadata.
+func BuildRepoURL(repo *tangled.Pipeline_TriggerRepo, devMode bool) string {
+	if repo == nil {
 		return ""
 	}
 
-	// Determine protocol
 	scheme := "https://"
 	if devMode {
 		scheme = "http://"
 	}
 
 	// Get host from knot
-	host := tr.Repo.Knot
+	host := repo.Knot
 
 	// In dev mode, replace localhost with host.docker.internal for Docker networking
 	if devMode && strings.Contains(host, "localhost") {
@@ -122,7 +121,7 @@ func buildRepoURL(tr tangled.Pipeline_TriggerMetadata, devMode bool) string {
 	}
 
 	// Build URL: {scheme}{knot}/{did}/{repo}
-	return fmt.Sprintf("%s%s/%s/%s", scheme, host, tr.Repo.Did, tr.Repo.Repo)
+	return fmt.Sprintf("%s%s/%s/%s", scheme, host, repo.Did, repo.Repo)
 }
 
 // buildFetchArgs constructs the arguments for git fetch based on clone options

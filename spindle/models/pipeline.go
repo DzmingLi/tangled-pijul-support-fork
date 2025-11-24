@@ -22,7 +22,8 @@ const (
 )
 
 type Workflow struct {
-	Steps []Step
-	Name  string
-	Data  any
+	Steps       []Step
+	Name        string
+	Data        any
+	Environment map[string]string
 }

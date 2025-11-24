@@ -73,7 +73,6 @@ func (ss *setupSteps) addStep(step models.Step) {
 type addlFields struct {
 	image     string
 	container string
-	env       map[string]string
 }
 
 func (e *Engine) InitWorkflow(twf tangled.Pipeline_Workflow, tpl tangled.Pipeline) (*models.Workflow, error) {
@@ -103,7 +102,7 @@ func (e *Engine) InitWorkflow(twf tangled.Pipeline_Workflow, tpl tangled.Pipelin
 		swf.Steps = append(swf.Steps, sstep)
 	}
 	swf.Name = twf.Name
-	addl.env = dwf.Environment
+	swf.Environment = dwf.Environment
 	addl.image = workflowImage(dwf.Dependencies, e.cfg.NixeryPipelines.Nixery)
 
 	setup := &setupSteps{}
@@ -288,7 +287,7 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 
 func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.Workflow, idx int, secrets []secrets.UnlockedSecret, wfLogger *models.WorkflowLogger) error {
 	addl := w.Data.(addlFields)
-	workflowEnvs := ConstructEnvs(addl.env)
+	workflowEnvs := ConstructEnvs(w.Environment)
 	// TODO(winter): should SetupWorkflow also have secret access?
 	// IMO yes, but probably worth thinking on.
 	for _, s := range secrets {
@@ -310,7 +309,7 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 	envs.AddEnv("HOME", homeDir)
 
 	mkExecResp, err := e.docker.ContainerExecCreate(ctx, addl.container, container.ExecOptions{
-		Cmd:          []string{"bash", "-c", step.command},
+		Cmd:          []string{"bash", "-c", step.Command()},
 		AttachStdout: true,
 		AttachStderr: true,
 		Env:          envs,
@@ -333,7 +332,7 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 		// Docker doesn't provide an API to kill an exec run
 		// (sure, we could grab the PID and kill it ourselves,
 		// but that's wasted effort)
-		e.l.Warn("step timed out", "step", step.Name)
+		e.l.Warn("step timed out", "step", step.Name())
 
 		<-tailDone
 
