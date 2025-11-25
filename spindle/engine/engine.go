@@ -3,11 +3,10 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+	"sync"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
-	"golang.org/x/sync/errgroup"
 	"tangled.org/core/notifier"
 	"tangled.org/core/spindle/config"
 	"tangled.org/core/spindle/db"
@@ -31,13 +30,16 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 		}
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	var wg sync.WaitGroup
 	for eng, wfs := range pipeline.Workflows {
 		workflowTimeout := eng.WorkflowTimeout()
 		l.Info("using workflow timeout", "timeout", workflowTimeout)
 
 		for _, w := range wfs {
-			eg.Go(func() error {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
 				wid := models.WorkflowId{
 					PipelineId: pipelineId,
 					Name:       w.Name,
@@ -45,7 +47,8 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 
 				err := db.StatusRunning(wid, n)
 				if err != nil {
-					return err
+					l.Error("failed to set workflow status to running", "wid", wid, "err", err)
+					return
 				}
 
 				err = eng.SetupWorkflow(ctx, wid, &w)
@@ -61,9 +64,9 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 
 					dbErr := db.StatusFailed(wid, err.Error(), -1, n)
 					if dbErr != nil {
-						return dbErr
+						l.Error("failed to set workflow status to failed", "wid", wid, "err", dbErr)
 					}
-					return err
+					return
 				}
 				defer eng.DestroyWorkflow(ctx, wid)
 
@@ -99,32 +102,26 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 						if errors.Is(err, ErrTimedOut) {
 							dbErr := db.StatusTimeout(wid, n)
 							if dbErr != nil {
-								return dbErr
+								l.Error("failed to set workflow status to timeout", "wid", wid, "err", dbErr)
 							}
 						} else {
 							dbErr := db.StatusFailed(wid, err.Error(), -1, n)
 							if dbErr != nil {
-								return dbErr
+								l.Error("failed to set workflow status to failed", "wid", wid, "err", dbErr)
 							}
 						}
-
-						return fmt.Errorf("starting steps image: %w", err)
+						return
 					}
 				}
 
 				err = db.StatusSuccess(wid, n)
 				if err != nil {
-					return err
+					l.Error("failed to set workflow status to success", "wid", wid, "err", err)
 				}
-
-				return nil
-			})
+			}()
 		}
 	}
 
-	if err := eg.Wait(); err != nil {
-		l.Error("failed to run one or more workflows", "err", err)
-	} else {
-		l.Info("successfully ran full pipeline")
-	}
+	wg.Wait()
+	l.Info("all workflows completed")
 }
