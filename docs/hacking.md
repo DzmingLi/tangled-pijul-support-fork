@@ -117,7 +117,7 @@ nix run --impure .#vm
 # type `poweroff` at the shell to exit the VM
 ```
 
-This starts a knot on port 6000, a spindle on port 6555
+This starts a knot on port 6444, a spindle on port 6555
 with `ssh` exposed on port 2222.
 
 Once the services are running, head to

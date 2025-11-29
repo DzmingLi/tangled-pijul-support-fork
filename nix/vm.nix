@@ -48,8 +48,8 @@ in
             # knot
             {
               from = "host";
-              host.port = 6000;
-              guest.port = 6000;
+              host.port = 6444;
+              guest.port = 6444;
             }
             # spindle
             {
@@ -87,10 +87,10 @@ in
           motd = "Welcome to the development knot!\n";
           server = {
             owner = envVar "TANGLED_VM_KNOT_OWNER";
-            hostname = envVarOr "TANGLED_VM_KNOT_HOST" "localhost:6000";
+            hostname = envVarOr "TANGLED_VM_KNOT_HOST" "localhost:6444";
             plcUrl = plcUrl;
             jetstreamEndpoint = jetstream;
-            listenAddr = "0.0.0.0:6000";
+            listenAddr = "0.0.0.0:6444";
           };
         };
         services.tangled.spindle = {
