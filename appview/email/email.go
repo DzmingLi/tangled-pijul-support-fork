@@ -3,7 +3,7 @@ package email
 import (
 	"fmt"
 	"net"
-	"regexp"
+	"net/mail"
 	"strings"
 
 	"github.com/resend/resend-go/v2"
@@ -34,24 +34,19 @@ func SendEmail(email Email) error {
 }
 
 func IsValidEmail(email string) bool {
-	// Basic length check
-	if len(email) < 3 || len(email) > 254 {
+	// Reject whitespace (ParseAddress normalizes it away)
+	if strings.ContainsAny(email, " \t\n\r") {
 		return false
 	}
 
-	// Regular expression for email validation (RFC 5322 compliant)
-	pattern := `^[a-zA-Z0-9.!#$%&'*+/=?^_\x60{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`
-
-	// Compile regex
-	regex := regexp.MustCompile(pattern)
-
-	// Check if email matches regex pattern
-	if !regex.MatchString(email) {
+	// Use stdlib RFC 5322 parser
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
 		return false
 	}
 
 	// Split email into local and domain parts
-	parts := strings.Split(email, "@")
+	parts := strings.Split(addr.Address, "@")
 	domain := parts[1]
 
 	mx, err := net.LookupMX(domain)
