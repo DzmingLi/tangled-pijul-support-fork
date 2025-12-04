@@ -72,12 +72,17 @@ func (j *JetstreamClient) withDidFilter(processFunc processor) processor {
 	// existing instances of the closure when j.WantedDids is mutated
 	return func(ctx context.Context, evt *models.Event) error {
 
+		j.mu.RLock()
 		// empty filter => all dids allowed
-		if len(j.wantedDids) == 0 {
-			return processFunc(ctx, evt)
+		matches := len(j.wantedDids) == 0
+		if !matches {
+			if _, ok := j.wantedDids[evt.Did]; ok {
+				matches = true
+			}
 		}
+		j.mu.RUnlock()
 
-		if _, ok := j.wantedDids[evt.Did]; ok {
+		if matches {
 			return processFunc(ctx, evt)
 		} else {
 			return nil
@@ -122,7 +127,13 @@ func (j *JetstreamClient) StartJetstream(ctx context.Context, processFunc func(c
 
 	go func() {
 		if j.waitForDid {
-			for len(j.wantedDids) == 0 {
+			for {
+				j.mu.RLock()
+				hasDid := len(j.wantedDids) != 0
+				j.mu.RUnlock()
+				if hasDid {
+					break
+				}
 				time.Sleep(time.Second)
 			}
 		}
