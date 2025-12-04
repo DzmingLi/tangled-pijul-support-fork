@@ -84,7 +84,7 @@ func (h *Xrpc) CreateRepo(w http.ResponseWriter, r *http.Request) {
 	repoPath, _ := securejoin.SecureJoin(h.Config.Repo.ScanPath, relativeRepoPath)
 
 	if data.Source != nil && *data.Source != "" {
-		err = git.Fork(repoPath, *data.Source)
+		err = git.Fork(repoPath, *data.Source, h.Config)
 		if err != nil {
 			l.Error("forking repo", "error", err.Error())
 			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)

@@ -3,14 +3,27 @@ package git
 import (
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/url"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	knotconfig "tangled.org/core/knotserver/config"
 )
 
-func Fork(repoPath, source string) error {
-	cloneCmd := exec.Command("git", "clone", "--bare", source, repoPath)
+func Fork(repoPath, source string, cfg *knotconfig.Config) error {
+	u, err := url.Parse(source)
+	if err != nil {
+		return fmt.Errorf("failed to parse source URL: %w", err)
+	}
+
+	if o := optimizeClone(u, cfg); o != nil {
+		u = o
+	}
+
+	cloneCmd := exec.Command("git", "clone", "--bare", u.String(), repoPath)
 	if err := cloneCmd.Run(); err != nil {
 		return fmt.Errorf("failed to bare clone repository: %w", err)
 	}
@@ -21,6 +34,29 @@ func Fork(repoPath, source string) error {
 	}
 
 	return nil
+}
+
+func optimizeClone(u *url.URL, cfg *knotconfig.Config) *url.URL {
+	// only optimize if it's the same host
+	if u.Host != cfg.Server.Hostname {
+		return nil
+	}
+
+	local := filepath.Join(cfg.Repo.ScanPath, u.Path)
+
+	// sanity check: is there a git repo there?
+	if _, err := PlainOpen(local); err != nil {
+		return nil
+	}
+
+	// create optimized file:// URL
+	optimized := &url.URL{
+		Scheme: "file",
+		Path:   local,
+	}
+
+	slog.Debug("performing local clone", "url", optimized.String())
+	return optimized
 }
 
 func (g *GitRepo) Sync() error {
