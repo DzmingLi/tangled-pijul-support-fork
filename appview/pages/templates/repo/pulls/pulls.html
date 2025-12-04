@@ -38,6 +38,7 @@
       <input type="hidden" name="state" value="{{ .FilteringBy.String }}">
       <div class="flex-1 flex relative">
         <input
+          id="search-q"
           class="flex-1 py-1 pl-2 pr-10 mr-[-1px] rounded-r-none focus:border-0 focus:outline-none focus:ring focus:ring-blue-400 ring-inset peer"
           type="text"
           name="q"
@@ -59,7 +60,7 @@
       </button>
     </form>
     <div class="sm:row-start-1">
-      {{ template "fragments/tabSelector" (dict "Name" "state" "Values" $values "Active" $active) }}
+      {{ template "fragments/tabSelector" (dict "Name" "state" "Values" $values "Active" $active "Include" "#search-q") }}
     </div>
     <a
       href="/{{ .RepoInfo.FullName }}/pulls/new"
