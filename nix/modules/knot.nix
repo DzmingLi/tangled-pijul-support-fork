@@ -195,6 +195,8 @@ in
           Match User ${cfg.gitUser}
               AuthorizedKeysCommand /etc/ssh/keyfetch_wrapper
               AuthorizedKeysCommandUser nobody
+              ChallengeResponseAuthentication no
+              PasswordAuthentication no
         '';
       };
 
