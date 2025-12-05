@@ -170,10 +170,24 @@
   {{ $fieldName := $def.AtUri }}
   {{ $valueType := $def.ValueType }}
   {{ $value := .value }}
+
   {{ if $valueType.IsDidFormat }}
     {{ $value = trimPrefix (resolve .value) "@" }}
+    <actor-typeahead>
+      <input
+        autocapitalize="none"
+        autocorrect="off"
+        autocomplete="off"
+        placeholder="user.tngl.sh"
+        value="{{$value}}"
+        name="{{$fieldName}}"
+        type="text"
+        class="p-1 w-full text-sm"
+      />
+    </actor-typeahead>
+  {{ else }}
+    <input class="p-1 w-full" type="text" name="{{$fieldName}}" value="{{$value}}">
   {{ end }}
-  <input class="p-1 w-full" type="text" name="{{$fieldName}}" value="{{$value}}">
 {{ end }}
 
 {{ define "nullTypeInput" }}
