@@ -31,7 +31,6 @@ import (
 	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 //go:embed templates/* static legal
@@ -649,7 +648,7 @@ type RepoIndexParams struct {
 	RepoInfo      repoinfo.RepoInfo
 	Active        string
 	TagMap        map[string][]string
-	CommitsTrunc  []*object.Commit
+	CommitsTrunc  []types.Commit
 	TagsTrunc     []*types.TagReference
 	BranchesTrunc []types.Branch
 	// ForkInfo           *types.ForkInfo

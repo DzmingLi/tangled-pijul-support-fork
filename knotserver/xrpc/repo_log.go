@@ -62,9 +62,14 @@ func (x *Xrpc) RepoLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tcommits := make([]types.Commit, len(commits))
+	for i, c := range commits {
+		tcommits[i].FromGoGitCommit(c)
+	}
+
 	// Create response using existing types.RepoLogResponse
 	response := types.RepoLogResponse{
-		Commits: commits,
+		Commits: tcommits,
 		Ref:     ref,
 		Page:    (offset / limit) + 1,
 		PerPage: limit,

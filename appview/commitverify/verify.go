@@ -3,7 +3,6 @@ package commitverify
 import (
 	"log"
 
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/crypto"
@@ -35,23 +34,13 @@ func (vcs VerifiedCommits) Fingerprint(hash string) string {
 	return ""
 }
 
-func GetVerifiedObjectCommits(e db.Execer, emailToDid map[string]string, commits []*object.Commit) (VerifiedCommits, error) {
-	ndCommits := []types.NiceDiff{}
-	for _, commit := range commits {
-		ndCommits = append(ndCommits, ObjectCommitToNiceDiff(commit))
-	}
-	return GetVerifiedCommits(e, emailToDid, ndCommits)
-}
-
-func GetVerifiedCommits(e db.Execer, emailToDid map[string]string, ndCommits []types.NiceDiff) (VerifiedCommits, error) {
+func GetVerifiedCommits(e db.Execer, emailToDid map[string]string, ndCommits []types.Commit) (VerifiedCommits, error) {
 	vcs := VerifiedCommits{}
 
 	didPubkeyCache := make(map[string][]models.PublicKey)
 
 	for _, commit := range ndCommits {
-		c := commit.Commit
-
-		committerEmail := c.Committer.Email
+		committerEmail := commit.Committer.Email
 		if did, exists := emailToDid[committerEmail]; exists {
 			// check if we've already fetched public keys for this did
 			pubKeys, ok := didPubkeyCache[did]
@@ -67,15 +56,17 @@ func GetVerifiedCommits(e db.Execer, emailToDid map[string]string, ndCommits []t
 			}
 
 			// try to verify with any associated pubkeys
+			payload := commit.Payload()
+			signature := commit.PGPSignature
 			for _, pk := range pubKeys {
-				if _, ok := crypto.VerifyCommitSignature(pk.Key, commit); ok {
+				if _, ok := crypto.VerifySignature([]byte(pk.Key), []byte(signature), []byte(payload)); ok {
 
 					fp, err := crypto.SSHFingerprint(pk.Key)
 					if err != nil {
 						log.Println("error computing ssh fingerprint:", err)
 					}
 
-					vc := verifiedCommit{fingerprint: fp, hash: c.This}
+					vc := verifiedCommit{fingerprint: fp, hash: commit.This}
 					vcs[vc] = struct{}{}
 					break
 				}
@@ -85,34 +76,4 @@ func GetVerifiedCommits(e db.Execer, emailToDid map[string]string, ndCommits []t
 	}
 
 	return vcs, nil
-}
-
-// ObjectCommitToNiceDiff is a compatibility function to convert a
-// commit object into a NiceDiff structure.
-func ObjectCommitToNiceDiff(c *object.Commit) types.NiceDiff {
-	var niceDiff types.NiceDiff
-
-	// set commit information
-	niceDiff.Commit.Message = c.Message
-	niceDiff.Commit.Author = c.Author
-	niceDiff.Commit.This = c.Hash.String()
-	niceDiff.Commit.Committer = c.Committer
-	niceDiff.Commit.Tree = c.TreeHash.String()
-	niceDiff.Commit.PGPSignature = c.PGPSignature
-
-	changeId, ok := c.ExtraHeaders["change-id"]
-	if ok {
-		niceDiff.Commit.ChangedId = string(changeId)
-	}
-
-	// set parent hash if available
-	if len(c.ParentHashes) > 0 {
-		niceDiff.Commit.Parent = c.ParentHashes[0].String()
-	}
-
-	// XXX: Stats and Diff fields are typically populated
-	// after fetching the actual diff information, which isn't
-	// directly available in the commit object itself.
-
-	return niceDiff
 }

@@ -122,7 +122,7 @@ func (rp *Repo) Index(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to get email to did map", "err", err)
 	}
 
-	vc, err := commitverify.GetVerifiedObjectCommits(rp.db, emailToDidMap, commitsTrunc)
+	vc, err := commitverify.GetVerifiedCommits(rp.db, emailToDidMap, commitsTrunc)
 	if err != nil {
 		l.Error("failed to GetVerifiedObjectCommits", "err", err)
 	}

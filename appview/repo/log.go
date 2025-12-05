@@ -116,7 +116,7 @@ func (rp *Repo) Log(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to fetch email to did mapping", "err", err)
 	}
 
-	vc, err := commitverify.GetVerifiedObjectCommits(rp.db, emailToDidMap, xrpcResp.Commits)
+	vc, err := commitverify.GetVerifiedCommits(rp.db, emailToDidMap, xrpcResp.Commits)
 	if err != nil {
 		l.Error("failed to GetVerifiedObjectCommits", "err", err)
 	}
@@ -192,7 +192,7 @@ func (rp *Repo) Commit(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to get email to did mapping", "err", err)
 	}
 
-	vc, err := commitverify.GetVerifiedCommits(rp.db, emailToDidMap, []types.NiceDiff{*result.Diff})
+	vc, err := commitverify.GetVerifiedCommits(rp.db, emailToDidMap, []types.Commit{result.Diff.Commit})
 	if err != nil {
 		l.Error("failed to GetVerifiedCommits", "err", err)
 	}

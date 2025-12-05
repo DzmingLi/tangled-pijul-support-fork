@@ -296,7 +296,6 @@ func AsNiceDiff(patch, targetBranch string) types.NiceDiff {
 	}
 
 	nd := types.NiceDiff{}
-	nd.Commit.Parent = targetBranch
 
 	for _, d := range diffs {
 		ndiff := types.Diff{}

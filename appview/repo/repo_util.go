@@ -8,8 +8,6 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/types"
-
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 func sortFiles(files []types.NiceTree) {
@@ -42,7 +40,7 @@ func sortBranches(branches []types.Branch) {
 	})
 }
 
-func uniqueEmails(commits []*object.Commit) []string {
+func uniqueEmails(commits []types.Commit) []string {
 	emails := make(map[string]struct{})
 	for _, commit := range commits {
 		if commit.Author.Email != "" {

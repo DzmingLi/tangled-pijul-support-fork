@@ -8,26 +8,26 @@ import (
 )
 
 type RepoIndexResponse struct {
-	IsEmpty        bool             `json:"is_empty"`
-	Ref            string           `json:"ref,omitempty"`
-	Readme         string           `json:"readme,omitempty"`
-	ReadmeFileName string           `json:"readme_file_name,omitempty"`
-	Commits        []*object.Commit `json:"commits,omitempty"`
-	Description    string           `json:"description,omitempty"`
-	Files          []NiceTree       `json:"files,omitempty"`
-	Branches       []Branch         `json:"branches,omitempty"`
-	Tags           []*TagReference  `json:"tags,omitempty"`
-	TotalCommits   int              `json:"total_commits,omitempty"`
+	IsEmpty        bool            `json:"is_empty"`
+	Ref            string          `json:"ref,omitempty"`
+	Readme         string          `json:"readme,omitempty"`
+	ReadmeFileName string          `json:"readme_file_name,omitempty"`
+	Commits        []Commit        `json:"commits,omitempty"`
+	Description    string          `json:"description,omitempty"`
+	Files          []NiceTree      `json:"files,omitempty"`
+	Branches       []Branch        `json:"branches,omitempty"`
+	Tags           []*TagReference `json:"tags,omitempty"`
+	TotalCommits   int             `json:"total_commits,omitempty"`
 }
 
 type RepoLogResponse struct {
-	Commits     []*object.Commit `json:"commits,omitempty"`
-	Ref         string           `json:"ref,omitempty"`
-	Description string           `json:"description,omitempty"`
-	Log         bool             `json:"log,omitempty"`
-	Total       int              `json:"total,omitempty"`
-	Page        int              `json:"page,omitempty"`
-	PerPage     int              `json:"per_page,omitempty"`
+	Commits     []Commit `json:"commits,omitempty"`
+	Ref         string   `json:"ref,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Log         bool     `json:"log,omitempty"`
+	Total       int      `json:"total,omitempty"`
+	Page        int      `json:"page,omitempty"`
+	PerPage     int      `json:"per_page,omitempty"`
 }
 
 type RepoCommitResponse struct {

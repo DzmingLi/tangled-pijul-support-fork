@@ -77,23 +77,7 @@ func (g *GitRepo) Diff() (*types.NiceDiff, error) {
 		nd.Diff = append(nd.Diff, ndiff)
 	}
 
-	nd.Stat.FilesChanged = len(diffs)
-	nd.Commit.This = c.Hash.String()
-	nd.Commit.PGPSignature = c.PGPSignature
-	nd.Commit.Committer = c.Committer
-	nd.Commit.Tree = c.TreeHash.String()
-
-	if parent.Hash.IsZero() {
-		nd.Commit.Parent = ""
-	} else {
-		nd.Commit.Parent = parent.Hash.String()
-	}
-	nd.Commit.Author = c.Author
-	nd.Commit.Message = c.Message
-
-	if v, ok := c.ExtraHeaders["change-id"]; ok {
-		nd.Commit.ChangedId = string(v)
-	}
+	nd.Commit.FromGoGitCommit(c)
 
 	return &nd, nil
 }
