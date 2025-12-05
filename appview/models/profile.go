@@ -111,6 +111,7 @@ func (p *ProfileTimeline) IsEmpty() bool {
 }
 
 type ByMonth struct {
+	Commits     int
 	RepoEvents  []RepoEvent
 	IssueEvents IssueEvents
 	PullEvents  PullEvents
@@ -119,7 +120,8 @@ type ByMonth struct {
 func (b ByMonth) IsEmpty() bool {
 	return len(b.RepoEvents) == 0 &&
 		len(b.IssueEvents.Items) == 0 &&
-		len(b.PullEvents.Items) == 0
+		len(b.PullEvents.Items) == 0 &&
+		b.Commits == 0
 }
 
 type IssueEvents struct {

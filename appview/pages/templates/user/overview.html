@@ -33,6 +33,7 @@
             </p>
 
               <div class="flex flex-col gap-1">
+                {{ block "commits"  .Commits }} {{ end }}
                 {{ block "repoEvents"  .RepoEvents }} {{ end }}
                 {{ block "issueEvents" .IssueEvents }} {{ end }}
                 {{ block "pullEvents"  .PullEvents }} {{ end }}
@@ -43,6 +44,15 @@
       {{ end }}
     {{ end }}
   </div>
+{{ end }}
+
+{{ define "commits" }}
+  {{ if . }}
+    <div class="flex flex-wrap items-center gap-1">
+      {{ i "git-commit-horizontal" "size-5" }}
+      created {{ . }} commits
+    </div>
+  {{ end }}
 {{ end }}
 
 {{ define "repoEvents" }}

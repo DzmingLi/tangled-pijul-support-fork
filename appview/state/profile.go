@@ -161,6 +161,15 @@ func (s *State) profileOverview(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to create timeline", "err", err)
 	}
 
+	// populate commit counts in the timeline, using the punchcard
+	currentMonth := time.Now().Month()
+	for _, p := range profile.Punchcard.Punches {
+		idx := currentMonth - p.Date.Month()
+		if int(idx) < len(timeline.ByMonth) {
+			timeline.ByMonth[idx].Commits += p.Count
+		}
+	}
+
 	s.pages.ProfileOverview(w, pages.ProfileOverviewParams{
 		LoggedInUser:       s.oauth.GetUser(r),
 		Card:               profile,
