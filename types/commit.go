@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"regexp"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -165,4 +166,29 @@ func (c *Commit) Payload() string {
 	fmt.Fprintf(&payload, "\n%s", c.Message)
 
 	return payload.String()
+}
+
+var (
+	coAuthorRegex = regexp.MustCompile(`(?im)^Co-authored-by:\s*(.+?)\s*<([^>]+)>`)
+)
+
+func (commit *Commit) CoAuthors() []object.Signature {
+	var coAuthors []object.Signature
+
+	matches := coAuthorRegex.FindAllStringSubmatch(commit.Message, -1)
+
+	for _, match := range matches {
+		if len(match) >= 3 {
+			name := strings.TrimSpace(match[1])
+			email := strings.TrimSpace(match[2])
+
+			coAuthors = append(coAuthors, object.Signature{
+				Name:  name,
+				Email: email,
+				When:  commit.Committer.When,
+			})
+		}
+	}
+
+	return coAuthors
 }
