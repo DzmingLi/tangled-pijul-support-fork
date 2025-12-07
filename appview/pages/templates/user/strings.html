@@ -13,7 +13,9 @@
         {{ template "singleString" (list $ .) }}
       </div>
     {{ else }}
-      <p class="px-6 dark:text-white">This user does not have any strings yet.</p>
+      <div class="text-base text-gray-500 flex items-center justify-center italic p-12 border border-gray-200 dark:border-gray-700 rounded">
+        <span>This user does not have any strings yet.</span>
+      </div>
     {{ end }}
   </div>
 {{ end }}

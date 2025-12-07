@@ -16,7 +16,11 @@
   <p class="text-sm font-bold px-2 pb-4 dark:text-white">ACTIVITY</p>
   <div class="flex flex-col gap-4 relative">
     {{ if .ProfileTimeline.IsEmpty }}
-      <p class="dark:text-white">This user does not have any activity yet.</p>
+      <div class="text-base text-gray-500 flex items-center justify-center italic p-12 border border-gray-200 dark:border-gray-700 rounded">
+        <span class="flex items-center gap-2">
+          This user does not have any activity yet.
+        </span>
+      </div>
     {{ end }}
 
     {{ with .ProfileTimeline }}
@@ -254,7 +258,11 @@
         {{ template "user/fragments/repoCard" (list $ . false) }}
       </div>
       {{ else }}
-        <p class="dark:text-white">This user does not have any pinned repos.</p>
+        <div class="text-base text-gray-500 flex items-center justify-center italic p-12 border border-gray-200 dark:border-gray-700 rounded">
+          <span class="flex items-center gap-2">
+            This user does not have any pinned repos.
+          </span>
+        </div>
       {{ end }}
     </div>
   </div>
