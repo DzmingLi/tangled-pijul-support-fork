@@ -162,7 +162,7 @@ func (p *Pages) funcMap() template.FuncMap {
 			}
 			return pairs, nil
 		},
-		"append": func(s []string, values ...string) []string {
+		"append": func(s []any, values ...any) []any {
 			s = append(s, values...)
 			return s
 		},

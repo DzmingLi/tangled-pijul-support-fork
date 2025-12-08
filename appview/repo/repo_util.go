@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -43,18 +44,17 @@ func sortBranches(branches []types.Branch) {
 func uniqueEmails(commits []types.Commit) []string {
 	emails := make(map[string]struct{})
 	for _, commit := range commits {
-		if commit.Author.Email != "" {
-			emails[commit.Author.Email] = struct{}{}
-		}
-		if commit.Committer.Email != "" {
-			emails[commit.Committer.Email] = struct{}{}
+		emails[commit.Author.Email] = struct{}{}
+		emails[commit.Committer.Email] = struct{}{}
+		for _, c := range commit.CoAuthors() {
+			emails[c.Email] = struct{}{}
 		}
 	}
-	var uniqueEmails []string
-	for email := range emails {
-		uniqueEmails = append(uniqueEmails, email)
-	}
-	return uniqueEmails
+
+	// delete empty emails if any, from the set
+	delete(emails, "")
+
+	return slices.Collect(maps.Keys(emails))
 }
 
 func balanceIndexItems(commitCount, branchCount, tagCount, fileCount int) (commitsTrunc int, branchesTrunc int, tagsTrunc int) {

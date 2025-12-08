@@ -14,7 +14,7 @@
         {{ end }}
         <div class="flex items-center justify-between pb-5">
           {{ block "branchSelector" . }}{{ end }}
-          <div class="flex md:hidden items-center gap-2">
+          <div class="flex md:hidden items-center gap-3">
             <a href="/{{ .RepoInfo.FullName }}/commits/{{ .Ref | urlquery }}" class="inline-flex items-center text-sm gap-1 font-bold">
               {{ i "git-commit-horizontal" "w-4" "h-4" }} {{ .TotalCommits }}
             </a>
@@ -66,7 +66,7 @@
 
 {{ define "branchSelector" }}
   <div class="flex gap-2 items-center justify-between w-full">
-    <div class="flex gap-2 items-center">
+    <div class="flex gap-2 items-stretch">
       <select
           onchange="window.location.href = '/{{ .RepoInfo.FullName }}/tree/' + encodeURIComponent(this.value)"
           class="p-1 border max-w-32 border-gray-200 bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700"
@@ -228,12 +228,7 @@
         <span
           class="mx-1 before:content-['·'] before:select-none"
           ></span>
-        <span>
-          {{ $did := index $.EmailToDid .Author.Email }}
-          <a href="{{ if $did }}/{{ resolve $did }}{{ else }}mailto:{{ .Author.Email }}{{ end }}"
-            class="text-gray-500 dark:text-gray-400 no-underline hover:underline"
-            >{{ if $did }}{{ template "user/fragments/picHandleLink" $did }}{{ else }}{{ .Author.Name }}{{ end }}</a>
-        </span>
+        {{ template "attribution" (list . $.EmailToDid) }}
         <div class="inline-block px-1 select-none after:content-['·']"></div>
         {{ template "repo/fragments/time" .Committer.When }}
 
@@ -259,6 +254,33 @@
     {{ end }}
   </div>
 </div>
+{{ end }}
+
+{{ define "attribution" }}
+  {{ $commit := index . 0 }}
+  {{ $map := index . 1 }}
+  <span class="flex items-center">
+    {{ $author := index $map $commit.Author.Email }}
+    {{ $coauthors := $commit.CoAuthors }}
+    {{ $all := list }}
+
+    {{ if $author }}
+        {{ $all = append $all $author }}
+    {{ end }}
+    {{ range $coauthors }}
+      {{ $co := index $map .Email }}
+      {{ if $co }}
+        {{ $all = append $all $co }}
+      {{ end }}
+    {{ end }}
+
+    {{ template "fragments/tinyAvatarList" (dict "all" $all "classes" "size-6") }}
+    <a href="{{ if $author }}/{{ $author }}{{ else }}mailto:{{ $commit.Author.Email }}{{ end }}"
+       class="no-underline hover:underline">
+       {{ if $author }}{{ resolve $author }}{{ else }}{{ $commit.Author.Name }}{{ end }}
+       {{ if $coauthors }} +{{ length $coauthors }}{{ end }}
+    </a>
+  </span>
 {{ end }}
 
 {{ define "branchList" }}

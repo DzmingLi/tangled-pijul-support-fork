@@ -25,17 +25,11 @@
   </div>
 
   <div class="flex flex-wrap items-center space-x-2">
-      <p class="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-300">
-          {{ $did := index $.EmailToDid $commit.Author.Email }}
-
-          {{ if $did }}
-            {{ template "user/fragments/picHandleLink" $did }}
-          {{ else }}
-            <a href="mailto:{{ $commit.Author.Email }}" class="no-underline hover:underline text-gray-500 dark:text-gray-300">{{ $commit.Author.Name }}</a>
-          {{ end }}
+      <p class="flex flex-wrap items-center gap-1 text-sm text-gray-500 dark:text-gray-300">
+          {{ template "attribution" . }}
 
           <span class="px-1 select-none before:content-['\00B7']"></span>
-          {{ template "repo/fragments/time" $commit.Committer.When }}
+            {{ template "repo/fragments/time" $commit.Committer.When }}
           <span class="px-1 select-none before:content-['\00B7']"></span>
 
           <a href="/{{ $repo }}/commit/{{ $commit.This }}" class="no-underline hover:underline text-gray-500 dark:text-gray-300">{{ slice $commit.This 0 8 }}</a>
@@ -78,6 +72,37 @@
 
 </section>
 {{end}}
+
+{{ define "attribution" }}
+  {{ $commit := .Diff.Commit }}
+  {{ $showCommitter := true }}
+  {{ if eq $commit.Author.Email $commit.Committer.Email }}
+    {{ $showCommitter = false }}
+  {{ end }}
+
+  {{ if $showCommitter }}
+    authored by {{ template "attributedUser" (list $commit.Author.Email $commit.Author.Name $.EmailToDid) }}
+    {{ range $commit.CoAuthors }} 
+      {{ template "attributedUser" (list .Email .Name $.EmailToDid) }}
+    {{ end }}
+    and committed by  {{ template "attributedUser" (list $commit.Committer.Email $commit.Committer.Name $.EmailToDid) }}
+  {{ else }}
+    {{ template "attributedUser" (list $commit.Author.Email $commit.Author.Name $.EmailToDid )}}
+  {{ end }}
+{{ end }}
+
+{{ define "attributedUser" }}
+  {{ $email := index . 0 }}
+  {{ $name := index . 1 }}
+  {{ $map := index . 2 }}
+  {{ $did := index $map $email }}
+
+  {{ if $did }}
+    {{ template "user/fragments/picHandleLink" $did }}
+  {{ else }}
+    <a href="mailto:{{ $email }}" class="no-underline hover:underline text-gray-500 dark:text-gray-300">{{ $name }}</a>
+  {{ end }}
+{{ end }}
 
 {{ define "topbarLayout" }}
   <header class="col-span-full" style="z-index: 20;">

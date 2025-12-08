@@ -172,7 +172,7 @@ var (
 	coAuthorRegex = regexp.MustCompile(`(?im)^Co-authored-by:\s*(.+?)\s*<([^>]+)>`)
 )
 
-func (commit *Commit) CoAuthors() []object.Signature {
+func (commit Commit) CoAuthors() []object.Signature {
 	var coAuthors []object.Signature
 
 	matches := coAuthorRegex.FindAllStringSubmatch(commit.Message, -1)
