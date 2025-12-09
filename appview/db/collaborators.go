@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func AddCollaborator(e Execer, c models.Collaborator) error {
@@ -16,7 +17,7 @@ func AddCollaborator(e Execer, c models.Collaborator) error {
 	return err
 }
 
-func DeleteCollaborator(e Execer, filters ...filter) error {
+func DeleteCollaborator(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -58,10 +59,10 @@ func CollaboratingIn(e Execer, collaborator string) ([]models.Repo, error) {
 		return nil, nil
 	}
 
-	return GetRepos(e, 0, FilterIn("at_uri", repoAts))
+	return GetRepos(e, 0, orm.FilterIn("at_uri", repoAts))
 }
 
-func GetCollaborators(e Execer, filters ...filter) ([]models.Collaborator, error) {
+func GetCollaborators(e Execer, filters ...orm.Filter) ([]models.Collaborator, error) {
 	var collaborators []models.Collaborator
 	var conditions []string
 	var args []any

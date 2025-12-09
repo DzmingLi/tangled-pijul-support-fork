@@ -12,6 +12,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 )
 
 const (
@@ -42,7 +43,7 @@ func (n *databaseNotifier) NewStar(ctx context.Context, star *models.Star) {
 		return
 	}
 	var err error
-	repo, err := db.GetRepo(n.db, db.FilterEq("at_uri", string(star.RepoAt)))
+	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(star.RepoAt)))
 	if err != nil {
 		log.Printf("NewStar: failed to get repos: %v", err)
 		return
@@ -80,7 +81,7 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 	// - collaborators in the repo
 	var recipients []syntax.DID
 	recipients = append(recipients, syntax.DID(issue.Repo.Did))
-	collaborators, err := db.GetCollaborators(n.db, db.FilterEq("repo_at", issue.Repo.RepoAt()))
+	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
@@ -119,7 +120,7 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 }
 
 func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.IssueComment, mentions []syntax.DID) {
-	issues, err := db.GetIssues(n.db, db.FilterEq("at_uri", comment.IssueAt))
+	issues, err := db.GetIssues(n.db, orm.FilterEq("at_uri", comment.IssueAt))
 	if err != nil {
 		log.Printf("NewIssueComment: failed to get issues: %v", err)
 		return
@@ -207,7 +208,7 @@ func (n *databaseNotifier) DeleteFollow(ctx context.Context, follow *models.Foll
 }
 
 func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
-	repo, err := db.GetRepo(n.db, db.FilterEq("at_uri", string(pull.RepoAt)))
+	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(pull.RepoAt)))
 	if err != nil {
 		log.Printf("NewPull: failed to get repos: %v", err)
 		return
@@ -218,7 +219,7 @@ func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
 	// - collaborators in the repo
 	var recipients []syntax.DID
 	recipients = append(recipients, syntax.DID(repo.Did))
-	collaborators, err := db.GetCollaborators(n.db, db.FilterEq("repo_at", repo.RepoAt()))
+	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
@@ -258,7 +259,7 @@ func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.P
 		return
 	}
 
-	repo, err := db.GetRepo(n.db, db.FilterEq("at_uri", comment.RepoAt))
+	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", comment.RepoAt))
 	if err != nil {
 		log.Printf("NewPullComment: failed to get repos: %v", err)
 		return
@@ -327,7 +328,7 @@ func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, 
 	// - all issue participants
 	var recipients []syntax.DID
 	recipients = append(recipients, syntax.DID(issue.Repo.Did))
-	collaborators, err := db.GetCollaborators(n.db, db.FilterEq("repo_at", issue.Repo.RepoAt()))
+	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
@@ -366,7 +367,7 @@ func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, 
 
 func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, pull *models.Pull) {
 	// Get repo details
-	repo, err := db.GetRepo(n.db, db.FilterEq("at_uri", string(pull.RepoAt)))
+	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(pull.RepoAt)))
 	if err != nil {
 		log.Printf("NewPullState: failed to get repos: %v", err)
 		return
@@ -377,7 +378,7 @@ func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, p
 	// - all pull participants
 	var recipients []syntax.DID
 	recipients = append(recipients, syntax.DID(repo.Did))
-	collaborators, err := db.GetCollaborators(n.db, db.FilterEq("repo_at", repo.RepoAt()))
+	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
@@ -443,7 +444,7 @@ func (n *databaseNotifier) notifyEvent(
 
 	prefMap, err := db.GetNotificationPreferences(
 		n.db,
-		db.FilterIn("user_did", slices.Collect(maps.Keys(recipientSet))),
+		orm.FilterIn("user_did", slices.Collect(maps.Keys(recipientSet))),
 	)
 	if err != nil {
 		// failed to get prefs for users

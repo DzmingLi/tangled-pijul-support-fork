@@ -30,6 +30,7 @@ import (
 	"tangled.org/core/jetstream"
 	"tangled.org/core/log"
 	tlog "tangled.org/core/log"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 
@@ -299,7 +300,7 @@ func (s *State) Timeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gfiLabel, err := db.GetLabelDefinition(s.db, db.FilterEq("at_uri", s.config.Label.GoodFirstIssue))
+	gfiLabel, err := db.GetLabelDefinition(s.db, orm.FilterEq("at_uri", s.config.Label.GoodFirstIssue))
 	if err != nil {
 		// non-fatal
 	}
@@ -323,8 +324,8 @@ func (s *State) UpgradeBanner(w http.ResponseWriter, r *http.Request) {
 
 	regs, err := db.GetRegistrations(
 		s.db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("needs_upgrade", 1),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("needs_upgrade", 1),
 	)
 	if err != nil {
 		l.Error("non-fatal: failed to get registrations", "err", err)
@@ -332,8 +333,8 @@ func (s *State) UpgradeBanner(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.db,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("needs_upgrade", 1),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("needs_upgrade", 1),
 	)
 	if err != nil {
 		l.Error("non-fatal: failed to get spindles", "err", err)
@@ -504,8 +505,8 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		// Check for existing repos
 		existingRepo, err := db.GetRepo(
 			s.db,
-			db.FilterEq("did", user.Did),
-			db.FilterEq("name", repoName),
+			orm.FilterEq("did", user.Did),
+			orm.FilterEq("name", repoName),
 		)
 		if err == nil && existingRepo != nil {
 			l.Info("repo exists")
@@ -665,7 +666,7 @@ func rollbackRecord(ctx context.Context, aturi string, client *atpclient.APIClie
 }
 
 func BackfillDefaultDefs(e db.Execer, r *idresolver.Resolver, defaults []string) error {
-	defaultLabels, err := db.GetLabelDefinitions(e, db.FilterIn("at_uri", defaults))
+	defaultLabels, err := db.GetLabelDefinitions(e, orm.FilterIn("at_uri", defaults))
 	if err != nil {
 		return err
 	}

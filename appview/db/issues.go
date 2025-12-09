@@ -13,6 +13,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pagination"
+	"tangled.org/core/orm"
 )
 
 func PutIssue(tx *sql.Tx, issue *models.Issue) error {
@@ -27,8 +28,8 @@ func PutIssue(tx *sql.Tx, issue *models.Issue) error {
 
 	issues, err := GetIssues(
 		tx,
-		FilterEq("did", issue.Did),
-		FilterEq("rkey", issue.Rkey),
+		orm.FilterEq("did", issue.Did),
+		orm.FilterEq("rkey", issue.Rkey),
 	)
 	switch {
 	case err != nil:
@@ -98,7 +99,7 @@ func updateIssue(tx *sql.Tx, issue *models.Issue) error {
 	return nil
 }
 
-func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]models.Issue, error) {
+func GetIssuesPaginated(e Execer, page pagination.Page, filters ...orm.Filter) ([]models.Issue, error) {
 	issueMap := make(map[string]*models.Issue) // at-uri -> issue
 
 	var conditions []string
@@ -114,8 +115,8 @@ func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]mo
 		whereClause = " where " + strings.Join(conditions, " and ")
 	}
 
-	pLower := FilterGte("row_num", page.Offset+1)
-	pUpper := FilterLte("row_num", page.Offset+page.Limit)
+	pLower := orm.FilterGte("row_num", page.Offset+1)
+	pUpper := orm.FilterLte("row_num", page.Offset+page.Limit)
 
 	pageClause := ""
 	if page.Limit > 0 {
@@ -205,7 +206,7 @@ func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]mo
 		repoAts = append(repoAts, string(issue.RepoAt))
 	}
 
-	repos, err := GetRepos(e, 0, FilterIn("at_uri", repoAts))
+	repos, err := GetRepos(e, 0, orm.FilterIn("at_uri", repoAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to build repo mappings: %w", err)
 	}
@@ -228,7 +229,7 @@ func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]mo
 	// collect comments
 	issueAts := slices.Collect(maps.Keys(issueMap))
 
-	comments, err := GetIssueComments(e, FilterIn("issue_at", issueAts))
+	comments, err := GetIssueComments(e, orm.FilterIn("issue_at", issueAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query comments: %w", err)
 	}
@@ -240,7 +241,7 @@ func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]mo
 	}
 
 	// collect allLabels for each issue
-	allLabels, err := GetLabels(e, FilterIn("subject", issueAts))
+	allLabels, err := GetLabels(e, orm.FilterIn("subject", issueAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query labels: %w", err)
 	}
@@ -251,7 +252,7 @@ func GetIssuesPaginated(e Execer, page pagination.Page, filters ...filter) ([]mo
 	}
 
 	// collect references for each issue
-	allReferencs, err := GetReferencesAll(e, FilterIn("from_at", issueAts))
+	allReferencs, err := GetReferencesAll(e, orm.FilterIn("from_at", issueAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query reference_links: %w", err)
 	}
@@ -277,8 +278,8 @@ func GetIssue(e Execer, repoAt syntax.ATURI, issueId int) (*models.Issue, error)
 	issues, err := GetIssuesPaginated(
 		e,
 		pagination.Page{},
-		FilterEq("repo_at", repoAt),
-		FilterEq("issue_id", issueId),
+		orm.FilterEq("repo_at", repoAt),
+		orm.FilterEq("issue_id", issueId),
 	)
 	if err != nil {
 		return nil, err
@@ -290,7 +291,7 @@ func GetIssue(e Execer, repoAt syntax.ATURI, issueId int) (*models.Issue, error)
 	return &issues[0], nil
 }
 
-func GetIssues(e Execer, filters ...filter) ([]models.Issue, error) {
+func GetIssues(e Execer, filters ...orm.Filter) ([]models.Issue, error) {
 	return GetIssuesPaginated(e, pagination.Page{}, filters...)
 }
 
@@ -298,14 +299,14 @@ func GetIssues(e Execer, filters ...filter) ([]models.Issue, error) {
 func GetIssueIDs(e Execer, opts models.IssueSearchOptions) ([]int64, error) {
 	var ids []int64
 
-	var filters []filter
+	var filters []orm.Filter
 	openValue := 0
 	if opts.IsOpen {
 		openValue = 1
 	}
-	filters = append(filters, FilterEq("open", openValue))
+	filters = append(filters, orm.FilterEq("open", openValue))
 	if opts.RepoAt != "" {
-		filters = append(filters, FilterEq("repo_at", opts.RepoAt))
+		filters = append(filters, orm.FilterEq("repo_at", opts.RepoAt))
 	}
 
 	var conditions []string
@@ -397,7 +398,7 @@ func AddIssueComment(tx *sql.Tx, c models.IssueComment) (int64, error) {
 	return id, nil
 }
 
-func DeleteIssueComments(e Execer, filters ...filter) error {
+func DeleteIssueComments(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -416,7 +417,7 @@ func DeleteIssueComments(e Execer, filters ...filter) error {
 	return err
 }
 
-func GetIssueComments(e Execer, filters ...filter) ([]models.IssueComment, error) {
+func GetIssueComments(e Execer, filters ...orm.Filter) ([]models.IssueComment, error) {
 	commentMap := make(map[string]*models.IssueComment)
 
 	var conditions []string
@@ -506,7 +507,7 @@ func GetIssueComments(e Execer, filters ...filter) ([]models.IssueComment, error
 
 	// collect references for each comments
 	commentAts := slices.Collect(maps.Keys(commentMap))
-	allReferencs, err := GetReferencesAll(e, FilterIn("from_at", commentAts))
+	allReferencs, err := GetReferencesAll(e, orm.FilterIn("from_at", commentAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query reference_links: %w", err)
 	}
@@ -548,7 +549,7 @@ func DeleteIssues(tx *sql.Tx, did, rkey string) error {
 	return nil
 }
 
-func CloseIssues(e Execer, filters ...filter) error {
+func CloseIssues(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -566,7 +567,7 @@ func CloseIssues(e Execer, filters ...filter) error {
 	return err
 }
 
-func ReopenIssues(e Execer, filters ...filter) error {
+func ReopenIssues(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {

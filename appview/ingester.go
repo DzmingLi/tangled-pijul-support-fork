@@ -21,6 +21,7 @@ import (
 	"tangled.org/core/appview/serververify"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 )
 
@@ -253,7 +254,7 @@ func (i *Ingester) ingestArtifact(e *jmodels.Event) error {
 
 		err = db.AddArtifact(i.Db, artifact)
 	case jmodels.CommitOperationDelete:
-		err = db.DeleteArtifact(i.Db, db.FilterEq("did", did), db.FilterEq("rkey", e.Commit.RKey))
+		err = db.DeleteArtifact(i.Db, orm.FilterEq("did", did), orm.FilterEq("rkey", e.Commit.RKey))
 	}
 
 	if err != nil {
@@ -350,7 +351,7 @@ func (i *Ingester) ingestProfile(e *jmodels.Event) error {
 
 		err = db.UpsertProfile(tx, &profile)
 	case jmodels.CommitOperationDelete:
-		err = db.DeleteArtifact(i.Db, db.FilterEq("did", did), db.FilterEq("rkey", e.Commit.RKey))
+		err = db.DeleteArtifact(i.Db, orm.FilterEq("did", did), orm.FilterEq("rkey", e.Commit.RKey))
 	}
 
 	if err != nil {
@@ -424,8 +425,8 @@ func (i *Ingester) ingestSpindleMember(ctx context.Context, e *jmodels.Event) er
 		// get record from db first
 		members, err := db.GetSpindleMembers(
 			ddb,
-			db.FilterEq("did", did),
-			db.FilterEq("rkey", rkey),
+			orm.FilterEq("did", did),
+			orm.FilterEq("rkey", rkey),
 		)
 		if err != nil || len(members) != 1 {
 			return fmt.Errorf("failed to get member: %w, len(members) = %d", err, len(members))
@@ -440,8 +441,8 @@ func (i *Ingester) ingestSpindleMember(ctx context.Context, e *jmodels.Event) er
 		// remove record by rkey && update enforcer
 		if err = db.RemoveSpindleMember(
 			tx,
-			db.FilterEq("did", did),
-			db.FilterEq("rkey", rkey),
+			orm.FilterEq("did", did),
+			orm.FilterEq("rkey", rkey),
 		); err != nil {
 			return fmt.Errorf("failed to remove from db: %w", err)
 		}
@@ -523,8 +524,8 @@ func (i *Ingester) ingestSpindle(ctx context.Context, e *jmodels.Event) error {
 		// get record from db first
 		spindles, err := db.GetSpindles(
 			ddb,
-			db.FilterEq("owner", did),
-			db.FilterEq("instance", instance),
+			orm.FilterEq("owner", did),
+			orm.FilterEq("instance", instance),
 		)
 		if err != nil || len(spindles) != 1 {
 			return fmt.Errorf("failed to get spindles: %w, len(spindles) = %d", err, len(spindles))
@@ -543,8 +544,8 @@ func (i *Ingester) ingestSpindle(ctx context.Context, e *jmodels.Event) error {
 		// remove spindle members first
 		err = db.RemoveSpindleMember(
 			tx,
-			db.FilterEq("owner", did),
-			db.FilterEq("instance", instance),
+			orm.FilterEq("owner", did),
+			orm.FilterEq("instance", instance),
 		)
 		if err != nil {
 			return err
@@ -552,8 +553,8 @@ func (i *Ingester) ingestSpindle(ctx context.Context, e *jmodels.Event) error {
 
 		err = db.DeleteSpindle(
 			tx,
-			db.FilterEq("owner", did),
-			db.FilterEq("instance", instance),
+			orm.FilterEq("owner", did),
+			orm.FilterEq("instance", instance),
 		)
 		if err != nil {
 			return err
@@ -621,8 +622,8 @@ func (i *Ingester) ingestString(e *jmodels.Event) error {
 	case jmodels.CommitOperationDelete:
 		if err := db.DeleteString(
 			ddb,
-			db.FilterEq("did", did),
-			db.FilterEq("rkey", rkey),
+			orm.FilterEq("did", did),
+			orm.FilterEq("rkey", rkey),
 		); err != nil {
 			l.Error("failed to delete", "err", err)
 			return fmt.Errorf("failed to delete string record: %w", err)
@@ -740,8 +741,8 @@ func (i *Ingester) ingestKnot(e *jmodels.Event) error {
 		// get record from db first
 		registrations, err := db.GetRegistrations(
 			ddb,
-			db.FilterEq("domain", domain),
-			db.FilterEq("did", did),
+			orm.FilterEq("domain", domain),
+			orm.FilterEq("did", did),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to get registration: %w", err)
@@ -762,8 +763,8 @@ func (i *Ingester) ingestKnot(e *jmodels.Event) error {
 
 		err = db.DeleteKnot(
 			tx,
-			db.FilterEq("did", did),
-			db.FilterEq("domain", domain),
+			orm.FilterEq("did", did),
+			orm.FilterEq("domain", domain),
 		)
 		if err != nil {
 			return err
@@ -915,8 +916,8 @@ func (i *Ingester) ingestIssueComment(e *jmodels.Event) error {
 	case jmodels.CommitOperationDelete:
 		if err := db.DeleteIssueComments(
 			ddb,
-			db.FilterEq("did", did),
-			db.FilterEq("rkey", rkey),
+			orm.FilterEq("did", did),
+			orm.FilterEq("rkey", rkey),
 		); err != nil {
 			return fmt.Errorf("failed to delete issue comment record: %w", err)
 		}
@@ -969,8 +970,8 @@ func (i *Ingester) ingestLabelDefinition(e *jmodels.Event) error {
 	case jmodels.CommitOperationDelete:
 		if err := db.DeleteLabelDefinition(
 			ddb,
-			db.FilterEq("did", did),
-			db.FilterEq("rkey", rkey),
+			orm.FilterEq("did", did),
+			orm.FilterEq("rkey", rkey),
 		); err != nil {
 			return fmt.Errorf("failed to delete labeldef record: %w", err)
 		}
@@ -1010,7 +1011,7 @@ func (i *Ingester) ingestLabelOp(e *jmodels.Event) error {
 		var repo *models.Repo
 		switch collection {
 		case tangled.RepoIssueNSID:
-			i, err := db.GetIssues(ddb, db.FilterEq("at_uri", subject))
+			i, err := db.GetIssues(ddb, orm.FilterEq("at_uri", subject))
 			if err != nil || len(i) != 1 {
 				return fmt.Errorf("failed to find subject: %w || subject count %d", err, len(i))
 			}
@@ -1019,7 +1020,7 @@ func (i *Ingester) ingestLabelOp(e *jmodels.Event) error {
 			return fmt.Errorf("unsupport label subject: %s", collection)
 		}
 
-		actx, err := db.NewLabelApplicationCtx(ddb, db.FilterIn("at_uri", repo.Labels))
+		actx, err := db.NewLabelApplicationCtx(ddb, orm.FilterIn("at_uri", repo.Labels))
 		if err != nil {
 			return fmt.Errorf("failed to build label application ctx: %w", err)
 		}

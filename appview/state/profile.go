@@ -19,6 +19,7 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
+	"tangled.org/core/orm"
 )
 
 func (s *State) Profile(w http.ResponseWriter, r *http.Request) {
@@ -56,17 +57,17 @@ func (s *State) profile(r *http.Request) (*pages.ProfileCard, error) {
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
 
-	repoCount, err := db.CountRepos(s.db, db.FilterEq("did", did))
+	repoCount, err := db.CountRepos(s.db, orm.FilterEq("did", did))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get repo count: %w", err)
 	}
 
-	stringCount, err := db.CountStrings(s.db, db.FilterEq("did", did))
+	stringCount, err := db.CountStrings(s.db, orm.FilterEq("did", did))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get string count: %w", err)
 	}
 
-	starredCount, err := db.CountStars(s.db, db.FilterEq("did", did))
+	starredCount, err := db.CountStars(s.db, orm.FilterEq("did", did))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get starred repo count: %w", err)
 	}
@@ -86,9 +87,9 @@ func (s *State) profile(r *http.Request) (*pages.ProfileCard, error) {
 	startOfYear := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
 	punchcard, err := db.MakePunchcard(
 		s.db,
-		db.FilterEq("did", did),
-		db.FilterGte("date", startOfYear.Format(time.DateOnly)),
-		db.FilterLte("date", now.Format(time.DateOnly)),
+		orm.FilterEq("did", did),
+		orm.FilterGte("date", startOfYear.Format(time.DateOnly)),
+		orm.FilterLte("date", now.Format(time.DateOnly)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get punchcard for %s: %w", did, err)
@@ -123,7 +124,7 @@ func (s *State) profileOverview(w http.ResponseWriter, r *http.Request) {
 	repos, err := db.GetRepos(
 		s.db,
 		0,
-		db.FilterEq("did", profile.UserDid),
+		orm.FilterEq("did", profile.UserDid),
 	)
 	if err != nil {
 		l.Error("failed to fetch repos", "err", err)
@@ -193,7 +194,7 @@ func (s *State) reposPage(w http.ResponseWriter, r *http.Request) {
 	repos, err := db.GetRepos(
 		s.db,
 		0,
-		db.FilterEq("did", profile.UserDid),
+		orm.FilterEq("did", profile.UserDid),
 	)
 	if err != nil {
 		l.Error("failed to get repos", "err", err)
@@ -219,7 +220,7 @@ func (s *State) starredPage(w http.ResponseWriter, r *http.Request) {
 	}
 	l = l.With("profileDid", profile.UserDid)
 
-	stars, err := db.GetRepoStars(s.db, 0, db.FilterEq("did", profile.UserDid))
+	stars, err := db.GetRepoStars(s.db, 0, orm.FilterEq("did", profile.UserDid))
 	if err != nil {
 		l.Error("failed to get stars", "err", err)
 		s.pages.Error500(w)
@@ -248,7 +249,7 @@ func (s *State) stringsPage(w http.ResponseWriter, r *http.Request) {
 	}
 	l = l.With("profileDid", profile.UserDid)
 
-	strings, err := db.GetStrings(s.db, 0, db.FilterEq("did", profile.UserDid))
+	strings, err := db.GetStrings(s.db, 0, orm.FilterEq("did", profile.UserDid))
 	if err != nil {
 		l.Error("failed to get strings", "err", err)
 		s.pages.Error500(w)
@@ -300,7 +301,7 @@ func (s *State) followPage(
 		followDids = append(followDids, extractDid(follow))
 	}
 
-	profiles, err := db.GetProfiles(s.db, db.FilterIn("did", followDids))
+	profiles, err := db.GetProfiles(s.db, orm.FilterIn("did", followDids))
 	if err != nil {
 		l.Error("failed to get profiles", "followDids", followDids, "err", err)
 		return &params, err
@@ -703,7 +704,7 @@ func (s *State) EditPinsFragment(w http.ResponseWriter, r *http.Request) {
 		log.Printf("getting profile data for %s: %s", user.Did, err)
 	}
 
-	repos, err := db.GetRepos(s.db, 0, db.FilterEq("did", user.Did))
+	repos, err := db.GetRepos(s.db, 0, orm.FilterEq("did", user.Did))
 	if err != nil {
 		log.Printf("getting repos for %s: %s", user.Did, err)
 	}

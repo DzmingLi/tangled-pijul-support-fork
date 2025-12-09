@@ -6,12 +6,13 @@ import (
 
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func (v *Validator) ValidateIssueComment(comment *models.IssueComment) error {
 	// if comments have parents, only ingest ones that are 1 level deep
 	if comment.ReplyTo != nil {
-		parents, err := db.GetIssueComments(v.db, db.FilterEq("at_uri", *comment.ReplyTo))
+		parents, err := db.GetIssueComments(v.db, orm.FilterEq("at_uri", *comment.ReplyTo))
 		if err != nil {
 			return fmt.Errorf("failed to fetch parent comment: %w", err)
 		}

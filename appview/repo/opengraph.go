@@ -16,6 +16,7 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/ogcard"
+	"tangled.org/core/orm"
 	"tangled.org/core/types"
 )
 
@@ -338,8 +339,8 @@ func (rp *Repo) Opengraph(w http.ResponseWriter, r *http.Request) {
 	var languageStats []types.RepoLanguageDetails
 	langs, err := db.GetRepoLanguages(
 		rp.db,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterEq("is_default_ref", 1),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterEq("is_default_ref", 1),
 	)
 	if err != nil {
 		log.Printf("failed to get language stats from db: %v", err)

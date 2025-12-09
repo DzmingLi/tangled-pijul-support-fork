@@ -20,6 +20,7 @@ import (
 	"tangled.org/core/appview/serververify"
 	"tangled.org/core/appview/xrpcclient"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 
@@ -71,7 +72,7 @@ func (s *Spindles) spindles(w http.ResponseWriter, r *http.Request) {
 	user := s.OAuth.GetUser(r)
 	all, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Did),
 	)
 	if err != nil {
 		s.Logger.Error("failed to fetch spindles", "err", err)
@@ -101,9 +102,9 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("instance", instance),
-		db.FilterEq("owner", user.Did),
-		db.FilterIsNot("verified", "null"),
+		orm.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterIsNot("verified", "null"),
 	)
 	if err != nil || len(spindles) != 1 {
 		l.Error("failed to get spindle", "err", err, "len(spindles)", len(spindles))
@@ -123,7 +124,7 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 	repos, err := db.GetRepos(
 		s.Db,
 		0,
-		db.FilterEq("spindle", instance),
+		orm.FilterEq("spindle", instance),
 	)
 	if err != nil {
 		l.Error("failed to get spindle repos", "err", err)
@@ -290,8 +291,8 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
 		l.Error("failed to retrieve instance", "err", err, "len(spindles)", len(spindles))
@@ -319,8 +320,8 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 	// remove spindle members first
 	err = db.RemoveSpindleMember(
 		tx,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil {
 		l.Error("failed to remove spindle members", "err", err)
@@ -330,8 +331,8 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	err = db.DeleteSpindle(
 		tx,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil {
 		l.Error("failed to delete spindle", "err", err)
@@ -410,8 +411,8 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
 		l.Error("failed to retrieve instance", "err", err, "len(spindles)", len(spindles))
@@ -453,7 +454,7 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 
 	verifiedSpindle, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("id", rowId),
+		orm.FilterEq("id", rowId),
 	)
 	if err != nil || len(verifiedSpindle) != 1 {
 		l.Error("failed get new spindle", "err", err)
@@ -486,8 +487,8 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
 		l.Error("failed to retrieve instance", "err", err, "len(spindles)", len(spindles))
@@ -622,8 +623,8 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		db.FilterEq("owner", user.Did),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
 		l.Error("failed to retrieve instance", "err", err, "len(spindles)", len(spindles))
@@ -672,9 +673,9 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 	// get the record from the DB first:
 	members, err := db.GetSpindleMembers(
 		s.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("instance", instance),
-		db.FilterEq("subject", memberId.DID),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("instance", instance),
+		orm.FilterEq("subject", memberId.DID),
 	)
 	if err != nil || len(members) != 1 {
 		l.Error("failed to get member", "err", err)
@@ -685,9 +686,9 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 	// remove from db
 	if err = db.RemoveSpindleMember(
 		tx,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("instance", instance),
-		db.FilterEq("subject", memberId.DID),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("instance", instance),
+		orm.FilterEq("subject", memberId.DID),
 	); err != nil {
 		l.Error("failed to remove spindle member", "err", err)
 		fail()

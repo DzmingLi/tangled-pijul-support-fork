@@ -17,6 +17,7 @@ import (
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/tid"
 
 	"github.com/bluesky-social/indigo/api/atproto"
@@ -108,8 +109,8 @@ func (s *Strings) contents(w http.ResponseWriter, r *http.Request) {
 	strings, err := db.GetStrings(
 		s.Db,
 		0,
-		db.FilterEq("did", id.DID),
-		db.FilterEq("rkey", rkey),
+		orm.FilterEq("did", id.DID),
+		orm.FilterEq("rkey", rkey),
 	)
 	if err != nil {
 		l.Error("failed to fetch string", "err", err)
@@ -199,8 +200,8 @@ func (s *Strings) edit(w http.ResponseWriter, r *http.Request) {
 	all, err := db.GetStrings(
 		s.Db,
 		0,
-		db.FilterEq("did", id.DID),
-		db.FilterEq("rkey", rkey),
+		orm.FilterEq("did", id.DID),
+		orm.FilterEq("rkey", rkey),
 	)
 	if err != nil {
 		l.Error("failed to fetch string", "err", err)
@@ -408,8 +409,8 @@ func (s *Strings) delete(w http.ResponseWriter, r *http.Request) {
 
 	if err := db.DeleteString(
 		s.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("rkey", rkey),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("rkey", rkey),
 	); err != nil {
 		fail("Failed to delete string.", err)
 		return

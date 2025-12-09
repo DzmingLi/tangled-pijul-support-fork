@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 // this adds to the existing count
@@ -20,7 +21,7 @@ func AddPunch(e Execer, punch models.Punch) error {
 	return err
 }
 
-func MakePunchcard(e Execer, filters ...filter) (*models.Punchcard, error) {
+func MakePunchcard(e Execer, filters ...orm.Filter) (*models.Punchcard, error) {
 	punchcard := &models.Punchcard{}
 	now := time.Now()
 	startOfYear := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)

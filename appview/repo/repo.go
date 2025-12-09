@@ -24,6 +24,7 @@ import (
 	xrpcclient "tangled.org/core/appview/xrpcclient"
 	"tangled.org/core/eventconsumer"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 	"tangled.org/core/xrpc/serviceauth"
@@ -345,7 +346,7 @@ func (rp *Repo) DeleteLabelDef(w http.ResponseWriter, r *http.Request) {
 	// get form values
 	labelId := r.FormValue("label-id")
 
-	label, err := db.GetLabelDefinition(rp.db, db.FilterEq("id", labelId))
+	label, err := db.GetLabelDefinition(rp.db, orm.FilterEq("id", labelId))
 	if err != nil {
 		fail("Failed to find label definition.", err)
 		return
@@ -409,15 +410,15 @@ func (rp *Repo) DeleteLabelDef(w http.ResponseWriter, r *http.Request) {
 
 	err = db.UnsubscribeLabel(
 		tx,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterEq("label_at", removedAt),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterEq("label_at", removedAt),
 	)
 	if err != nil {
 		fail("Failed to unsubscribe label.", err)
 		return
 	}
 
-	err = db.DeleteLabelDefinition(tx, db.FilterEq("id", label.Id))
+	err = db.DeleteLabelDefinition(tx, orm.FilterEq("id", label.Id))
 	if err != nil {
 		fail("Failed to delete label definition.", err)
 		return
@@ -456,7 +457,7 @@ func (rp *Repo) SubscribeLabel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	labelAts := r.Form["label"]
-	_, err = db.GetLabelDefinitions(rp.db, db.FilterIn("at_uri", labelAts))
+	_, err = db.GetLabelDefinitions(rp.db, orm.FilterIn("at_uri", labelAts))
 	if err != nil {
 		fail("Failed to subscribe to label.", err)
 		return
@@ -542,7 +543,7 @@ func (rp *Repo) UnsubscribeLabel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	labelAts := r.Form["label"]
-	_, err = db.GetLabelDefinitions(rp.db, db.FilterIn("at_uri", labelAts))
+	_, err = db.GetLabelDefinitions(rp.db, orm.FilterIn("at_uri", labelAts))
 	if err != nil {
 		fail("Failed to unsubscribe to label.", err)
 		return
@@ -582,8 +583,8 @@ func (rp *Repo) UnsubscribeLabel(w http.ResponseWriter, r *http.Request) {
 
 	err = db.UnsubscribeLabel(
 		rp.db,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterIn("label_at", labelAts),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterIn("label_at", labelAts),
 	)
 	if err != nil {
 		fail("Failed to unsubscribe label.", err)
@@ -612,8 +613,8 @@ func (rp *Repo) LabelPanel(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		rp.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", subject.Collection().String()),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", subject.Collection().String()),
 	)
 	if err != nil {
 		l.Error("failed to fetch label defs", "err", err)
@@ -625,7 +626,7 @@ func (rp *Repo) LabelPanel(w http.ResponseWriter, r *http.Request) {
 		defs[l.AtUri().String()] = &l
 	}
 
-	states, err := db.GetLabels(rp.db, db.FilterEq("subject", subject))
+	states, err := db.GetLabels(rp.db, orm.FilterEq("subject", subject))
 	if err != nil {
 		l.Error("failed to build label state", "err", err)
 		return
@@ -660,8 +661,8 @@ func (rp *Repo) EditLabelPanel(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		rp.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", subject.Collection().String()),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", subject.Collection().String()),
 	)
 	if err != nil {
 		l.Error("failed to fetch labels", "err", err)
@@ -673,7 +674,7 @@ func (rp *Repo) EditLabelPanel(w http.ResponseWriter, r *http.Request) {
 		defs[l.AtUri().String()] = &l
 	}
 
-	states, err := db.GetLabels(rp.db, db.FilterEq("subject", subject))
+	states, err := db.GetLabels(rp.db, orm.FilterEq("subject", subject))
 	if err != nil {
 		l.Error("failed to build label state", "err", err)
 		return
@@ -1036,8 +1037,8 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		// in the user's account.
 		existingRepo, err := db.GetRepo(
 			rp.db,
-			db.FilterEq("did", user.Did),
-			db.FilterEq("name", forkName),
+			orm.FilterEq("did", user.Did),
+			orm.FilterEq("name", forkName),
 		)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) {

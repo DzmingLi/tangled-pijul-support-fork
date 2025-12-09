@@ -15,6 +15,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/orm"
 	"tangled.org/core/tid"
 	"tangled.org/core/types"
 
@@ -155,9 +156,9 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	artifacts, err := db.GetArtifact(
 		rp.db,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterEq("tag", tag.Tag.Hash[:]),
-		db.FilterEq("name", filename),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterEq("tag", tag.Tag.Hash[:]),
+		orm.FilterEq("name", filename),
 	)
 	if err != nil {
 		log.Println("failed to get artifacts", err)
@@ -234,9 +235,9 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 
 	artifacts, err := db.GetArtifact(
 		rp.db,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterEq("tag", tag[:]),
-		db.FilterEq("name", filename),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterEq("tag", tag[:]),
+		orm.FilterEq("name", filename),
 	)
 	if err != nil {
 		log.Println("failed to get artifacts", err)
@@ -276,9 +277,9 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	err = db.DeleteArtifact(tx,
-		db.FilterEq("repo_at", f.RepoAt()),
-		db.FilterEq("tag", artifact.Tag[:]),
-		db.FilterEq("name", filename),
+		orm.FilterEq("repo_at", f.RepoAt()),
+		orm.FilterEq("tag", artifact.Tag[:]),
+		orm.FilterEq("name", filename),
 	)
 	if err != nil {
 		log.Println("failed to remove artifact record from db", err)

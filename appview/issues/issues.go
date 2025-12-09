@@ -29,6 +29,7 @@ import (
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 )
@@ -113,8 +114,8 @@ func (rp *Issues) RepoSingleIssue(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		rp.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", tangled.RepoIssueNSID),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", tangled.RepoIssueNSID),
 	)
 	if err != nil {
 		l.Error("failed to fetch labels", "err", err)
@@ -314,7 +315,7 @@ func (rp *Issues) CloseIssue(w http.ResponseWriter, r *http.Request) {
 	if isIssueOwner || isRepoOwner || isCollaborator {
 		err = db.CloseIssues(
 			rp.db,
-			db.FilterEq("id", issue.Id),
+			orm.FilterEq("id", issue.Id),
 		)
 		if err != nil {
 			l.Error("failed to close issue", "err", err)
@@ -361,7 +362,7 @@ func (rp *Issues) ReopenIssue(w http.ResponseWriter, r *http.Request) {
 	if isCollaborator || isRepoOwner || isIssueOwner {
 		err := db.ReopenIssues(
 			rp.db,
-			db.FilterEq("id", issue.Id),
+			orm.FilterEq("id", issue.Id),
 		)
 		if err != nil {
 			l.Error("failed to reopen issue", "err", err)
@@ -506,7 +507,7 @@ func (rp *Issues) IssueComment(w http.ResponseWriter, r *http.Request) {
 	commentId := chi.URLParam(r, "commentId")
 	comments, err := db.GetIssueComments(
 		rp.db,
-		db.FilterEq("id", commentId),
+		orm.FilterEq("id", commentId),
 	)
 	if err != nil {
 		l.Error("failed to fetch comment", "id", commentId)
@@ -542,7 +543,7 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 	commentId := chi.URLParam(r, "commentId")
 	comments, err := db.GetIssueComments(
 		rp.db,
-		db.FilterEq("id", commentId),
+		orm.FilterEq("id", commentId),
 	)
 	if err != nil {
 		l.Error("failed to fetch comment", "id", commentId)
@@ -652,7 +653,7 @@ func (rp *Issues) ReplyIssueCommentPlaceholder(w http.ResponseWriter, r *http.Re
 	commentId := chi.URLParam(r, "commentId")
 	comments, err := db.GetIssueComments(
 		rp.db,
-		db.FilterEq("id", commentId),
+		orm.FilterEq("id", commentId),
 	)
 	if err != nil {
 		l.Error("failed to fetch comment", "id", commentId)
@@ -688,7 +689,7 @@ func (rp *Issues) ReplyIssueComment(w http.ResponseWriter, r *http.Request) {
 	commentId := chi.URLParam(r, "commentId")
 	comments, err := db.GetIssueComments(
 		rp.db,
-		db.FilterEq("id", commentId),
+		orm.FilterEq("id", commentId),
 	)
 	if err != nil {
 		l.Error("failed to fetch comment", "id", commentId)
@@ -724,7 +725,7 @@ func (rp *Issues) DeleteIssueComment(w http.ResponseWriter, r *http.Request) {
 	commentId := chi.URLParam(r, "commentId")
 	comments, err := db.GetIssueComments(
 		rp.db,
-		db.FilterEq("id", commentId),
+		orm.FilterEq("id", commentId),
 	)
 	if err != nil {
 		l.Error("failed to fetch comment", "id", commentId)
@@ -751,7 +752,7 @@ func (rp *Issues) DeleteIssueComment(w http.ResponseWriter, r *http.Request) {
 
 	// optimistic deletion
 	deleted := time.Now()
-	err = db.DeleteIssueComments(rp.db, db.FilterEq("id", comment.Id))
+	err = db.DeleteIssueComments(rp.db, orm.FilterEq("id", comment.Id))
 	if err != nil {
 		l.Error("failed to delete comment", "err", err)
 		rp.pages.Notice(w, fmt.Sprintf("comment-%s-status", commentId), "failed to delete comment")
@@ -840,7 +841,7 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 		issues, err = db.GetIssues(
 			rp.db,
-			db.FilterIn("id", res.Hits),
+			orm.FilterIn("id", res.Hits),
 		)
 		if err != nil {
 			l.Error("failed to get issues", "err", err)
@@ -856,8 +857,8 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 		issues, err = db.GetIssuesPaginated(
 			rp.db,
 			page,
-			db.FilterEq("repo_at", f.RepoAt()),
-			db.FilterEq("open", openInt),
+			orm.FilterEq("repo_at", f.RepoAt()),
+			orm.FilterEq("open", openInt),
 		)
 		if err != nil {
 			l.Error("failed to get issues", "err", err)
@@ -868,8 +869,8 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		rp.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", tangled.RepoIssueNSID),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", tangled.RepoIssueNSID),
 	)
 	if err != nil {
 		l.Error("failed to fetch labels", "err", err)

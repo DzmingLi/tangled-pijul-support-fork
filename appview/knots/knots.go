@@ -21,6 +21,7 @@ import (
 	"tangled.org/core/appview/xrpcclient"
 	"tangled.org/core/eventconsumer"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 
@@ -72,7 +73,7 @@ func (k *Knots) knots(w http.ResponseWriter, r *http.Request) {
 	user := k.OAuth.GetUser(r)
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Did),
 	)
 	if err != nil {
 		k.Logger.Error("failed to fetch knot registrations", "err", err)
@@ -102,8 +103,8 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		l.Error("failed to get registrations", "err", err)
@@ -127,7 +128,7 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 	repos, err := db.GetRepos(
 		k.Db,
 		0,
-		db.FilterEq("knot", domain),
+		orm.FilterEq("knot", domain),
 	)
 	if err != nil {
 		l.Error("failed to get knot repos", "err", err)
@@ -293,8 +294,8 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 	// get record from db first
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		l.Error("failed to get registration", "err", err)
@@ -321,8 +322,8 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 
 	err = db.DeleteKnot(
 		tx,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		l.Error("failed to delete registration", "err", err)
@@ -402,8 +403,8 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 	// get record from db first
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		l.Error("failed to get registration", "err", err)
@@ -493,8 +494,8 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 	// Get updated registration to show
 	registrations, err = db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		l.Error("failed to get registration", "err", err)
@@ -529,9 +530,9 @@ func (k *Knots) addMember(w http.ResponseWriter, r *http.Request) {
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
-		db.FilterIsNot("registered", "null"),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
+		orm.FilterIsNot("registered", "null"),
 	)
 	if err != nil {
 		l.Error("failed to get registration", "err", err)
@@ -637,9 +638,9 @@ func (k *Knots) removeMember(w http.ResponseWriter, r *http.Request) {
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		db.FilterEq("did", user.Did),
-		db.FilterEq("domain", domain),
-		db.FilterIsNot("registered", "null"),
+		orm.FilterEq("did", user.Did),
+		orm.FilterEq("domain", domain),
+		orm.FilterIsNot("registered", "null"),
 	)
 	if err != nil {
 		l.Error("failed to get registration", "err", err)

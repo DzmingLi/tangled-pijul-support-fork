@@ -11,6 +11,7 @@ import (
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pagination"
+	"tangled.org/core/orm"
 )
 
 type Notifications struct {
@@ -53,7 +54,7 @@ func (n *Notifications) notificationsPage(w http.ResponseWriter, r *http.Request
 
 	total, err := db.CountNotifications(
 		n.db,
-		db.FilterEq("recipient_did", user.Did),
+		orm.FilterEq("recipient_did", user.Did),
 	)
 	if err != nil {
 		l.Error("failed to get total notifications", "err", err)
@@ -64,7 +65,7 @@ func (n *Notifications) notificationsPage(w http.ResponseWriter, r *http.Request
 	notifications, err := db.GetNotificationsWithEntities(
 		n.db,
 		page,
-		db.FilterEq("recipient_did", user.Did),
+		orm.FilterEq("recipient_did", user.Did),
 	)
 	if err != nil {
 		l.Error("failed to get notifications", "err", err)
@@ -96,8 +97,8 @@ func (n *Notifications) getUnreadCount(w http.ResponseWriter, r *http.Request) {
 
 	count, err := db.CountNotifications(
 		n.db,
-		db.FilterEq("recipient_did", user.Did),
-		db.FilterEq("read", 0),
+		orm.FilterEq("recipient_did", user.Did),
+		orm.FilterEq("read", 0),
 	)
 	if err != nil {
 		http.Error(w, "Failed to get unread count", http.StatusInternalServerError)

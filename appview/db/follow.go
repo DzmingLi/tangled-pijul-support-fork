@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func AddFollow(e Execer, follow *models.Follow) error {
@@ -134,7 +135,7 @@ func GetFollowerFollowingCounts(e Execer, dids []string) (map[string]models.Foll
 	return result, nil
 }
 
-func GetFollows(e Execer, limit int, filters ...filter) ([]models.Follow, error) {
+func GetFollows(e Execer, limit int, filters ...orm.Filter) ([]models.Follow, error) {
 	var follows []models.Follow
 
 	var conditions []string
@@ -191,11 +192,11 @@ func GetFollows(e Execer, limit int, filters ...filter) ([]models.Follow, error)
 }
 
 func GetFollowers(e Execer, did string) ([]models.Follow, error) {
-	return GetFollows(e, 0, FilterEq("subject_did", did))
+	return GetFollows(e, 0, orm.FilterEq("subject_did", did))
 }
 
 func GetFollowing(e Execer, did string) ([]models.Follow, error) {
-	return GetFollows(e, 0, FilterEq("user_did", did))
+	return GetFollows(e, 0, orm.FilterEq("user_did", did))
 }
 
 func getFollowStatuses(e Execer, userDid string, subjectDids []string) (map[string]models.FollowStatus, error) {

@@ -11,6 +11,7 @@ import (
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pagination"
 	"tangled.org/core/consts"
+	"tangled.org/core/orm"
 )
 
 func (s *State) GoodFirstIssues(w http.ResponseWriter, r *http.Request) {
@@ -20,14 +21,14 @@ func (s *State) GoodFirstIssues(w http.ResponseWriter, r *http.Request) {
 
 	goodFirstIssueLabel := s.config.Label.GoodFirstIssue
 
-	gfiLabelDef, err := db.GetLabelDefinition(s.db, db.FilterEq("at_uri", goodFirstIssueLabel))
+	gfiLabelDef, err := db.GetLabelDefinition(s.db, orm.FilterEq("at_uri", goodFirstIssueLabel))
 	if err != nil {
 		log.Println("failed to get gfi label def", err)
 		s.pages.Error500(w)
 		return
 	}
 
-	repoLabels, err := db.GetRepoLabels(s.db, db.FilterEq("label_at", goodFirstIssueLabel))
+	repoLabels, err := db.GetRepoLabels(s.db, orm.FilterEq("label_at", goodFirstIssueLabel))
 	if err != nil {
 		log.Println("failed to get repo labels", err)
 		s.pages.Error503(w)
@@ -55,8 +56,8 @@ func (s *State) GoodFirstIssues(w http.ResponseWriter, r *http.Request) {
 		pagination.Page{
 			Limit: 500,
 		},
-		db.FilterIn("repo_at", repoUris),
-		db.FilterEq("open", 1),
+		orm.FilterIn("repo_at", repoUris),
+		orm.FilterEq("open", 1),
 	)
 	if err != nil {
 		log.Println("failed to get issues", err)
@@ -132,7 +133,7 @@ func (s *State) GoodFirstIssues(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(uriList) > 0 {
-			allLabelDefs, err = db.GetLabelDefinitions(s.db, db.FilterIn("at_uri", uriList))
+			allLabelDefs, err = db.GetLabelDefinitions(s.db, orm.FilterIn("at_uri", uriList))
 			if err != nil {
 				log.Println("failed to fetch labels", err)
 			}

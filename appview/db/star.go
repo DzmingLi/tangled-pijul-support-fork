@@ -11,6 +11,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func AddStar(e Execer, star *models.Star) error {
@@ -133,7 +134,7 @@ func GetStarStatuses(e Execer, userDid string, subjectAts []syntax.ATURI) (map[s
 
 // GetRepoStars return a list of stars each holding target repository.
 // If there isn't known repo with starred at-uri, those stars will be ignored.
-func GetRepoStars(e Execer, limit int, filters ...filter) ([]models.RepoStar, error) {
+func GetRepoStars(e Execer, limit int, filters ...orm.Filter) ([]models.RepoStar, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -195,7 +196,7 @@ func GetRepoStars(e Execer, limit int, filters ...filter) ([]models.RepoStar, er
 		return nil, nil
 	}
 
-	repos, err := GetRepos(e, 0, FilterIn("at_uri", args))
+	repos, err := GetRepos(e, 0, orm.FilterIn("at_uri", args))
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +226,7 @@ func GetRepoStars(e Execer, limit int, filters ...filter) ([]models.RepoStar, er
 	return repoStars, nil
 }
 
-func CountStars(e Execer, filters ...filter) (int64, error) {
+func CountStars(e Execer, filters ...orm.Filter) (int64, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -298,7 +299,7 @@ func GetTopStarredReposLastWeek(e Execer) ([]models.Repo, error) {
 	}
 
 	// get full repo data
-	repos, err := GetRepos(e, 0, FilterIn("at_uri", repoUris))
+	repos, err := GetRepos(e, 0, orm.FilterIn("at_uri", repoUris))
 	if err != nil {
 		return nil, err
 	}

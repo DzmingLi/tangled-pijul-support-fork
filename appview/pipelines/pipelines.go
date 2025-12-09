@@ -16,6 +16,7 @@ import (
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/eventconsumer"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	spindlemodel "tangled.org/core/spindle/models"
 
@@ -81,9 +82,9 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		30,
-		db.FilterEq("repo_owner", f.Did),
-		db.FilterEq("repo_name", f.Name),
-		db.FilterEq("knot", f.Knot),
+		orm.FilterEq("repo_owner", f.Did),
+		orm.FilterEq("repo_name", f.Name),
+		orm.FilterEq("knot", f.Knot),
 	)
 	if err != nil {
 		l.Error("failed to query db", "err", err)
@@ -122,10 +123,10 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		db.FilterEq("repo_owner", f.Did),
-		db.FilterEq("repo_name", f.Name),
-		db.FilterEq("knot", f.Knot),
-		db.FilterEq("id", pipelineId),
+		orm.FilterEq("repo_owner", f.Did),
+		orm.FilterEq("repo_name", f.Name),
+		orm.FilterEq("knot", f.Knot),
+		orm.FilterEq("id", pipelineId),
 	)
 	if err != nil {
 		l.Error("failed to query db", "err", err)
@@ -189,10 +190,10 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		db.FilterEq("repo_owner", f.Did),
-		db.FilterEq("repo_name", f.Name),
-		db.FilterEq("knot", f.Knot),
-		db.FilterEq("id", pipelineId),
+		orm.FilterEq("repo_owner", f.Did),
+		orm.FilterEq("repo_name", f.Name),
+		orm.FilterEq("knot", f.Knot),
+		orm.FilterEq("id", pipelineId),
 	)
 	if err != nil || len(ps) != 1 {
 		l.Error("pipeline query failed", "err", err, "count", len(ps))

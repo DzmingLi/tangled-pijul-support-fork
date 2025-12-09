@@ -30,6 +30,7 @@ import (
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/appview/xrpcclient"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/patchutil"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
@@ -190,10 +191,10 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		db.FilterEq("repo_owner", f.Did),
-		db.FilterEq("repo_name", f.Name),
-		db.FilterEq("knot", f.Knot),
-		db.FilterIn("sha", shas),
+		orm.FilterEq("repo_owner", f.Did),
+		orm.FilterEq("repo_name", f.Name),
+		orm.FilterEq("knot", f.Knot),
+		orm.FilterIn("sha", shas),
 	)
 	if err != nil {
 		log.Printf("failed to fetch pipeline statuses: %s", err)
@@ -217,8 +218,8 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		s.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", tangled.RepoPullNSID),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", tangled.RepoPullNSID),
 	)
 	if err != nil {
 		log.Println("failed to fetch labels", err)
@@ -597,7 +598,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	pulls, err := db.GetPulls(
 		s.db,
-		db.FilterIn("id", ids),
+		orm.FilterIn("id", ids),
 	)
 	if err != nil {
 		log.Println("failed to get pulls", err)
@@ -648,10 +649,10 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		db.FilterEq("repo_owner", f.Did),
-		db.FilterEq("repo_name", f.Name),
-		db.FilterEq("knot", f.Knot),
-		db.FilterIn("sha", shas),
+		orm.FilterEq("repo_owner", f.Did),
+		orm.FilterEq("repo_name", f.Name),
+		orm.FilterEq("knot", f.Knot),
+		orm.FilterIn("sha", shas),
 	)
 	if err != nil {
 		log.Printf("failed to fetch pipeline statuses: %s", err)
@@ -664,8 +665,8 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	labelDefs, err := db.GetLabelDefinitions(
 		s.db,
-		db.FilterIn("at_uri", f.Labels),
-		db.FilterContains("scope", tangled.RepoPullNSID),
+		orm.FilterIn("at_uri", f.Labels),
+		orm.FilterContains("scope", tangled.RepoPullNSID),
 	)
 	if err != nil {
 		log.Println("failed to fetch labels", err)
@@ -1498,8 +1499,8 @@ func (s *Pulls) CompareForksBranchesFragment(w http.ResponseWriter, r *http.Requ
 	// fork repo
 	repo, err := db.GetRepo(
 		s.db,
-		db.FilterEq("did", forkOwnerDid),
-		db.FilterEq("name", forkName),
+		orm.FilterEq("did", forkOwnerDid),
+		orm.FilterEq("name", forkName),
 	)
 	if err != nil {
 		log.Println("failed to get repo", "did", forkOwnerDid, "name", forkName, "err", err)
@@ -2066,9 +2067,9 @@ func (s *Pulls) resubmitStackedPullHelper(
 			tx,
 			p.ParentChangeId,
 			// these should be enough filters to be unique per-stack
-			db.FilterEq("repo_at", p.RepoAt.String()),
-			db.FilterEq("owner_did", p.OwnerDid),
-			db.FilterEq("change_id", p.ChangeId),
+			orm.FilterEq("repo_at", p.RepoAt.String()),
+			orm.FilterEq("owner_did", p.OwnerDid),
+			orm.FilterEq("change_id", p.ChangeId),
 		)
 
 		if err != nil {

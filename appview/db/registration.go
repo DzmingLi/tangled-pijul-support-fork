@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
-func GetRegistrations(e Execer, filters ...filter) ([]models.Registration, error) {
+func GetRegistrations(e Execer, filters ...orm.Filter) ([]models.Registration, error) {
 	var registrations []models.Registration
 
 	var conditions []string
@@ -69,7 +70,7 @@ func GetRegistrations(e Execer, filters ...filter) ([]models.Registration, error
 	return registrations, nil
 }
 
-func MarkRegistered(e Execer, filters ...filter) error {
+func MarkRegistered(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -94,7 +95,7 @@ func AddKnot(e Execer, domain, did string) error {
 	return err
 }
 
-func DeleteKnot(e Execer, filters ...filter) error {
+func DeleteKnot(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {

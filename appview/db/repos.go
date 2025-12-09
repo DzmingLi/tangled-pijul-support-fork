@@ -11,9 +11,10 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
-func GetRepos(e Execer, limit int, filters ...filter) ([]models.Repo, error) {
+func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error) {
 	repoMap := make(map[syntax.ATURI]*models.Repo)
 
 	var conditions []string
@@ -294,7 +295,7 @@ func GetRepos(e Execer, limit int, filters ...filter) ([]models.Repo, error) {
 }
 
 // helper to get exactly one repo
-func GetRepo(e Execer, filters ...filter) (*models.Repo, error) {
+func GetRepo(e Execer, filters ...orm.Filter) (*models.Repo, error) {
 	repos, err := GetRepos(e, 0, filters...)
 	if err != nil {
 		return nil, err
@@ -311,7 +312,7 @@ func GetRepo(e Execer, filters ...filter) (*models.Repo, error) {
 	return &repos[0], nil
 }
 
-func CountRepos(e Execer, filters ...filter) (int64, error) {
+func CountRepos(e Execer, filters ...orm.Filter) (int64, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -542,7 +543,7 @@ func SubscribeLabel(e Execer, rl *models.RepoLabel) error {
 	return err
 }
 
-func UnsubscribeLabel(e Execer, filters ...filter) error {
+func UnsubscribeLabel(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -560,7 +561,7 @@ func UnsubscribeLabel(e Execer, filters ...filter) error {
 	return err
 }
 
-func GetRepoLabels(e Execer, filters ...filter) ([]models.RepoLabel, error) {
+func GetRepoLabels(e Execer, filters ...orm.Filter) ([]models.RepoLabel, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {

@@ -13,6 +13,7 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/ogcard"
+	"tangled.org/core/orm"
 	"tangled.org/core/patchutil"
 	"tangled.org/core/types"
 )
@@ -276,7 +277,7 @@ func (s *Pulls) PullOpenGraphSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get comment count from database
-	comments, err := db.GetPullComments(s.db, db.FilterEq("pull_id", pull.ID))
+	comments, err := db.GetPullComments(s.db, orm.FilterEq("pull_id", pull.ID))
 	if err != nil {
 		log.Printf("failed to get pull comments: %v", err)
 	}

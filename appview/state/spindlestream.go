@@ -17,6 +17,7 @@ import (
 	ec "tangled.org/core/eventconsumer"
 	"tangled.org/core/eventconsumer/cursor"
 	"tangled.org/core/log"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	spindle "tangled.org/core/spindle/models"
 )
@@ -27,7 +28,7 @@ func Spindlestream(ctx context.Context, c *config.Config, d *db.DB, enforcer *rb
 
 	spindles, err := db.GetSpindles(
 		d,
-		db.FilterIsNot("verified", "null"),
+		orm.FilterIsNot("verified", "null"),
 	)
 	if err != nil {
 		return nil, err

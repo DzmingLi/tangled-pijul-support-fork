@@ -16,6 +16,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/db"
 	"tangled.org/core/consts"
+	"tangled.org/core/orm"
 	"tangled.org/core/tid"
 )
 
@@ -97,8 +98,8 @@ func (o *OAuth) addToDefaultSpindle(did string) {
 	// and create an sh.tangled.spindle.member record with that
 	spindleMembers, err := db.GetSpindleMembers(
 		o.Db,
-		db.FilterEq("instance", "spindle.tangled.sh"),
-		db.FilterEq("subject", did),
+		orm.FilterEq("instance", "spindle.tangled.sh"),
+		orm.FilterEq("subject", did),
 	)
 	if err != nil {
 		l.Error("failed to get spindle members", "err", err)

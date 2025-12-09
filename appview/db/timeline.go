@@ -5,6 +5,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 // TODO: this gathers heterogenous events from different sources and aggregates
@@ -84,9 +85,9 @@ func getRepoStarInfo(repo *models.Repo, starStatuses map[string]bool) (bool, int
 }
 
 func getTimelineRepos(e Execer, limit int, loggedInUserDid string, userIsFollowing []string) ([]models.TimelineEvent, error) {
-	filters := make([]filter, 0)
+	filters := make([]orm.Filter, 0)
 	if userIsFollowing != nil {
-		filters = append(filters, FilterIn("did", userIsFollowing))
+		filters = append(filters, orm.FilterIn("did", userIsFollowing))
 	}
 
 	repos, err := GetRepos(e, limit, filters...)
@@ -104,7 +105,7 @@ func getTimelineRepos(e Execer, limit int, loggedInUserDid string, userIsFollowi
 
 	var origRepos []models.Repo
 	if args != nil {
-		origRepos, err = GetRepos(e, 0, FilterIn("at_uri", args))
+		origRepos, err = GetRepos(e, 0, orm.FilterIn("at_uri", args))
 	}
 	if err != nil {
 		return nil, err
@@ -144,9 +145,9 @@ func getTimelineRepos(e Execer, limit int, loggedInUserDid string, userIsFollowi
 }
 
 func getTimelineStars(e Execer, limit int, loggedInUserDid string, userIsFollowing []string) ([]models.TimelineEvent, error) {
-	filters := make([]filter, 0)
+	filters := make([]orm.Filter, 0)
 	if userIsFollowing != nil {
-		filters = append(filters, FilterIn("did", userIsFollowing))
+		filters = append(filters, orm.FilterIn("did", userIsFollowing))
 	}
 
 	stars, err := GetRepoStars(e, limit, filters...)
@@ -180,9 +181,9 @@ func getTimelineStars(e Execer, limit int, loggedInUserDid string, userIsFollowi
 }
 
 func getTimelineFollows(e Execer, limit int, loggedInUserDid string, userIsFollowing []string) ([]models.TimelineEvent, error) {
-	filters := make([]filter, 0)
+	filters := make([]orm.Filter, 0)
 	if userIsFollowing != nil {
-		filters = append(filters, FilterIn("user_did", userIsFollowing))
+		filters = append(filters, orm.FilterIn("user_did", userIsFollowing))
 	}
 
 	follows, err := GetFollows(e, limit, filters...)
@@ -199,7 +200,7 @@ func getTimelineFollows(e Execer, limit int, loggedInUserDid string, userIsFollo
 		return nil, nil
 	}
 
-	profiles, err := GetProfiles(e, FilterIn("did", subjects))
+	profiles, err := GetProfiles(e, orm.FilterIn("did", subjects))
 	if err != nil {
 		return nil, err
 	}

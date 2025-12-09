@@ -11,6 +11,7 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pagination"
+	"tangled.org/core/orm"
 )
 
 func CreateNotification(e Execer, notification *models.Notification) error {
@@ -44,7 +45,7 @@ func CreateNotification(e Execer, notification *models.Notification) error {
 }
 
 // GetNotificationsPaginated retrieves notifications with filters and pagination
-func GetNotificationsPaginated(e Execer, page pagination.Page, filters ...filter) ([]*models.Notification, error) {
+func GetNotificationsPaginated(e Execer, page pagination.Page, filters ...orm.Filter) ([]*models.Notification, error) {
 	var conditions []string
 	var args []any
 
@@ -113,7 +114,7 @@ func GetNotificationsPaginated(e Execer, page pagination.Page, filters ...filter
 }
 
 // GetNotificationsWithEntities retrieves notifications with their related entities
-func GetNotificationsWithEntities(e Execer, page pagination.Page, filters ...filter) ([]*models.NotificationWithEntity, error) {
+func GetNotificationsWithEntities(e Execer, page pagination.Page, filters ...orm.Filter) ([]*models.NotificationWithEntity, error) {
 	var conditions []string
 	var args []any
 
@@ -256,11 +257,11 @@ func GetNotificationsWithEntities(e Execer, page pagination.Page, filters ...fil
 }
 
 // GetNotifications retrieves notifications with filters
-func GetNotifications(e Execer, filters ...filter) ([]*models.Notification, error) {
+func GetNotifications(e Execer, filters ...orm.Filter) ([]*models.Notification, error) {
 	return GetNotificationsPaginated(e, pagination.FirstPage(), filters...)
 }
 
-func CountNotifications(e Execer, filters ...filter) (int64, error) {
+func CountNotifications(e Execer, filters ...orm.Filter) (int64, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -285,8 +286,8 @@ func CountNotifications(e Execer, filters ...filter) (int64, error) {
 }
 
 func MarkNotificationRead(e Execer, notificationID int64, userDID string) error {
-	idFilter := FilterEq("id", notificationID)
-	recipientFilter := FilterEq("recipient_did", userDID)
+	idFilter := orm.FilterEq("id", notificationID)
+	recipientFilter := orm.FilterEq("recipient_did", userDID)
 
 	query := fmt.Sprintf(`
 		UPDATE notifications
@@ -314,8 +315,8 @@ func MarkNotificationRead(e Execer, notificationID int64, userDID string) error 
 }
 
 func MarkAllNotificationsRead(e Execer, userDID string) error {
-	recipientFilter := FilterEq("recipient_did", userDID)
-	readFilter := FilterEq("read", 0)
+	recipientFilter := orm.FilterEq("recipient_did", userDID)
+	readFilter := orm.FilterEq("read", 0)
 
 	query := fmt.Sprintf(`
 		UPDATE notifications
@@ -334,8 +335,8 @@ func MarkAllNotificationsRead(e Execer, userDID string) error {
 }
 
 func DeleteNotification(e Execer, notificationID int64, userDID string) error {
-	idFilter := FilterEq("id", notificationID)
-	recipientFilter := FilterEq("recipient_did", userDID)
+	idFilter := orm.FilterEq("id", notificationID)
+	recipientFilter := orm.FilterEq("recipient_did", userDID)
 
 	query := fmt.Sprintf(`
 		DELETE FROM notifications
@@ -362,7 +363,7 @@ func DeleteNotification(e Execer, notificationID int64, userDID string) error {
 }
 
 func GetNotificationPreference(e Execer, userDid string) (*models.NotificationPreferences, error) {
-	prefs, err := GetNotificationPreferences(e, FilterEq("user_did", userDid))
+	prefs, err := GetNotificationPreferences(e, orm.FilterEq("user_did", userDid))
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +376,7 @@ func GetNotificationPreference(e Execer, userDid string) (*models.NotificationPr
 	return p, nil
 }
 
-func GetNotificationPreferences(e Execer, filters ...filter) (map[syntax.DID]*models.NotificationPreferences, error) {
+func GetNotificationPreferences(e Execer, filters ...orm.Filter) (map[syntax.DID]*models.NotificationPreferences, error) {
 	prefsMap := make(map[syntax.DID]*models.NotificationPreferences)
 
 	var conditions []string
@@ -483,7 +484,7 @@ func (d *DB) UpdateNotificationPreferences(ctx context.Context, prefs *models.No
 
 func (d *DB) ClearOldNotifications(ctx context.Context, olderThan time.Duration) error {
 	cutoff := time.Now().Add(-olderThan)
-	createdFilter := FilterLte("created", cutoff)
+	createdFilter := orm.FilterLte("created", cutoff)
 
 	query := fmt.Sprintf(`
 		DELETE FROM notifications

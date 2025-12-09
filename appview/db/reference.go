@@ -8,6 +8,7 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 // ValidateReferenceLinks resolves refLinks to Issue/PR/IssueComment/PullComment ATURIs.
@@ -205,7 +206,7 @@ func deleteReferences(tx *sql.Tx, fromAt syntax.ATURI) error {
 	return err
 }
 
-func GetReferencesAll(e Execer, filters ...filter) (map[syntax.ATURI][]syntax.ATURI, error) {
+func GetReferencesAll(e Execer, filters ...orm.Filter) (map[syntax.ATURI][]syntax.ATURI, error) {
 	var (
 		conditions []string
 		args       []any
@@ -347,7 +348,7 @@ func getIssueCommentBacklinks(e Execer, aturis []syntax.ATURI) ([]models.RichRef
 	if len(aturis) == 0 {
 		return nil, nil
 	}
-	filter := FilterIn("c.at_uri", aturis)
+	filter := orm.FilterIn("c.at_uri", aturis)
 	rows, err := e.Query(
 		fmt.Sprintf(
 			`select r.did, r.name, i.issue_id, c.id, i.title, i.open
@@ -427,7 +428,7 @@ func getPullCommentBacklinks(e Execer, aturis []syntax.ATURI) ([]models.RichRefe
 	if len(aturis) == 0 {
 		return nil, nil
 	}
-	filter := FilterIn("c.comment_at", aturis)
+	filter := orm.FilterIn("c.comment_at", aturis)
 	rows, err := e.Query(
 		fmt.Sprintf(
 			`select r.did, r.name, p.pull_id, c.id, p.title, p.state

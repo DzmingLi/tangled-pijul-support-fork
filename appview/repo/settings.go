@@ -14,6 +14,7 @@ import (
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/orm"
 	"tangled.org/core/types"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
@@ -210,14 +211,14 @@ func (rp *Repo) generalSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defaultLabels, err := db.GetLabelDefinitions(rp.db, db.FilterIn("at_uri", rp.config.Label.DefaultLabelDefs))
+	defaultLabels, err := db.GetLabelDefinitions(rp.db, orm.FilterIn("at_uri", rp.config.Label.DefaultLabelDefs))
 	if err != nil {
 		l.Error("failed to fetch labels", "err", err)
 		rp.pages.Error503(w)
 		return
 	}
 
-	labels, err := db.GetLabelDefinitions(rp.db, db.FilterIn("at_uri", f.Labels))
+	labels, err := db.GetLabelDefinitions(rp.db, orm.FilterIn("at_uri", f.Labels))
 	if err != nil {
 		l.Error("failed to fetch labels", "err", err)
 		rp.pages.Error503(w)

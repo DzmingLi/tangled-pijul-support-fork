@@ -10,6 +10,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 // no updating type for now
@@ -59,7 +60,7 @@ func AddLabelDefinition(e Execer, l *models.LabelDefinition) (int64, error) {
 	return id, nil
 }
 
-func DeleteLabelDefinition(e Execer, filters ...filter) error {
+func DeleteLabelDefinition(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -75,7 +76,7 @@ func DeleteLabelDefinition(e Execer, filters ...filter) error {
 	return err
 }
 
-func GetLabelDefinitions(e Execer, filters ...filter) ([]models.LabelDefinition, error) {
+func GetLabelDefinitions(e Execer, filters ...orm.Filter) ([]models.LabelDefinition, error) {
 	var labelDefinitions []models.LabelDefinition
 	var conditions []string
 	var args []any
@@ -167,7 +168,7 @@ func GetLabelDefinitions(e Execer, filters ...filter) ([]models.LabelDefinition,
 }
 
 // helper to get exactly one label def
-func GetLabelDefinition(e Execer, filters ...filter) (*models.LabelDefinition, error) {
+func GetLabelDefinition(e Execer, filters ...orm.Filter) (*models.LabelDefinition, error) {
 	labels, err := GetLabelDefinitions(e, filters...)
 	if err != nil {
 		return nil, err
@@ -227,7 +228,7 @@ func AddLabelOp(e Execer, l *models.LabelOp) (int64, error) {
 	return id, nil
 }
 
-func GetLabelOps(e Execer, filters ...filter) ([]models.LabelOp, error) {
+func GetLabelOps(e Execer, filters ...orm.Filter) ([]models.LabelOp, error) {
 	var labelOps []models.LabelOp
 	var conditions []string
 	var args []any
@@ -302,7 +303,7 @@ func GetLabelOps(e Execer, filters ...filter) ([]models.LabelOp, error) {
 }
 
 // get labels for a given list of subject URIs
-func GetLabels(e Execer, filters ...filter) (map[syntax.ATURI]models.LabelState, error) {
+func GetLabels(e Execer, filters ...orm.Filter) (map[syntax.ATURI]models.LabelState, error) {
 	ops, err := GetLabelOps(e, filters...)
 	if err != nil {
 		return nil, err
@@ -322,7 +323,7 @@ func GetLabels(e Execer, filters ...filter) (map[syntax.ATURI]models.LabelState,
 	}
 	labelAts := slices.Collect(maps.Keys(labelAtSet))
 
-	actx, err := NewLabelApplicationCtx(e, FilterIn("at_uri", labelAts))
+	actx, err := NewLabelApplicationCtx(e, orm.FilterIn("at_uri", labelAts))
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +339,7 @@ func GetLabels(e Execer, filters ...filter) (map[syntax.ATURI]models.LabelState,
 	return results, nil
 }
 
-func NewLabelApplicationCtx(e Execer, filters ...filter) (*models.LabelApplicationCtx, error) {
+func NewLabelApplicationCtx(e Execer, filters ...orm.Filter) (*models.LabelApplicationCtx, error) {
 	labels, err := GetLabelDefinitions(e, filters...)
 	if err != nil {
 		return nil, err

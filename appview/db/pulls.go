@@ -13,6 +13,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func NewPull(tx *sql.Tx, pull *models.Pull) error {
@@ -118,7 +119,7 @@ func NextPullId(e Execer, repoAt syntax.ATURI) (int, error) {
 	return pullId - 1, err
 }
 
-func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, error) {
+func GetPullsWithLimit(e Execer, limit int, filters ...orm.Filter) ([]*models.Pull, error) {
 	pulls := make(map[syntax.ATURI]*models.Pull)
 
 	var conditions []string
@@ -229,7 +230,7 @@ func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, 
 	for _, p := range pulls {
 		pullAts = append(pullAts, p.AtUri())
 	}
-	submissionsMap, err := GetPullSubmissions(e, FilterIn("pull_at", pullAts))
+	submissionsMap, err := GetPullSubmissions(e, orm.FilterIn("pull_at", pullAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get submissions: %w", err)
 	}
@@ -241,7 +242,7 @@ func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, 
 	}
 
 	// collect allLabels for each issue
-	allLabels, err := GetLabels(e, FilterIn("subject", pullAts))
+	allLabels, err := GetLabels(e, orm.FilterIn("subject", pullAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query labels: %w", err)
 	}
@@ -258,7 +259,7 @@ func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, 
 			sourceAts = append(sourceAts, *p.PullSource.RepoAt)
 		}
 	}
-	sourceRepos, err := GetRepos(e, 0, FilterIn("at_uri", sourceAts))
+	sourceRepos, err := GetRepos(e, 0, orm.FilterIn("at_uri", sourceAts))
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed to get source repos: %w", err)
 	}
@@ -274,7 +275,7 @@ func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, 
 		}
 	}
 
-	allReferences, err := GetReferencesAll(e, FilterIn("from_at", pullAts))
+	allReferences, err := GetReferencesAll(e, orm.FilterIn("from_at", pullAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query reference_links: %w", err)
 	}
@@ -295,17 +296,17 @@ func GetPullsWithLimit(e Execer, limit int, filters ...filter) ([]*models.Pull, 
 	return orderedByPullId, nil
 }
 
-func GetPulls(e Execer, filters ...filter) ([]*models.Pull, error) {
+func GetPulls(e Execer, filters ...orm.Filter) ([]*models.Pull, error) {
 	return GetPullsWithLimit(e, 0, filters...)
 }
 
 func GetPullIDs(e Execer, opts models.PullSearchOptions) ([]int64, error) {
 	var ids []int64
 
-	var filters []filter
-	filters = append(filters, FilterEq("state", opts.State))
+	var filters []orm.Filter
+	filters = append(filters, orm.FilterEq("state", opts.State))
 	if opts.RepoAt != "" {
-		filters = append(filters, FilterEq("repo_at", opts.RepoAt))
+		filters = append(filters, orm.FilterEq("repo_at", opts.RepoAt))
 	}
 
 	var conditions []string
@@ -361,7 +362,7 @@ func GetPullIDs(e Execer, opts models.PullSearchOptions) ([]int64, error) {
 }
 
 func GetPull(e Execer, repoAt syntax.ATURI, pullId int) (*models.Pull, error) {
-	pulls, err := GetPullsWithLimit(e, 1, FilterEq("repo_at", repoAt), FilterEq("pull_id", pullId))
+	pulls, err := GetPullsWithLimit(e, 1, orm.FilterEq("repo_at", repoAt), orm.FilterEq("pull_id", pullId))
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +374,7 @@ func GetPull(e Execer, repoAt syntax.ATURI, pullId int) (*models.Pull, error) {
 }
 
 // mapping from pull -> pull submissions
-func GetPullSubmissions(e Execer, filters ...filter) (map[syntax.ATURI][]*models.PullSubmission, error) {
+func GetPullSubmissions(e Execer, filters ...orm.Filter) (map[syntax.ATURI][]*models.PullSubmission, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -448,7 +449,7 @@ func GetPullSubmissions(e Execer, filters ...filter) (map[syntax.ATURI][]*models
 
 	// Get comments for all submissions using GetPullComments
 	submissionIds := slices.Collect(maps.Keys(submissionMap))
-	comments, err := GetPullComments(e, FilterIn("submission_id", submissionIds))
+	comments, err := GetPullComments(e, orm.FilterIn("submission_id", submissionIds))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pull comments: %w", err)
 	}
@@ -474,7 +475,7 @@ func GetPullSubmissions(e Execer, filters ...filter) (map[syntax.ATURI][]*models
 	return m, nil
 }
 
-func GetPullComments(e Execer, filters ...filter) ([]models.PullComment, error) {
+func GetPullComments(e Execer, filters ...orm.Filter) ([]models.PullComment, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -542,7 +543,7 @@ func GetPullComments(e Execer, filters ...filter) ([]models.PullComment, error) 
 
 	// collect references for each comments
 	commentAts := slices.Collect(maps.Keys(commentMap))
-	allReferencs, err := GetReferencesAll(e, FilterIn("from_at", commentAts))
+	allReferencs, err := GetReferencesAll(e, orm.FilterIn("from_at", commentAts))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query reference_links: %w", err)
 	}
@@ -708,7 +709,7 @@ func ResubmitPull(e Execer, pullAt syntax.ATURI, newRoundNumber int, newPatch st
 	return err
 }
 
-func SetPullParentChangeId(e Execer, parentChangeId string, filters ...filter) error {
+func SetPullParentChangeId(e Execer, parentChangeId string, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 
@@ -732,7 +733,7 @@ func SetPullParentChangeId(e Execer, parentChangeId string, filters ...filter) e
 
 // Only used when stacking to update contents in the event of a rebase (the interdiff should be empty).
 // otherwise submissions are immutable
-func UpdatePull(e Execer, newPatch, sourceRev string, filters ...filter) error {
+func UpdatePull(e Execer, newPatch, sourceRev string, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 
@@ -790,8 +791,8 @@ func GetPullCount(e Execer, repoAt syntax.ATURI) (models.PullCount, error) {
 func GetStack(e Execer, stackId string) (models.Stack, error) {
 	unorderedPulls, err := GetPulls(
 		e,
-		FilterEq("stack_id", stackId),
-		FilterNotEq("state", models.PullDeleted),
+		orm.FilterEq("stack_id", stackId),
+		orm.FilterNotEq("state", models.PullDeleted),
 	)
 	if err != nil {
 		return nil, err
@@ -835,8 +836,8 @@ func GetStack(e Execer, stackId string) (models.Stack, error) {
 func GetAbandonedPulls(e Execer, stackId string) ([]*models.Pull, error) {
 	pulls, err := GetPulls(
 		e,
-		FilterEq("stack_id", stackId),
-		FilterEq("state", models.PullDeleted),
+		orm.FilterEq("stack_id", stackId),
+		orm.FilterEq("state", models.PullDeleted),
 	)
 	if err != nil {
 		return nil, err

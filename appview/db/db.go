@@ -3,13 +3,12 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
-	"reflect"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"tangled.org/core/log"
+	"tangled.org/core/orm"
 )
 
 type DB struct {
@@ -584,14 +583,14 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	}
 
 	// run migrations
-	runMigration(conn, logger, "add-description-to-repos", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-description-to-repos", func(tx *sql.Tx) error {
 		tx.Exec(`
 			alter table repos add column description text check (length(description) <= 200);
 		`)
 		return nil
 	})
 
-	runMigration(conn, logger, "add-rkey-to-pubkeys", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-rkey-to-pubkeys", func(tx *sql.Tx) error {
 		// add unconstrained column
 		_, err := tx.Exec(`
 			alter table public_keys
@@ -614,7 +613,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return nil
 	})
 
-	runMigration(conn, logger, "add-rkey-to-comments", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-rkey-to-comments", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table comments drop column comment_at;
 			alter table comments add column rkey text;
@@ -622,7 +621,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
-	runMigration(conn, logger, "add-deleted-and-edited-to-issue-comments", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-deleted-and-edited-to-issue-comments", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table comments add column deleted text; -- timestamp
 			alter table comments add column edited text; -- timestamp
@@ -630,7 +629,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
-	runMigration(conn, logger, "add-source-info-to-pulls-and-submissions", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-source-info-to-pulls-and-submissions", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table pulls add column source_branch text;
 			alter table pulls add column source_repo_at text;
@@ -639,7 +638,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
-	runMigration(conn, logger, "add-source-to-repos", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-source-to-repos", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table repos add column source text;
 		`)
@@ -651,7 +650,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	//
 	// [0]: https://sqlite.org/pragma.html#pragma_foreign_keys
 	conn.ExecContext(ctx, "pragma foreign_keys = off;")
-	runMigration(conn, logger, "recreate-pulls-column-for-stacking-support", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "recreate-pulls-column-for-stacking-support", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			create table pulls_new (
 				-- identifiers
@@ -708,7 +707,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 	conn.ExecContext(ctx, "pragma foreign_keys = on;")
 
-	runMigration(conn, logger, "add-spindle-to-repos", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-spindle-to-repos", func(tx *sql.Tx) error {
 		tx.Exec(`
 			alter table repos add column spindle text;
 		`)
@@ -718,7 +717,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	// drop all knot secrets, add unique constraint to knots
 	//
 	// knots will henceforth use service auth for signed requests
-	runMigration(conn, logger, "no-more-secrets", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "no-more-secrets", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			create table registrations_new (
 				id integer primary key autoincrement,
@@ -741,7 +740,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	// recreate and add rkey + created columns with default constraint
-	runMigration(conn, logger, "rework-collaborators-table", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "rework-collaborators-table", func(tx *sql.Tx) error {
 		// create new table
 		// - repo_at instead of repo integer
 		// - rkey field
@@ -795,7 +794,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
-	runMigration(conn, logger, "add-rkey-to-issues", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-rkey-to-issues", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table issues add column rkey text not null default '';
 
@@ -807,7 +806,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	// repurpose the read-only column to "needs-upgrade"
-	runMigration(conn, logger, "rename-registrations-read-only-to-needs-upgrade", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "rename-registrations-read-only-to-needs-upgrade", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table registrations rename column read_only to needs_upgrade;
 		`)
@@ -815,7 +814,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	// require all knots to upgrade after the release of total xrpc
-	runMigration(conn, logger, "migrate-knots-to-total-xrpc", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "migrate-knots-to-total-xrpc", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			update registrations set needs_upgrade = 1;
 		`)
@@ -823,7 +822,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	// require all knots to upgrade after the release of total xrpc
-	runMigration(conn, logger, "migrate-spindles-to-xrpc-owner", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "migrate-spindles-to-xrpc-owner", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table spindles add column needs_upgrade integer not null default 0;
 		`)
@@ -841,7 +840,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	//
 	// disable foreign-keys for the next migration
 	conn.ExecContext(ctx, "pragma foreign_keys = off;")
-	runMigration(conn, logger, "remove-issue-at-from-issues", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "remove-issue-at-from-issues", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			create table if not exists issues_new (
 				-- identifiers
@@ -911,7 +910,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	// - new columns
 	//   * column "reply_to" which can be any other comment
 	//   * column "at-uri" which is a generated column
-	runMigration(conn, logger, "rework-issue-comments", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "rework-issue-comments", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			create table if not exists issue_comments (
 				-- identifiers
@@ -971,7 +970,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	//
 	// disable foreign-keys for the next migration
 	conn.ExecContext(ctx, "pragma foreign_keys = off;")
-	runMigration(conn, logger, "add-at-uri-to-pulls", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-at-uri-to-pulls", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 		create table if not exists pulls_new (
 			-- identifiers
@@ -1052,7 +1051,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	//
 	// disable foreign-keys for the next migration
 	conn.ExecContext(ctx, "pragma foreign_keys = off;")
-	runMigration(conn, logger, "remove-repo-at-pull-id-from-pull-submissions", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "remove-repo-at-pull-id-from-pull-submissions", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 		create table if not exists pull_submissions_new (
 			-- identifiers
@@ -1106,21 +1105,21 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 
 	// knots may report the combined patch for a comparison, we can store that on the appview side
 	// (but not on the pds record), because calculating the combined patch requires a git index
-	runMigration(conn, logger, "add-combined-column-submissions", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-combined-column-submissions", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table pull_submissions add column combined text;
 		`)
 		return err
 	})
 
-	runMigration(conn, logger, "add-pronouns-profile", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-pronouns-profile", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table profile add column pronouns text;
 		`)
 		return err
 	})
 
-	runMigration(conn, logger, "add-meta-column-repos", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-meta-column-repos", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table repos add column website text;
 			alter table repos add column topics text;
@@ -1128,7 +1127,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
-	runMigration(conn, logger, "add-usermentioned-preference", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "add-usermentioned-preference", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			alter table notification_preferences add column user_mentioned integer not null default 1;
 		`)
@@ -1136,7 +1135,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	// remove the foreign key constraints from stars.
-	runMigration(conn, logger, "generalize-stars-subject", func(tx *sql.Tx) error {
+	orm.RunMigration(conn, logger, "generalize-stars-subject", func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 			create table stars_new (
 				id integer primary key autoincrement,
@@ -1180,118 +1179,6 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	}, nil
 }
 
-type migrationFn = func(*sql.Tx) error
-
-func runMigration(c *sql.Conn, logger *slog.Logger, name string, migrationFn migrationFn) error {
-	logger = logger.With("migration", name)
-
-	tx, err := c.BeginTx(context.Background(), nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	var exists bool
-	err = tx.QueryRow("select exists (select 1 from migrations where name = ?)", name).Scan(&exists)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		// run migration
-		err = migrationFn(tx)
-		if err != nil {
-			logger.Error("failed to run migration", "err", err)
-			return err
-		}
-
-		// mark migration as complete
-		_, err = tx.Exec("insert into migrations (name) values (?)", name)
-		if err != nil {
-			logger.Error("failed to mark migration as complete", "err", err)
-			return err
-		}
-
-		// commit the transaction
-		if err := tx.Commit(); err != nil {
-			return err
-		}
-
-		logger.Info("migration applied successfully")
-	} else {
-		logger.Warn("skipped migration, already applied")
-	}
-
-	return nil
-}
-
 func (d *DB) Close() error {
 	return d.DB.Close()
-}
-
-type filter struct {
-	key string
-	arg any
-	cmp string
-}
-
-func newFilter(key, cmp string, arg any) filter {
-	return filter{
-		key: key,
-		arg: arg,
-		cmp: cmp,
-	}
-}
-
-func FilterEq(key string, arg any) filter      { return newFilter(key, "=", arg) }
-func FilterNotEq(key string, arg any) filter   { return newFilter(key, "<>", arg) }
-func FilterGte(key string, arg any) filter     { return newFilter(key, ">=", arg) }
-func FilterLte(key string, arg any) filter     { return newFilter(key, "<=", arg) }
-func FilterIs(key string, arg any) filter      { return newFilter(key, "is", arg) }
-func FilterIsNot(key string, arg any) filter   { return newFilter(key, "is not", arg) }
-func FilterIn(key string, arg any) filter      { return newFilter(key, "in", arg) }
-func FilterLike(key string, arg any) filter    { return newFilter(key, "like", arg) }
-func FilterNotLike(key string, arg any) filter { return newFilter(key, "not like", arg) }
-func FilterContains(key string, arg any) filter {
-	return newFilter(key, "like", fmt.Sprintf("%%%v%%", arg))
-}
-
-func (f filter) Condition() string {
-	rv := reflect.ValueOf(f.arg)
-	kind := rv.Kind()
-
-	// if we have `FilterIn(k, [1, 2, 3])`, compile it down to `k in (?, ?, ?)`
-	if (kind == reflect.Slice && rv.Type().Elem().Kind() != reflect.Uint8) || kind == reflect.Array {
-		if rv.Len() == 0 {
-			// always false
-			return "1 = 0"
-		}
-
-		placeholders := make([]string, rv.Len())
-		for i := range placeholders {
-			placeholders[i] = "?"
-		}
-
-		return fmt.Sprintf("%s %s (%s)", f.key, f.cmp, strings.Join(placeholders, ", "))
-	}
-
-	return fmt.Sprintf("%s %s ?", f.key, f.cmp)
-}
-
-func (f filter) Arg() []any {
-	rv := reflect.ValueOf(f.arg)
-	kind := rv.Kind()
-	if (kind == reflect.Slice && rv.Type().Elem().Kind() != reflect.Uint8) || kind == reflect.Array {
-		if rv.Len() == 0 {
-			return nil
-		}
-
-		out := make([]any, rv.Len())
-		for i := range rv.Len() {
-			out[i] = rv.Index(i).Interface()
-		}
-		return out
-	}
-
-	return []any{f.arg}
 }

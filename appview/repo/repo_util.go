@@ -8,6 +8,7 @@ import (
 
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 	"tangled.org/core/types"
 )
 
@@ -102,10 +103,10 @@ func getPipelineStatuses(
 	ps, err := db.GetPipelineStatuses(
 		d,
 		len(shas),
-		db.FilterEq("repo_owner", repo.Did),
-		db.FilterEq("repo_name", repo.Name),
-		db.FilterEq("knot", repo.Knot),
-		db.FilterIn("sha", shas),
+		orm.FilterEq("repo_owner", repo.Did),
+		orm.FilterEq("repo_name", repo.Name),
+		orm.FilterEq("knot", repo.Knot),
+		orm.FilterIn("sha", shas),
 	)
 	if err != nil {
 		return nil, err

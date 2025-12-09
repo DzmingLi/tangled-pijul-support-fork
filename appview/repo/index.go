@@ -23,6 +23,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/orm"
 	"tangled.org/core/types"
 
 	"github.com/go-chi/chi/v5"
@@ -171,8 +172,8 @@ func (rp *Repo) getLanguageInfo(
 	// first attempt to fetch from db
 	langs, err := db.GetRepoLanguages(
 		rp.db,
-		db.FilterEq("repo_at", repo.RepoAt()),
-		db.FilterEq("ref", currentRef),
+		orm.FilterEq("repo_at", repo.RepoAt()),
+		orm.FilterEq("ref", currentRef),
 	)
 
 	if err != nil || langs == nil {

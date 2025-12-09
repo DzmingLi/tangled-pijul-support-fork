@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/ipfs/go-cid"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func AddArtifact(e Execer, artifact models.Artifact) error {
@@ -37,7 +38,7 @@ func AddArtifact(e Execer, artifact models.Artifact) error {
 	return err
 }
 
-func GetArtifact(e Execer, filters ...filter) ([]models.Artifact, error) {
+func GetArtifact(e Execer, filters ...orm.Filter) ([]models.Artifact, error) {
 	var artifacts []models.Artifact
 
 	var conditions []string
@@ -109,7 +110,7 @@ func GetArtifact(e Execer, filters ...filter) ([]models.Artifact, error) {
 	return artifacts, nil
 }
 
-func DeleteArtifact(e Execer, filters ...filter) error {
+func DeleteArtifact(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {

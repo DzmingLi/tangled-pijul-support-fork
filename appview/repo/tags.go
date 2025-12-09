@@ -10,6 +10,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/orm"
 	"tangled.org/core/types"
 
 	indigoxrpc "github.com/bluesky-social/indigo/xrpc"
@@ -44,7 +45,7 @@ func (rp *Repo) Tags(w http.ResponseWriter, r *http.Request) {
 		rp.pages.Error503(w)
 		return
 	}
-	artifacts, err := db.GetArtifact(rp.db, db.FilterEq("repo_at", f.RepoAt()))
+	artifacts, err := db.GetArtifact(rp.db, orm.FilterEq("repo_at", f.RepoAt()))
 	if err != nil {
 		l.Error("failed grab artifacts", "err", err)
 		return

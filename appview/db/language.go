@@ -7,9 +7,10 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
-func GetRepoLanguages(e Execer, filters ...filter) ([]models.RepoLanguage, error) {
+func GetRepoLanguages(e Execer, filters ...orm.Filter) ([]models.RepoLanguage, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -85,7 +86,7 @@ func InsertRepoLanguages(e Execer, langs []models.RepoLanguage) error {
 	return nil
 }
 
-func DeleteRepoLanguages(e Execer, filters ...filter) error {
+func DeleteRepoLanguages(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -107,8 +108,8 @@ func DeleteRepoLanguages(e Execer, filters ...filter) error {
 func UpdateRepoLanguages(tx *sql.Tx, repoAt syntax.ATURI, ref string, langs []models.RepoLanguage) error {
 	err := DeleteRepoLanguages(
 		tx,
-		FilterEq("repo_at", repoAt),
-		FilterEq("ref", ref),
+		orm.FilterEq("repo_at", repoAt),
+		orm.FilterEq("ref", ref),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to delete existing languages: %w", err)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 func AddString(e Execer, s models.String) error {
@@ -44,7 +45,7 @@ func AddString(e Execer, s models.String) error {
 	return err
 }
 
-func GetStrings(e Execer, limit int, filters ...filter) ([]models.String, error) {
+func GetStrings(e Execer, limit int, filters ...orm.Filter) ([]models.String, error) {
 	var all []models.String
 
 	var conditions []string
@@ -127,7 +128,7 @@ func GetStrings(e Execer, limit int, filters ...filter) ([]models.String, error)
 	return all, nil
 }
 
-func CountStrings(e Execer, filters ...filter) (int64, error) {
+func CountStrings(e Execer, filters ...orm.Filter) (int64, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -151,7 +152,7 @@ func CountStrings(e Execer, filters ...filter) (int64, error) {
 	return count, nil
 }
 
-func DeleteString(e Execer, filters ...filter) error {
+func DeleteString(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {

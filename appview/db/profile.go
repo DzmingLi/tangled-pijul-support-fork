@@ -11,6 +11,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
 const TimeframeMonths = 7
@@ -44,8 +45,8 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 
 	issues, err := GetIssues(
 		e,
-		FilterEq("did", forDid),
-		FilterGte("created", time.Now().AddDate(0, -TimeframeMonths, 0)),
+		orm.FilterEq("did", forDid),
+		orm.FilterGte("created", time.Now().AddDate(0, -TimeframeMonths, 0)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error getting issues by owner did: %w", err)
@@ -65,7 +66,7 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 		*items = append(*items, &issue)
 	}
 
-	repos, err := GetRepos(e, 0, FilterEq("did", forDid))
+	repos, err := GetRepos(e, 0, orm.FilterEq("did", forDid))
 	if err != nil {
 		return nil, fmt.Errorf("error getting all repos by did: %w", err)
 	}
@@ -199,7 +200,7 @@ func UpsertProfile(tx *sql.Tx, profile *models.Profile) error {
 	return tx.Commit()
 }
 
-func GetProfiles(e Execer, filters ...filter) (map[string]*models.Profile, error) {
+func GetProfiles(e Execer, filters ...orm.Filter) (map[string]*models.Profile, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -441,7 +442,7 @@ func ValidateProfile(e Execer, profile *models.Profile) error {
 	}
 
 	// ensure all pinned repos are either own repos or collaborating repos
-	repos, err := GetRepos(e, 0, FilterEq("did", profile.Did))
+	repos, err := GetRepos(e, 0, orm.FilterEq("did", profile.Did))
 	if err != nil {
 		log.Printf("getting repos for %s: %s", profile.Did, err)
 	}

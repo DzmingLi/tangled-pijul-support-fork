@@ -9,6 +9,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 )
 
@@ -76,8 +77,8 @@ func MarkSpindleVerified(d *db.DB, e *rbac.Enforcer, instance, owner string) (in
 	// mark this spindle as verified in the db
 	rowId, err := db.VerifySpindle(
 		tx,
-		db.FilterEq("owner", owner),
-		db.FilterEq("instance", instance),
+		orm.FilterEq("owner", owner),
+		orm.FilterEq("instance", instance),
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to write to DB: %w", err)
@@ -115,8 +116,8 @@ func MarkKnotVerified(d *db.DB, e *rbac.Enforcer, domain, owner string) error {
 	// mark as registered
 	err = db.MarkRegistered(
 		tx,
-		db.FilterEq("did", owner),
-		db.FilterEq("domain", domain),
+		orm.FilterEq("did", owner),
+		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to register domain: %w", err)

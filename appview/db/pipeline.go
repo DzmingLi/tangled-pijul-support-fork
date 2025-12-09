@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
-func GetPipelines(e Execer, filters ...filter) ([]models.Pipeline, error) {
+func GetPipelines(e Execer, filters ...orm.Filter) ([]models.Pipeline, error) {
 	var pipelines []models.Pipeline
 
 	var conditions []string
@@ -168,11 +169,11 @@ func AddPipelineStatus(e Execer, status models.PipelineStatus) error {
 
 // this is a mega query, but the most useful one:
 // get N pipelines, for each one get the latest status of its N workflows
-func GetPipelineStatuses(e Execer, limit int, filters ...filter) ([]models.Pipeline, error) {
+func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.Pipeline, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
-		filter.key = "p." + filter.key // the table is aliased in the query to `p`
+		filter.Key = "p." + filter.Key // the table is aliased in the query to `p`
 		conditions = append(conditions, filter.Condition())
 		args = append(args, filter.Arg()...)
 	}
@@ -264,8 +265,8 @@ func GetPipelineStatuses(e Execer, limit int, filters ...filter) ([]models.Pipel
 	conditions = nil
 	args = nil
 	for _, p := range pipelines {
-		knotFilter := FilterEq("pipeline_knot", p.Knot)
-		rkeyFilter := FilterEq("pipeline_rkey", p.Rkey)
+		knotFilter := orm.FilterEq("pipeline_knot", p.Knot)
+		rkeyFilter := orm.FilterEq("pipeline_rkey", p.Rkey)
 		conditions = append(conditions, fmt.Sprintf("(%s and %s)", knotFilter.Condition(), rkeyFilter.Condition()))
 		args = append(args, p.Knot)
 		args = append(args, p.Rkey)

@@ -11,6 +11,7 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pagination"
+	"tangled.org/core/orm"
 
 	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
@@ -20,7 +21,7 @@ import (
 func (rp *Repo) getRepoFeed(ctx context.Context, repo *models.Repo, ownerSlashRepo string) (*feeds.Feed, error) {
 	const feedLimitPerType = 100
 
-	pulls, err := db.GetPullsWithLimit(rp.db, feedLimitPerType, db.FilterEq("repo_at", repo.RepoAt()))
+	pulls, err := db.GetPullsWithLimit(rp.db, feedLimitPerType, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (rp *Repo) getRepoFeed(ctx context.Context, repo *models.Repo, ownerSlashRe
 	issues, err := db.GetIssuesPaginated(
 		rp.db,
 		pagination.Page{Limit: feedLimitPerType},
-		db.FilterEq("repo_at", repo.RepoAt()),
+		orm.FilterEq("repo_at", repo.RepoAt()),
 	)
 	if err != nil {
 		return nil, err

@@ -18,6 +18,7 @@ import (
 	"tangled.org/core/appview/pagination"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 )
 
@@ -217,8 +218,8 @@ func (mw Middleware) ResolveRepo() middlewareFunc {
 
 			repo, err := db.GetRepo(
 				mw.db,
-				db.FilterEq("did", id.DID.String()),
-				db.FilterEq("name", repoName),
+				orm.FilterEq("did", id.DID.String()),
+				orm.FilterEq("name", repoName),
 			)
 			if err != nil {
 				log.Println("failed to resolve repo", "err", err)

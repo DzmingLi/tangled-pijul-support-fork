@@ -16,6 +16,7 @@ import (
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/validator"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 
@@ -88,14 +89,14 @@ func (l *Labels) PerformLabelOp(w http.ResponseWriter, r *http.Request) {
 	repoAt := r.Form.Get("repo")
 	subjectUri := r.Form.Get("subject")
 
-	repo, err := db.GetRepo(l.db, db.FilterEq("at_uri", repoAt))
+	repo, err := db.GetRepo(l.db, orm.FilterEq("at_uri", repoAt))
 	if err != nil {
 		fail("Failed to get repository.", err)
 		return
 	}
 
 	// find all the labels that this repo subscribes to
-	repoLabels, err := db.GetRepoLabels(l.db, db.FilterEq("repo_at", repoAt))
+	repoLabels, err := db.GetRepoLabels(l.db, orm.FilterEq("repo_at", repoAt))
 	if err != nil {
 		fail("Failed to get labels for this repository.", err)
 		return
@@ -106,14 +107,14 @@ func (l *Labels) PerformLabelOp(w http.ResponseWriter, r *http.Request) {
 		labelAts = append(labelAts, rl.LabelAt.String())
 	}
 
-	actx, err := db.NewLabelApplicationCtx(l.db, db.FilterIn("at_uri", labelAts))
+	actx, err := db.NewLabelApplicationCtx(l.db, orm.FilterIn("at_uri", labelAts))
 	if err != nil {
 		fail("Invalid form data.", err)
 		return
 	}
 
 	// calculate the start state by applying already known labels
-	existingOps, err := db.GetLabelOps(l.db, db.FilterEq("subject", subjectUri))
+	existingOps, err := db.GetLabelOps(l.db, orm.FilterEq("subject", subjectUri))
 	if err != nil {
 		fail("Invalid form data.", err)
 		return

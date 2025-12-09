@@ -16,6 +16,7 @@ import (
 	ec "tangled.org/core/eventconsumer"
 	"tangled.org/core/eventconsumer/cursor"
 	"tangled.org/core/log"
+	"tangled.org/core/orm"
 	"tangled.org/core/rbac"
 	"tangled.org/core/workflow"
 
@@ -30,7 +31,7 @@ func Knotstream(ctx context.Context, c *config.Config, d *db.DB, enforcer *rbac.
 
 	knots, err := db.GetRegistrations(
 		d,
-		db.FilterIsNot("registered", "null"),
+		orm.FilterIsNot("registered", "null"),
 	)
 	if err != nil {
 		return nil, err
@@ -143,8 +144,8 @@ func updateRepoLanguages(d *db.DB, record tangled.GitRefUpdate) error {
 	repos, err := db.GetRepos(
 		d,
 		0,
-		db.FilterEq("did", record.RepoDid),
-		db.FilterEq("name", record.RepoName),
+		orm.FilterEq("did", record.RepoDid),
+		orm.FilterEq("name", record.RepoName),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to look for repo in DB (%s/%s): %w", record.RepoDid, record.RepoName, err)
@@ -209,8 +210,8 @@ func ingestPipeline(d *db.DB, source ec.Source, msg ec.Message) error {
 	repos, err := db.GetRepos(
 		d,
 		0,
-		db.FilterEq("did", record.TriggerMetadata.Repo.Did),
-		db.FilterEq("name", record.TriggerMetadata.Repo.Repo),
+		orm.FilterEq("did", record.TriggerMetadata.Repo.Did),
+		orm.FilterEq("name", record.TriggerMetadata.Repo.Repo),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to look for repo in DB: nsid %s, rkey %s, %w", msg.Nsid, msg.Rkey, err)

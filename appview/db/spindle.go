@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"tangled.org/core/appview/models"
+	"tangled.org/core/orm"
 )
 
-func GetSpindles(e Execer, filters ...filter) ([]models.Spindle, error) {
+func GetSpindles(e Execer, filters ...orm.Filter) ([]models.Spindle, error) {
 	var spindles []models.Spindle
 
 	var conditions []string
@@ -91,7 +92,7 @@ func AddSpindle(e Execer, spindle models.Spindle) error {
 	return err
 }
 
-func VerifySpindle(e Execer, filters ...filter) (int64, error) {
+func VerifySpindle(e Execer, filters ...orm.Filter) (int64, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -114,7 +115,7 @@ func VerifySpindle(e Execer, filters ...filter) (int64, error) {
 	return res.RowsAffected()
 }
 
-func DeleteSpindle(e Execer, filters ...filter) error {
+func DeleteSpindle(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -144,7 +145,7 @@ func AddSpindleMember(e Execer, member models.SpindleMember) error {
 	return err
 }
 
-func RemoveSpindleMember(e Execer, filters ...filter) error {
+func RemoveSpindleMember(e Execer, filters ...orm.Filter) error {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
@@ -163,7 +164,7 @@ func RemoveSpindleMember(e Execer, filters ...filter) error {
 	return err
 }
 
-func GetSpindleMembers(e Execer, filters ...filter) ([]models.SpindleMember, error) {
+func GetSpindleMembers(e Execer, filters ...orm.Filter) ([]models.SpindleMember, error) {
 	var members []models.SpindleMember
 
 	var conditions []string
