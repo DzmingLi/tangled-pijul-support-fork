@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"tangled.org/core/api/tangled"
@@ -30,7 +31,7 @@ import (
 )
 
 //go:embed motd
-var motd []byte
+var defaultMotd []byte
 
 const (
 	rbacDomain = "thisserver"
@@ -47,7 +48,9 @@ type Spindle struct {
 	cfg   *config.Config
 	ks    *eventconsumer.Consumer
 	res   *idresolver.Resolver
-	vault secrets.Manager
+	vault  secrets.Manager
+	motd   []byte
+	motdMu sync.RWMutex
 }
 
 // New creates a new Spindle server with the provided configuration and engines.
@@ -128,6 +131,7 @@ func New(ctx context.Context, cfg *config.Config, engines map[string]models.Engi
 		cfg:   cfg,
 		res:   resolver,
 		vault: vault,
+		motd:  defaultMotd,
 	}
 
 	err = e.AddSpindle(rbacDomain)
@@ -201,6 +205,20 @@ func (s *Spindle) Enforcer() *rbac.Enforcer {
 	return s.e
 }
 
+// SetMotdContent sets custom MOTD content, replacing the embedded default.
+func (s *Spindle) SetMotdContent(content []byte) {
+	s.motdMu.Lock()
+	defer s.motdMu.Unlock()
+	s.motd = content
+}
+
+// GetMotdContent returns the current MOTD content.
+func (s *Spindle) GetMotdContent() []byte {
+	s.motdMu.RLock()
+	defer s.motdMu.RUnlock()
+	return s.motd
+}
+
 // Start starts the Spindle server (blocking).
 func (s *Spindle) Start(ctx context.Context) error {
 	// starts a job queue runner in the background
@@ -246,7 +264,7 @@ func (s *Spindle) Router() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(motd)
+		w.Write(s.GetMotdContent())
 	})
 	mux.HandleFunc("/events", s.Events)
 	mux.HandleFunc("/logs/{knot}/{rkey}/{name}", s.Logs)
