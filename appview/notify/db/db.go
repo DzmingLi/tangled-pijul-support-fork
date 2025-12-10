@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"log"
-	"maps"
 	"slices"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
@@ -13,10 +12,11 @@ import (
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/idresolver"
 	"tangled.org/core/orm"
+	"tangled.org/oppi.li/sets"
 )
 
 const (
-	maxMentions = 5
+	maxMentions = 8
 )
 
 type databaseNotifier struct {
@@ -50,7 +50,7 @@ func (n *databaseNotifier) NewStar(ctx context.Context, star *models.Star) {
 	}
 
 	actorDid := syntax.DID(star.Did)
-	recipients := []syntax.DID{syntax.DID(repo.Did)}
+	recipients := sets.Singleton(syntax.DID(repo.Did))
 	eventType := models.NotificationTypeRepoStarred
 	entityType := "repo"
 	entityId := star.RepoAt.String()
@@ -75,19 +75,22 @@ func (n *databaseNotifier) DeleteStar(ctx context.Context, star *models.Star) {
 }
 
 func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, mentions []syntax.DID) {
-
-	// build the recipients list
-	// - owner of the repo
-	// - collaborators in the repo
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(issue.Repo.Did))
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
 	}
+
+	// build the recipients list
+	// - owner of the repo
+	// - collaborators in the repo
+	// - remove users already mentioned
+	recipients := sets.Singleton(syntax.DID(issue.Repo.Did))
 	for _, c := range collaborators {
-		recipients = append(recipients, c.SubjectDid)
+		recipients.Insert(c.SubjectDid)
+	}
+	for _, m := range mentions {
+		recipients.Remove(m)
 	}
 
 	actorDid := syntax.DID(issue.Did)
@@ -109,7 +112,7 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 	)
 	n.notifyEvent(
 		actorDid,
-		mentions,
+		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
 		entityType,
 		entityId,
@@ -131,23 +134,32 @@ func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.
 	}
 	issue := issues[0]
 
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(issue.Repo.Did))
+	// built the recipients list:
+	// - the owner of the repo
+	// - | if the comment is a reply -> everybody on that thread
+	//   | if the comment is a top level -> just the issue owner
+	// - remove mentioned users from the recipients list
+	recipients := sets.Singleton(syntax.DID(issue.Repo.Did))
 
 	if comment.IsReply() {
 		// if this comment is a reply, then notify everybody in that thread
 		parentAtUri := *comment.ReplyTo
-		allThreads := issue.CommentList()
 
 		// find the parent thread, and add all DIDs from here to the recipient list
-		for _, t := range allThreads {
+		for _, t := range issue.CommentList() {
 			if t.Self.AtUri().String() == parentAtUri {
-				recipients = append(recipients, t.Participants()...)
+				for _, p := range t.Participants() {
+					recipients.Insert(p)
+				}
 			}
 		}
 	} else {
 		// not a reply, notify just the issue author
-		recipients = append(recipients, syntax.DID(issue.Did))
+		recipients.Insert(syntax.DID(issue.Did))
+	}
+
+	for _, m := range mentions {
+		recipients.Remove(m)
 	}
 
 	actorDid := syntax.DID(comment.Did)
@@ -169,7 +181,7 @@ func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.
 	)
 	n.notifyEvent(
 		actorDid,
-		mentions,
+		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
 		entityType,
 		entityId,
@@ -185,7 +197,7 @@ func (n *databaseNotifier) DeleteIssue(ctx context.Context, issue *models.Issue)
 
 func (n *databaseNotifier) NewFollow(ctx context.Context, follow *models.Follow) {
 	actorDid := syntax.DID(follow.UserDid)
-	recipients := []syntax.DID{syntax.DID(follow.SubjectDid)}
+	recipients := sets.Singleton(syntax.DID(follow.SubjectDid))
 	eventType := models.NotificationTypeFollowed
 	entityType := "follow"
 	entityId := follow.UserDid
@@ -213,19 +225,18 @@ func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
 		log.Printf("NewPull: failed to get repos: %v", err)
 		return
 	}
-
-	// build the recipients list
-	// - owner of the repo
-	// - collaborators in the repo
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(repo.Did))
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
 	}
+
+	// build the recipients list
+	// - owner of the repo
+	// - collaborators in the repo
+	recipients := sets.Singleton(syntax.DID(repo.Did))
 	for _, c := range collaborators {
-		recipients = append(recipients, c.SubjectDid)
+		recipients.Insert(c.SubjectDid)
 	}
 
 	actorDid := syntax.DID(pull.OwnerDid)
@@ -268,10 +279,13 @@ func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.P
 	// build up the recipients list:
 	// - repo owner
 	// - all pull participants
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(repo.Did))
+	// - remove those already mentioned
+	recipients := sets.Singleton(syntax.DID(repo.Did))
 	for _, p := range pull.Participants() {
-		recipients = append(recipients, syntax.DID(p))
+		recipients.Insert(syntax.DID(p))
+	}
+	for _, m := range mentions {
+		recipients.Remove(m)
 	}
 
 	actorDid := syntax.DID(comment.OwnerDid)
@@ -295,7 +309,7 @@ func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.P
 	)
 	n.notifyEvent(
 		actorDid,
-		mentions,
+		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
 		entityType,
 		entityId,
@@ -322,22 +336,22 @@ func (n *databaseNotifier) NewString(ctx context.Context, string *models.String)
 }
 
 func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, issue *models.Issue) {
-	// build up the recipients list:
-	// - repo owner
-	// - repo collaborators
-	// - all issue participants
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(issue.Repo.Did))
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
 	}
+
+	// build up the recipients list:
+	// - repo owner
+	// - repo collaborators
+	// - all issue participants
+	recipients := sets.Singleton(syntax.DID(issue.Repo.Did))
 	for _, c := range collaborators {
-		recipients = append(recipients, c.SubjectDid)
+		recipients.Insert(c.SubjectDid)
 	}
 	for _, p := range issue.Participants() {
-		recipients = append(recipients, syntax.DID(p))
+		recipients.Insert(syntax.DID(p))
 	}
 
 	entityType := "pull"
@@ -373,21 +387,21 @@ func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, p
 		return
 	}
 
-	// build up the recipients list:
-	// - repo owner
-	// - all pull participants
-	var recipients []syntax.DID
-	recipients = append(recipients, syntax.DID(repo.Did))
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
 		log.Printf("failed to fetch collaborators: %v", err)
 		return
 	}
+
+	// build up the recipients list:
+	// - repo owner
+	// - all pull participants
+	recipients := sets.Singleton(syntax.DID(repo.Did))
 	for _, c := range collaborators {
-		recipients = append(recipients, c.SubjectDid)
+		recipients.Insert(c.SubjectDid)
 	}
 	for _, p := range pull.Participants() {
-		recipients = append(recipients, syntax.DID(p))
+		recipients.Insert(syntax.DID(p))
 	}
 
 	entityType := "pull"
@@ -423,7 +437,7 @@ func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, p
 
 func (n *databaseNotifier) notifyEvent(
 	actorDid syntax.DID,
-	recipients []syntax.DID,
+	recipients sets.Set[syntax.DID],
 	eventType models.NotificationType,
 	entityType string,
 	entityId string,
@@ -431,20 +445,16 @@ func (n *databaseNotifier) notifyEvent(
 	issueId *int64,
 	pullId *int64,
 ) {
-	if eventType == models.NotificationTypeUserMentioned && len(recipients) > maxMentions {
-		recipients = recipients[:maxMentions]
+	// if the user is attempting to mention >maxMentions users, this is probably spam, do not mention anybody
+	if eventType == models.NotificationTypeUserMentioned && recipients.Len() > maxMentions {
+		return
 	}
-	recipientSet := make(map[syntax.DID]struct{})
-	for _, did := range recipients {
-		// everybody except actor themselves
-		if did != actorDid {
-			recipientSet[did] = struct{}{}
-		}
-	}
+
+	recipients.Remove(actorDid)
 
 	prefMap, err := db.GetNotificationPreferences(
 		n.db,
-		orm.FilterIn("user_did", slices.Collect(maps.Keys(recipientSet))),
+		orm.FilterIn("user_did", slices.Collect(recipients.All())),
 	)
 	if err != nil {
 		// failed to get prefs for users
@@ -460,7 +470,7 @@ func (n *databaseNotifier) notifyEvent(
 	defer tx.Rollback()
 
 	// filter based on preferences
-	for recipientDid := range recipientSet {
+	for recipientDid := range recipients.All() {
 		prefs, ok := prefMap[recipientDid]
 		if !ok {
 			prefs = models.DefaultNotificationPreferences(recipientDid)
