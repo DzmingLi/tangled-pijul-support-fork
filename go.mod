@@ -1,6 +1,6 @@
 module tangled.org/core
 
-go 1.24.4
+go 1.25.0
 
 require (
 	github.com/Blank-Xu/sql-adapter v1.1.1
@@ -215,6 +215,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
+	tangled.org/oppi.li/sets v0.0.0-20251210075238-d0656dd747b1 // indirect
 )
 
 replace github.com/sergi/go-diff => github.com/sergi/go-diff v1.1.0
