@@ -64,7 +64,7 @@ func Run(ctx context.Context, cmd *cli.Command) error {
 		logger.Info("running in dev mode, signature verification is disabled")
 	}
 
-	db, err := db.Setup(c.Server.DBPath)
+	db, err := db.Setup(ctx, c.Server.DBPath)
 	if err != nil {
 		return fmt.Errorf("failed to load db: %w", err)
 	}

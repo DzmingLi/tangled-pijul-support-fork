@@ -1,17 +1,21 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"log/slog"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
+	"tangled.org/core/log"
 )
 
 type DB struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *slog.Logger
 }
 
-func Setup(dbPath string) (*DB, error) {
+func Setup(ctx context.Context, dbPath string) (*DB, error) {
 	// https://github.com/mattn/go-sqlite3#connection-string
 	opts := []string{
 		"_foreign_keys=1",
@@ -19,6 +23,9 @@ func Setup(dbPath string) (*DB, error) {
 		"_synchronous=NORMAL",
 		"_auto_vacuum=incremental",
 	}
+
+	logger := log.FromContext(ctx)
+	logger = log.SubLogger(logger, "db")
 
 	db, err := sql.Open("sqlite3", dbPath+"?"+strings.Join(opts, "&"))
 	if err != nil {
@@ -60,5 +67,8 @@ func Setup(dbPath string) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{db: db}, nil
+	return &DB{
+		db:     db,
+		logger: logger,
+	}, nil
 }
