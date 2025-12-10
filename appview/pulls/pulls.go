@@ -19,13 +19,13 @@ import (
 	"tangled.org/core/appview/config"
 	"tangled.org/core/appview/db"
 	pulls_indexer "tangled.org/core/appview/indexer/pulls"
+	"tangled.org/core/appview/mentions"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/appview/pages/repoinfo"
-	"tangled.org/core/appview/refresolver"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/appview/xrpcclient"
@@ -44,18 +44,18 @@ import (
 )
 
 type Pulls struct {
-	oauth        *oauth.OAuth
-	repoResolver *reporesolver.RepoResolver
-	pages        *pages.Pages
-	idResolver   *idresolver.Resolver
-	refResolver  *refresolver.Resolver
-	db           *db.DB
-	config       *config.Config
-	notifier     notify.Notifier
-	enforcer     *rbac.Enforcer
-	logger       *slog.Logger
-	validator    *validator.Validator
-	indexer      *pulls_indexer.Indexer
+	oauth            *oauth.OAuth
+	repoResolver     *reporesolver.RepoResolver
+	pages            *pages.Pages
+	idResolver       *idresolver.Resolver
+	mentionsResolver *mentions.Resolver
+	db               *db.DB
+	config           *config.Config
+	notifier         notify.Notifier
+	enforcer         *rbac.Enforcer
+	logger           *slog.Logger
+	validator        *validator.Validator
+	indexer          *pulls_indexer.Indexer
 }
 
 func New(
@@ -63,7 +63,7 @@ func New(
 	repoResolver *reporesolver.RepoResolver,
 	pages *pages.Pages,
 	resolver *idresolver.Resolver,
-	refResolver *refresolver.Resolver,
+	mentionsResolver *mentions.Resolver,
 	db *db.DB,
 	config *config.Config,
 	notifier notify.Notifier,
@@ -73,18 +73,18 @@ func New(
 	logger *slog.Logger,
 ) *Pulls {
 	return &Pulls{
-		oauth:        oauth,
-		repoResolver: repoResolver,
-		pages:        pages,
-		idResolver:   resolver,
-		refResolver:  refResolver,
-		db:           db,
-		config:       config,
-		notifier:     notifier,
-		enforcer:     enforcer,
-		logger:       logger,
-		validator:    validator,
-		indexer:      indexer,
+		oauth:            oauth,
+		repoResolver:     repoResolver,
+		pages:            pages,
+		idResolver:       resolver,
+		mentionsResolver: mentionsResolver,
+		db:               db,
+		config:           config,
+		notifier:         notifier,
+		enforcer:         enforcer,
+		logger:           logger,
+		validator:        validator,
+		indexer:          indexer,
 	}
 }
 
@@ -729,7 +729,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		mentions, references := s.refResolver.Resolve(r.Context(), body)
+		mentions, references := s.mentionsResolver.Resolve(r.Context(), body)
 
 		// Start a transaction
 		tx, err := s.db.BeginTx(r.Context(), nil)
@@ -1205,7 +1205,7 @@ func (s *Pulls) createPullRequest(
 		}
 	}
 
-	mentions, references := s.refResolver.Resolve(r.Context(), body)
+	mentions, references := s.mentionsResolver.Resolve(r.Context(), body)
 
 	rkey := tid.TID()
 	initialSubmission := models.PullSubmission{
@@ -2397,7 +2397,7 @@ func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.Use
 		body := fp.Body
 		rkey := tid.TID()
 
-		mentions, references := s.refResolver.Resolve(ctx, body)
+		mentions, references := s.mentionsResolver.Resolve(ctx, body)
 
 		initialSubmission := models.PullSubmission{
 			Patch:     fp.Raw,

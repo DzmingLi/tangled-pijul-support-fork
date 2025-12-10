@@ -19,13 +19,13 @@ import (
 	"tangled.org/core/appview/config"
 	"tangled.org/core/appview/db"
 	issues_indexer "tangled.org/core/appview/indexer/issues"
+	"tangled.org/core/appview/mentions"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/repoinfo"
 	"tangled.org/core/appview/pagination"
-	"tangled.org/core/appview/refresolver"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/idresolver"
@@ -34,18 +34,18 @@ import (
 )
 
 type Issues struct {
-	oauth        *oauth.OAuth
-	repoResolver *reporesolver.RepoResolver
-	enforcer     *rbac.Enforcer
-	pages        *pages.Pages
-	idResolver   *idresolver.Resolver
-	refResolver  *refresolver.Resolver
-	db           *db.DB
-	config       *config.Config
-	notifier     notify.Notifier
-	logger       *slog.Logger
-	validator    *validator.Validator
-	indexer      *issues_indexer.Indexer
+	oauth            *oauth.OAuth
+	repoResolver     *reporesolver.RepoResolver
+	enforcer         *rbac.Enforcer
+	pages            *pages.Pages
+	idResolver       *idresolver.Resolver
+	mentionsResolver *mentions.Resolver
+	db               *db.DB
+	config           *config.Config
+	notifier         notify.Notifier
+	logger           *slog.Logger
+	validator        *validator.Validator
+	indexer          *issues_indexer.Indexer
 }
 
 func New(
@@ -54,7 +54,7 @@ func New(
 	enforcer *rbac.Enforcer,
 	pages *pages.Pages,
 	idResolver *idresolver.Resolver,
-	refResolver *refresolver.Resolver,
+	mentionsResolver *mentions.Resolver,
 	db *db.DB,
 	config *config.Config,
 	notifier notify.Notifier,
@@ -63,18 +63,18 @@ func New(
 	logger *slog.Logger,
 ) *Issues {
 	return &Issues{
-		oauth:        oauth,
-		repoResolver: repoResolver,
-		enforcer:     enforcer,
-		pages:        pages,
-		idResolver:   idResolver,
-		refResolver:  refResolver,
-		db:           db,
-		config:       config,
-		notifier:     notifier,
-		logger:       logger,
-		validator:    validator,
-		indexer:      indexer,
+		oauth:            oauth,
+		repoResolver:     repoResolver,
+		enforcer:         enforcer,
+		pages:            pages,
+		idResolver:       idResolver,
+		mentionsResolver: mentionsResolver,
+		db:               db,
+		config:           config,
+		notifier:         notifier,
+		logger:           logger,
+		validator:        validator,
+		indexer:          indexer,
 	}
 }
 
@@ -163,7 +163,7 @@ func (rp *Issues) EditIssue(w http.ResponseWriter, r *http.Request) {
 		newIssue := issue
 		newIssue.Title = r.FormValue("title")
 		newIssue.Body = r.FormValue("body")
-		newIssue.Mentions, newIssue.References = rp.refResolver.Resolve(r.Context(), newIssue.Body)
+		newIssue.Mentions, newIssue.References = rp.mentionsResolver.Resolve(r.Context(), newIssue.Body)
 
 		if err := rp.validator.ValidateIssue(newIssue); err != nil {
 			l.Error("validation error", "err", err)
@@ -412,7 +412,7 @@ func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 		replyTo = &replyToUri
 	}
 
-	mentions, references := rp.refResolver.Resolve(r.Context(), body)
+	mentions, references := rp.mentionsResolver.Resolve(r.Context(), body)
 
 	comment := models.IssueComment{
 		Did:        user.Did,
@@ -584,7 +584,7 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 		newComment := comment
 		newComment.Body = newBody
 		newComment.Edited = &now
-		newComment.Mentions, newComment.References = rp.refResolver.Resolve(r.Context(), newBody)
+		newComment.Mentions, newComment.References = rp.mentionsResolver.Resolve(r.Context(), newBody)
 
 		record := newComment.AsRecord()
 
@@ -912,7 +912,7 @@ func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 		})
 	case http.MethodPost:
 		body := r.FormValue("body")
-		mentions, references := rp.refResolver.Resolve(r.Context(), body)
+		mentions, references := rp.mentionsResolver.Resolve(r.Context(), body)
 
 		issue := &models.Issue{
 			RepoAt:     f.RepoAt(),

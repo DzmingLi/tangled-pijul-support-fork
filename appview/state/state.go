@@ -15,13 +15,13 @@ import (
 	"tangled.org/core/appview/config"
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/indexer"
+	"tangled.org/core/appview/mentions"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/notify"
 	dbnotify "tangled.org/core/appview/notify/db"
 	phnotify "tangled.org/core/appview/notify/posthog"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
-	"tangled.org/core/appview/refresolver"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
@@ -43,22 +43,22 @@ import (
 )
 
 type State struct {
-	db            *db.DB
-	notifier      notify.Notifier
-	indexer       *indexer.Indexer
-	oauth         *oauth.OAuth
-	enforcer      *rbac.Enforcer
-	pages         *pages.Pages
-	idResolver    *idresolver.Resolver
-	refResolver   *refresolver.Resolver
-	posthog       posthog.Client
-	jc            *jetstream.JetstreamClient
-	config        *config.Config
-	repoResolver  *reporesolver.RepoResolver
-	knotstream    *eventconsumer.Consumer
-	spindlestream *eventconsumer.Consumer
-	logger        *slog.Logger
-	validator     *validator.Validator
+	db               *db.DB
+	notifier         notify.Notifier
+	indexer          *indexer.Indexer
+	oauth            *oauth.OAuth
+	enforcer         *rbac.Enforcer
+	pages            *pages.Pages
+	idResolver       *idresolver.Resolver
+	mentionsResolver *mentions.Resolver
+	posthog          posthog.Client
+	jc               *jetstream.JetstreamClient
+	config           *config.Config
+	repoResolver     *reporesolver.RepoResolver
+	knotstream       *eventconsumer.Consumer
+	spindlestream    *eventconsumer.Consumer
+	logger           *slog.Logger
+	validator        *validator.Validator
 }
 
 func Make(ctx context.Context, config *config.Config) (*State, error) {
@@ -100,7 +100,7 @@ func Make(ctx context.Context, config *config.Config) (*State, error) {
 
 	repoResolver := reporesolver.New(config, enforcer, d)
 
-	refResolver := refresolver.New(config, res, d, log.SubLogger(logger, "refResolver"))
+	mentionsResolver := mentions.New(config, res, d, log.SubLogger(logger, "mentionsResolver"))
 
 	wrapper := db.DbWrapper{Execer: d}
 	jc, err := jetstream.NewJetstreamClient(
@@ -182,7 +182,7 @@ func Make(ctx context.Context, config *config.Config) (*State, error) {
 		enforcer,
 		pages,
 		res,
-		refResolver,
+		mentionsResolver,
 		posthog,
 		jc,
 		config,
