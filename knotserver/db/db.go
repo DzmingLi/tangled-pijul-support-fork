@@ -32,11 +32,13 @@ func Setup(ctx context.Context, dbPath string) (*DB, error) {
 		return nil, err
 	}
 
-	// NOTE: If any other migration is added here, you MUST
-	// copy the pattern in appview: use a single sql.Conn
-	// for every migration.
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
 
-	_, err = db.Exec(`
+	_, err = conn.ExecContext(ctx, `
 		create table if not exists known_dids (
 			did text primary key
 		);
@@ -61,6 +63,11 @@ func Setup(ctx context.Context, dbPath string) (*DB, error) {
 			event text not null, -- json
 			created integer not null default (strftime('%s', 'now')),
 			primary key (rkey, nsid)
+		);
+
+		create table if not exists migrations (
+			id integer primary key autoincrement,
+			name text unique
 		);
 	`)
 	if err != nil {
