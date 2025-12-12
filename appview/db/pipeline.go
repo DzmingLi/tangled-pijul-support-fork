@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/orm"
 )
@@ -216,7 +217,7 @@ func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.P
 	}
 	defer rows.Close()
 
-	pipelines := make(map[string]models.Pipeline)
+	pipelines := make(map[syntax.ATURI]models.Pipeline)
 	for rows.Next() {
 		var p models.Pipeline
 		var t models.Trigger
@@ -253,8 +254,7 @@ func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.P
 		p.Trigger = &t
 		p.Statuses = make(map[string]models.WorkflowStatus)
 
-		k := fmt.Sprintf("%s/%s", p.Knot, p.Rkey)
-		pipelines[k] = p
+		pipelines[p.AtUri()] = p
 	}
 
 	// get all statuses
@@ -314,10 +314,10 @@ func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.P
 			return nil, fmt.Errorf("invalid status created timestamp %q: %w", created, err)
 		}
 
-		key := fmt.Sprintf("%s/%s", ps.PipelineKnot, ps.PipelineRkey)
+		pipelineAt := ps.PipelineAt()
 
 		// extract
-		pipeline, ok := pipelines[key]
+		pipeline, ok := pipelines[pipelineAt]
 		if !ok {
 			continue
 		}
@@ -331,7 +331,7 @@ func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.P
 
 		// reassign
 		pipeline.Statuses[ps.Workflow] = statuses
-		pipelines[key] = pipeline
+		pipelines[pipelineAt] = pipeline
 	}
 
 	var all []models.Pipeline

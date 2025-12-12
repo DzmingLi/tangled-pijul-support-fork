@@ -1,11 +1,13 @@
 package models
 
 import (
+	"fmt"
 	"slices"
 	"time"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/go-git/go-git/v5/plumbing"
+	"tangled.org/core/api/tangled"
 	spindle "tangled.org/core/spindle/models"
 	"tangled.org/core/workflow"
 )
@@ -23,6 +25,10 @@ type Pipeline struct {
 	// populate when querying for reverse mappings
 	Trigger  *Trigger
 	Statuses map[string]WorkflowStatus
+}
+
+func (p *Pipeline) AtUri() syntax.ATURI {
+	return syntax.ATURI(fmt.Sprintf("at://did:web:%s/%s/%s", p.Knot, tangled.PipelineNSID, p.Rkey))
 }
 
 type WorkflowStatus struct {
@@ -127,4 +133,8 @@ type PipelineStatus struct {
 	Status       spindle.StatusKind
 	Error        *string
 	ExitCode     int
+}
+
+func (ps *PipelineStatus) PipelineAt() syntax.ATURI {
+	return syntax.ATURI(fmt.Sprintf("at://did:web:%s/%s/%s", ps.PipelineKnot, tangled.PipelineNSID, ps.PipelineRkey))
 }
