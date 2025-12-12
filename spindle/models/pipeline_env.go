@@ -20,7 +20,7 @@ func PipelineEnvVars(tr *tangled.Pipeline_TriggerMetadata, pipelineId PipelineId
 	// Standard CI environment variable
 	env["CI"] = "true"
 
-	env["TANGLED_PIPELINE_ID"] = pipelineId.Rkey
+	env["TANGLED_PIPELINE_ID"] = pipelineId.AtUri().String()
 
 	// Repo info
 	if tr.Repo != nil {
