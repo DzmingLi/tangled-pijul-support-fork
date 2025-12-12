@@ -18,7 +18,7 @@ type Event struct {
 	EventJson string `json:"event"`
 }
 
-func (d *DB) InsertEvent(event Event, notifier *notifier.Notifier) error {
+func (d *DB) insertEvent(event Event, notifier *notifier.Notifier) error {
 	_, err := d.Exec(
 		`insert into events (rkey, nsid, event, created) values (?, ?, ?, ?)`,
 		event.Rkey,
@@ -70,22 +70,6 @@ func (d *DB) GetEvents(cursor int64) ([]Event, error) {
 	return evts, nil
 }
 
-func (d *DB) CreateStatusEvent(rkey string, s tangled.PipelineStatus, n *notifier.Notifier) error {
-	eventJson, err := json.Marshal(s)
-	if err != nil {
-		return err
-	}
-
-	event := Event{
-		Rkey:      rkey,
-		Nsid:      tangled.PipelineStatusNSID,
-		Created:   time.Now().UnixNano(),
-		EventJson: string(eventJson),
-	}
-
-	return d.InsertEvent(event, n)
-}
-
 func (d *DB) createStatusEvent(
 	workflowId models.WorkflowId,
 	statusKind models.StatusKind,
@@ -116,7 +100,7 @@ func (d *DB) createStatusEvent(
 		EventJson: string(eventJson),
 	}
 
-	return d.InsertEvent(event, n)
+	return d.insertEvent(event, n)
 
 }
 

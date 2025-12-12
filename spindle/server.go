@@ -320,7 +320,7 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 			tpl.TriggerMetadata.Repo.Repo,
 		)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get repo: %w", err)
 		}
 
 		pipelineId := models.PipelineId{
@@ -341,7 +341,7 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 						Name:       w.Name,
 					}, fmt.Sprintf("unknown engine %#v", w.Engine), -1, s.n)
 					if err != nil {
-						return err
+						return fmt.Errorf("db.StatusFailed: %w", err)
 					}
 
 					continue
@@ -355,7 +355,7 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 
 				ewf, err := s.engs[w.Engine].InitWorkflow(*w, tpl)
 				if err != nil {
-					return err
+					return fmt.Errorf("init workflow: %w", err)
 				}
 
 				// inject TANGLED_* env vars after InitWorkflow
@@ -372,7 +372,7 @@ func (s *Spindle) processPipeline(ctx context.Context, src eventconsumer.Source,
 					Name:       w.Name,
 				}, s.n)
 				if err != nil {
-					return err
+					return fmt.Errorf("db.StatusPending: %w", err)
 				}
 			}
 		}

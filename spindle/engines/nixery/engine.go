@@ -179,7 +179,10 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		return err
 	}
 	e.registerCleanup(wid, func(ctx context.Context) error {
-		return e.docker.NetworkRemove(ctx, networkName(wid))
+		if err := e.docker.NetworkRemove(ctx, networkName(wid)); err != nil {
+			return fmt.Errorf("removing network: %w", err)
+		}
+		return nil
 	})
 
 	addl := wf.Data.(addlFields)
@@ -229,20 +232,22 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		return fmt.Errorf("creating container: %w", err)
 	}
 	e.registerCleanup(wid, func(ctx context.Context) error {
-		err = e.docker.ContainerStop(ctx, resp.ID, container.StopOptions{})
-		if err != nil {
-			return err
+		if err := e.docker.ContainerStop(ctx, resp.ID, container.StopOptions{}); err != nil {
+			return fmt.Errorf("stopping container: %w", err)
 		}
 
-		return e.docker.ContainerRemove(ctx, resp.ID, container.RemoveOptions{
+		err := e.docker.ContainerRemove(ctx, resp.ID, container.RemoveOptions{
 			RemoveVolumes: true,
 			RemoveLinks:   false,
 			Force:         false,
 		})
+		if err != nil {
+			return fmt.Errorf("removing container: %w", err)
+		}
+		return nil
 	})
 
-	err = e.docker.ContainerStart(ctx, resp.ID, container.StartOptions{})
-	if err != nil {
+	if err := e.docker.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("starting container: %w", err)
 	}
 
@@ -394,12 +399,7 @@ func (e *Engine) tailStep(ctx context.Context, wfLogger *models.WorkflowLogger, 
 }
 
 func (e *Engine) DestroyWorkflow(ctx context.Context, wid models.WorkflowId) error {
-	e.cleanupMu.Lock()
-	key := wid.String()
-
-	fns := e.cleanup[key]
-	delete(e.cleanup, key)
-	e.cleanupMu.Unlock()
+	fns := e.drainCleanups(wid)
 
 	for _, fn := range fns {
 		if err := fn(ctx); err != nil {
@@ -415,6 +415,17 @@ func (e *Engine) registerCleanup(wid models.WorkflowId, fn cleanupFunc) {
 
 	key := wid.String()
 	e.cleanup[key] = append(e.cleanup[key], fn)
+}
+
+func (e *Engine) drainCleanups(wid models.WorkflowId) []cleanupFunc {
+	e.cleanupMu.Lock()
+	key := wid.String()
+
+	fns := e.cleanup[key]
+	delete(e.cleanup, key)
+	e.cleanupMu.Unlock()
+
+	return fns
 }
 
 func networkName(wid models.WorkflowId) string {
