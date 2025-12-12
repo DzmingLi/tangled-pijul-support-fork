@@ -18,6 +18,8 @@ func init() {
 // RECORDTYPE: ActorProfile
 type ActorProfile struct {
 	LexiconTypeID string `json:"$type,const=sh.tangled.actor.profile" cborgen:"$type,const=sh.tangled.actor.profile"`
+	// avatar: Small image to be displayed next to posts from account. AKA, 'profile picture'
+	Avatar *util.LexBlob `json:"avatar,omitempty" cborgen:"avatar,omitempty"`
 	// bluesky: Include link to this account on Bluesky.
 	Bluesky bool `json:"bluesky" cborgen:"bluesky"`
 	// description: Free-form profile description text.

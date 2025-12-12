@@ -8,10 +8,14 @@
       "key": "literal:self",
       "record": {
         "type": "object",
-        "required": [
-          "bluesky"
-        ],
+        "required": ["bluesky"],
         "properties": {
+          "avatar": {
+            "type": "blob",
+            "description": "Small image to be displayed next to posts from account. AKA, 'profile picture'",
+            "accept": ["image/png", "image/jpeg"],
+            "maxSize": 1000000
+          },
           "description": {
             "type": "string",
             "description": "Free-form profile description text.",

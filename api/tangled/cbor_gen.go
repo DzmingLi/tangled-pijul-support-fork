@@ -26,7 +26,11 @@ func (t *ActorProfile) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 8
+	fieldCount := 9
+
+	if t.Avatar == nil {
+		fieldCount--
+	}
 
 	if t.Description == nil {
 		fieldCount--
@@ -144,6 +148,25 @@ func (t *ActorProfile) MarshalCBOR(w io.Writer) error {
 				return err
 			}
 
+		}
+	}
+
+	// t.Avatar (util.LexBlob) (struct)
+	if t.Avatar != nil {
+
+		if len("avatar") > 1000000 {
+			return xerrors.Errorf("Value in field \"avatar\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("avatar"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("avatar")); err != nil {
+			return err
+		}
+
+		if err := t.Avatar.MarshalCBOR(cw); err != nil {
+			return err
 		}
 	}
 
@@ -428,6 +451,26 @@ func (t *ActorProfile) UnmarshalCBOR(r io.Reader) (err error) {
 					}
 
 				}
+			}
+			// t.Avatar (util.LexBlob) (struct)
+		case "avatar":
+
+			{
+
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+					t.Avatar = new(util.LexBlob)
+					if err := t.Avatar.UnmarshalCBOR(cr); err != nil {
+						return xerrors.Errorf("unmarshaling t.Avatar pointer: %w", err)
+					}
+				}
+
 			}
 			// t.Bluesky (bool) (bool)
 		case "bluesky":
