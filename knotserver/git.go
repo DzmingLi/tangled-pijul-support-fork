@@ -56,6 +56,53 @@ func (h *Knot) InfoRefs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Knot) UploadArchive(w http.ResponseWriter, r *http.Request) {
+	did := chi.URLParam(r, "did")
+	name := chi.URLParam(r, "name")
+	repo, err := securejoin.SecureJoin(h.c.Repo.ScanPath, filepath.Join(did, name))
+	if err != nil {
+		gitError(w, err.Error(), http.StatusInternalServerError)
+		h.l.Error("git: failed to secure join repo path", "handler", "UploadPack", "error", err)
+		return
+	}
+
+	const expectedContentType = "application/x-git-upload-archive-request"
+	contentType := r.Header.Get("Content-Type")
+	if contentType != expectedContentType {
+		gitError(w, fmt.Sprintf("Expected Content-Type: '%s', but received '%s'.", expectedContentType, contentType), http.StatusUnsupportedMediaType)
+	}
+
+	var bodyReader io.ReadCloser = r.Body
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		gzipReader, err := gzip.NewReader(r.Body)
+		if err != nil {
+			gitError(w, err.Error(), http.StatusInternalServerError)
+			h.l.Error("git: failed to create gzip reader", "handler", "UploadArchive", "error", err)
+			return
+		}
+		defer gzipReader.Close()
+		bodyReader = gzipReader
+	}
+
+	w.Header().Set("Content-Type", "application/x-git-upload-archive-result")
+
+	h.l.Info("git: executing git-upload-archive", "handler", "UploadArchive", "repo", repo)
+
+	cmd := service.ServiceCommand{
+		GitProtocol: r.Header.Get("Git-Protocol"),
+		Dir:         repo,
+		Stdout:      w,
+		Stdin:       bodyReader,
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	if err := cmd.UploadArchive(); err != nil {
+		h.l.Error("git: failed to execute git-upload-pack", "handler", "UploadPack", "error", err)
+		return
+	}
+}
+
 func (h *Knot) UploadPack(w http.ResponseWriter, r *http.Request) {
 	did := chi.URLParam(r, "did")
 	name := chi.URLParam(r, "name")

@@ -95,6 +95,19 @@ func (c *ServiceCommand) InfoRefs() error {
 	return c.RunService(cmd)
 }
 
+func (c *ServiceCommand) UploadArchive() error {
+	cmd := exec.Command("git", []string{
+		"upload-archive",
+		".",
+	}...)
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_PROTOCOL=%s", c.GitProtocol))
+	cmd.Dir = c.Dir
+
+	return c.RunService(cmd)
+}
+
 func (c *ServiceCommand) UploadPack() error {
 	cmd := exec.Command("git", []string{
 		"-c", "uploadpack.allowFilter=true",

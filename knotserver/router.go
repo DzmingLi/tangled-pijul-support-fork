@@ -82,6 +82,7 @@ func (h *Knot) Router() http.Handler {
 		r.Route("/{name}", func(r chi.Router) {
 			// routes for git operations
 			r.Get("/info/refs", h.InfoRefs)
+			r.Post("/git-upload-archive", h.UploadArchive)
 			r.Post("/git-upload-pack", h.UploadPack)
 			r.Post("/git-receive-pack", h.ReceivePack)
 		})
