@@ -101,6 +101,7 @@ func (s *State) UserRouter(mw *middleware.Middleware) http.Handler {
 
 			// These routes get proxied to the knot
 			r.Get("/info/refs", s.InfoRefs)
+			r.Post("/git-upload-archive", s.UploadArchive)
 			r.Post("/git-upload-pack", s.UploadPack)
 			r.Post("/git-receive-pack", s.ReceivePack)
 

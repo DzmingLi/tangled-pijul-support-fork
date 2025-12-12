@@ -25,6 +25,23 @@ func (s *State) InfoRefs(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (s *State) UploadArchive(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("resolvedId").(identity.Identity)
+	if !ok {
+		http.Error(w, "failed to resolve user", http.StatusInternalServerError)
+		return
+	}
+	repo := r.Context().Value("repo").(*models.Repo)
+
+	scheme := "https"
+	if s.config.Core.Dev {
+		scheme = "http"
+	}
+
+	targetURL := fmt.Sprintf("%s://%s/%s/%s/git-upload-archive?%s", scheme, repo.Knot, user.DID, repo.Name, r.URL.RawQuery)
+	s.proxyRequest(w, r, targetURL)
+}
+
 func (s *State) UploadPack(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value("resolvedId").(identity.Identity)
 	if !ok {
