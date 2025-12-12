@@ -285,6 +285,11 @@ func (i *Ingester) ingestProfile(e *jmodels.Event) error {
 			return err
 		}
 
+		avatar := ""
+		if record.Avatar != nil {
+			avatar = record.Avatar.Ref.String()
+		}
+
 		description := ""
 		if record.Description != nil {
 			description = *record.Description
@@ -325,6 +330,7 @@ func (i *Ingester) ingestProfile(e *jmodels.Event) error {
 
 		profile := models.Profile{
 			Did:            did,
+			Avatar:         avatar,
 			Description:    description,
 			IncludeBluesky: includeBluesky,
 			Location:       location,
