@@ -384,6 +384,28 @@ func (p *Pages) funcMap() template.FuncMap {
 		"fullAvatar": func(handle string) string {
 			return p.AvatarUrl(handle, "")
 		},
+		"placeholderAvatar": func(size string) template.HTML {
+			sizeClass := "size-6"
+			iconSize := "size-4"
+			if size == "tiny" {
+				sizeClass = "size-6"
+				iconSize = "size-4"
+			} else if size == "small" {
+				sizeClass = "size-8"
+				iconSize = "size-5"
+			} else {
+				sizeClass = "size-12"
+				iconSize = "size-8"
+			}
+			icon, _ := p.icon("user-round", []string{iconSize, "text-gray-400", "dark:text-gray-500"})
+			return template.HTML(fmt.Sprintf(`<div class="%s rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">%s</div>`, sizeClass, icon))
+		},
+		"profileAvatarUrl": func(profile *models.Profile, size string) string {
+			if profile != nil {
+				return p.AvatarUrl(profile.Did, size)
+			}
+			return ""
+		},
 		"langColor": enry.GetColor,
 		"reverse": func(s any) any {
 			if s == nil {

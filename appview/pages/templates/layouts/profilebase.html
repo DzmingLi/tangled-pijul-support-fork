@@ -2,7 +2,7 @@
 
 {{ define "extrameta" }}
     {{ $handle := resolve .Card.UserDid }}
-    {{ $avatarUrl := fullAvatar $handle }}
+    {{ $avatarUrl := profileAvatarUrl .Card.Profile "" }}
     <meta property="og:title" content="{{ $handle }}" />
     <meta property="og:type" content="profile" />
     <meta property="og:url" content="https://tangled.org/{{ $handle }}?tab={{ .Active }}" />

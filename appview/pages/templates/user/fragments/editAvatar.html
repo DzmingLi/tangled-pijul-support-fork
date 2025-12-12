@@ -1,0 +1,44 @@
+{{ define "user/fragments/editAvatar" }}
+<form
+  hx-post="/profile/avatar"
+  hx-encoding="multipart/form-data"
+  hx-indicator="#spinner"
+  hx-swap="none"
+  class="flex flex-col gap-2">
+  <label for="avatar-file" class="uppercase p-0">
+    Upload avatar
+  </label>
+  <p class="text-sm text-gray-500 dark:text-gray-400">Select an image (PNG or JPEG, max 1MB)</p>
+  <input
+    type="file"
+    id="avatar-file"
+    name="avatar"
+    accept="image/png,image/jpeg"
+    required
+    class="block w-full text-sm text-gray-500 dark:text-gray-400
+      file:mr-4 file:py-2 file:px-4
+      file:rounded file:border-0
+      file:text-sm file:font-semibold
+      file:bg-gray-100 file:text-gray-700
+      dark:file:bg-gray-700 dark:file:text-gray-300
+      hover:file:bg-gray-200 dark:hover:file:bg-gray-600" />
+  <div id="avatar-error" class="text-red-500 dark:text-red-400 text-sm min-h-5"></div>
+  <div class="flex gap-2 pt-2">
+    <button
+      id="cancel-avatar-btn"
+      type="button"
+      popovertarget="avatar-upload-modal"
+      popovertargetaction="hide"
+      class="btn w-1/2 flex items-center gap-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+      {{ i "x" "size-4" }}
+      cancel
+    </button>
+    <button type="submit" class="btn w-1/2 flex items-center">
+      <span class="inline-flex gap-2 items-center">{{ i "upload" "size-4" }} upload</span>
+      <span id="spinner" class="group">
+        {{ i "loader-circle" "ml-2 w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
+      </span>
+    </button>
+  </div>
+</form>
+{{ end }}

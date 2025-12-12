@@ -3,8 +3,23 @@
 <div class="grid grid-cols-3 md:grid-cols-1 gap-1 items-center">
   <div id="avatar" class="col-span-1 flex justify-center items-center">
     <div class="w-3/4 aspect-square relative">
-      <img class="absolute inset-0 w-full h-full object-cover rounded-full p-2" src="{{ fullAvatar .UserDid }}" />
+      <img class="absolute inset-0 w-full h-full object-cover rounded-full p-2" src="{{ profileAvatarUrl .Profile "" }}" />
+      {{ if eq .FollowStatus.String "IsSelf" }}
+        <button
+          class="absolute bottom-2 right-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          popovertarget="avatar-upload-modal"
+          popovertargetaction="toggle"
+          title="Upload avatar">
+          {{ i "camera" "w-4 h-4" }}
+        </button>
+      {{ end }}
     </div>
+  </div>
+  <div
+    id="avatar-upload-modal"
+    popover
+    class="bg-white w-full md:w-96 dark:bg-gray-800 p-4 rounded border border-gray-200 dark:border-gray-700 drop-shadow dark:text-white backdrop:bg-gray-400/50 dark:backdrop:bg-gray-800/50">
+    {{ template "user/fragments/editAvatar" . }}
   </div>
   <div class="col-span-2">
     <div class="flex items-center flex-row flex-nowrap gap-2">
@@ -13,9 +28,9 @@
         {{ $userIdent }}
       </p>
       {{ with .Profile }}
-      {{ if .Pronouns }}
-      <p class="text-gray-500 dark:text-gray-400">{{ .Pronouns }}</p>
-      {{ end }}
+        {{ if .Pronouns }}
+          <p class="text-gray-500 dark:text-gray-400">{{ .Pronouns }}</p>
+        {{ end }}
       {{ end }}
     </div>
 
@@ -29,7 +44,7 @@
       {{ with .Profile }}
 
       {{ if .Description }}
-      <p class="text-base pb-4 md:pb-2">{{ .Description }}</p>
+        <p class="text-base pb-4 md:pb-2">{{ .Description }}</p>
       {{ end }}
 
       <div class="hidden md:block">
@@ -45,28 +60,27 @@
         {{ end }}
         {{ if .IncludeBluesky }}
         <div class="flex items-center gap-2">
-          <span class="flex-shrink-0">{{ template "user/fragments/bluesky" "w-4 h-4 text-black dark:text-white"
-            }}</span>
+          <span class="flex-shrink-0">{{ template "user/fragments/bluesky" "w-4 h-4 text-black dark:text-white" }}</span>
           <a id="bluesky-link" href="https://bsky.app/profile/{{ $.UserDid }}">{{ $userIdent }}</a>
         </div>
         {{ end }}
         {{ range $link := .Links }}
-        {{ if $link }}
-        <div class="flex items-center gap-2">
-          <span class="flex-shrink-0">{{ i "link" "size-4" }}</span>
-          <a href="{{ $link }}">{{ $link }}</a>
-        </div>
-        {{ end }}
+          {{ if $link }}
+          <div class="flex items-center gap-2">
+            <span class="flex-shrink-0">{{ i "link" "size-4" }}</span>
+            <a href="{{ $link }}">{{ $link }}</a>
+          </div>
+          {{ end }}
         {{ end }}
         {{ if not $profile.IsStatsEmpty }}
         <div class="flex items-center justify-evenly gap-2 py-2">
           {{ range $stat := .Stats }}
-          {{ if $stat.Kind }}
-          <div class="flex flex-col items-center gap-2">
-            <span class="text-xl font-bold">{{ $stat.Value }}</span>
-            <span>{{ $stat.Kind.String }}</span>
-          </div>
-          {{ end }}
+            {{ if $stat.Kind }}
+              <div class="flex flex-col items-center gap-2">
+                <span class="text-xl font-bold">{{ $stat.Value }}</span>
+                <span>{{ $stat.Kind.String }}</span>
+              </div>
+            {{ end }}
           {{ end }}
         </div>
         {{ end }}
@@ -75,10 +89,13 @@
 
       <div class="flex mt-2 items-center gap-2">
         {{ if ne .FollowStatus.String "IsSelf" }}
-        {{ template "user/fragments/follow" . }}
+          {{ template "user/fragments/follow" . }}
         {{ else }}
-        <button id="editBtn" class="btn w-full flex items-center gap-2 group" hx-target="#profile-bio"
-          hx-get="/profile/edit-bio" hx-swap="innerHTML">
+        <button id="editBtn"
+          class="btn w-full flex items-center gap-2 group"
+          hx-target="#profile-bio"
+          hx-get="/profile/edit-bio"
+          hx-swap="innerHTML">
           {{ i "pencil" "w-4 h-4" }}
           edit
           {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
