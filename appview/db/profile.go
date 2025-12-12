@@ -158,13 +158,15 @@ func UpsertProfile(tx *sql.Tx, profile *models.Profile) error {
 	_, err = tx.Exec(
 		`insert or replace into profile (
 			did,
+			avatar,
 			description,
 			include_bluesky,
 			location,
 			pronouns
 		)
-		values (?, ?, ?, ?, ?)`,
+		values (?, ?, ?, ?, ?, ?)`,
 		profile.Did,
+		profile.Avatar,
 		profile.Description,
 		includeBskyValue,
 		profile.Location,
@@ -347,15 +349,16 @@ func GetProfiles(e Execer, filters ...orm.Filter) (map[string]*models.Profile, e
 func GetProfile(e Execer, did string) (*models.Profile, error) {
 	var profile models.Profile
 	var pronouns sql.Null[string]
+	var avatar sql.Null[string]
 
 	profile.Did = did
 
 	includeBluesky := 0
 
 	err := e.QueryRow(
-		`select description, include_bluesky, location, pronouns from profile where did = ?`,
+		`select avatar, description, include_bluesky, location, pronouns from profile where did = ?`,
 		did,
-	).Scan(&profile.Description, &includeBluesky, &profile.Location, &pronouns)
+	).Scan(&avatar, &profile.Description, &includeBluesky, &profile.Location, &pronouns)
 	if err == sql.ErrNoRows {
 		profile := models.Profile{}
 		profile.Did = did
@@ -372,6 +375,10 @@ func GetProfile(e Execer, did string) (*models.Profile, error) {
 
 	if pronouns.Valid {
 		profile.Pronouns = pronouns.V
+	}
+
+	if avatar.Valid {
+		profile.Avatar = avatar.V
 	}
 
 	rows, err := e.Query(`select link from profile_links where did = ?`, did)

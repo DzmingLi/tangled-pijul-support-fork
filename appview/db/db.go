@@ -260,6 +260,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 			did text not null,
 
 			-- data
+			avatar text,
 			description text not null,
 			include_bluesky integer not null default 0,
 			location text,
@@ -1078,7 +1079,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		// transfer data, constructing pull_at from pulls table
 		_, err = tx.Exec(`
 		insert into pull_submissions_new (id, pull_at, round_number, patch, created)
-		select 
+		select
 			ps.id,
 			'at://' || p.owner_did || '/sh.tangled.repo.pull/' || p.rkey,
 			ps.round_number,
@@ -1169,6 +1170,13 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 
 			create index if not exists idx_stars_created on stars(created);
 			create index if not exists idx_stars_subject_at_created on stars(subject_at, created);
+		`)
+		return err
+	})
+
+	orm.RunMigration(conn, logger, "add-avatar-to-profile", func(tx *sql.Tx) error {
+		_, err := tx.Exec(`
+			alter table profile add column avatar text;
 		`)
 		return err
 	})

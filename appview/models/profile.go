@@ -13,6 +13,7 @@ type Profile struct {
 	Did string
 
 	// data
+	Avatar         string // CID of the avatar blob
 	Description    string
 	IncludeBluesky bool
 	Location       string
