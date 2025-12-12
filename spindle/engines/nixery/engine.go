@@ -294,7 +294,7 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 		workflowEnvs.AddEnv(s.Key, s.Value)
 	}
 
-	step := w.Steps[idx].(Step)
+	step := w.Steps[idx]
 
 	select {
 	case <-ctx.Done():
@@ -303,8 +303,10 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 	}
 
 	envs := append(EnvVars(nil), workflowEnvs...)
-	for k, v := range step.environment {
-		envs.AddEnv(k, v)
+	if nixStep, ok := step.(Step); ok {
+		for k, v := range nixStep.environment {
+			envs.AddEnv(k, v)
+		}
 	}
 	envs.AddEnv("HOME", homeDir)
 
