@@ -110,7 +110,6 @@ func (c *ServiceCommand) UploadArchive() error {
 
 func (c *ServiceCommand) UploadPack() error {
 	cmd := exec.Command("git", []string{
-		"-c", "uploadpack.allowFilter=true",
 		"upload-pack",
 		"--stateless-rpc",
 		".",
