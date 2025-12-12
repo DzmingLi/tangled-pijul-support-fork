@@ -286,6 +286,7 @@ func (s *Spindle) XrpcRouter() http.Handler {
 		Config:      s.cfg,
 		Resolver:    s.res,
 		Vault:       s.vault,
+		Notifier:    s.Notifier(),
 		ServiceAuth: serviceAuth,
 	}
 

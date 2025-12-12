@@ -150,6 +150,10 @@ func (d *DB) StatusFailed(workflowId models.WorkflowId, workflowError string, ex
 	return d.createStatusEvent(workflowId, models.StatusKindFailed, &workflowError, &exitCode, n)
 }
 
+func (d *DB) StatusCancelled(workflowId models.WorkflowId, workflowError string, exitCode int64, n *notifier.Notifier) error {
+	return d.createStatusEvent(workflowId, models.StatusKindCancelled, &workflowError, &exitCode, n)
+}
+
 func (d *DB) StatusSuccess(workflowId models.WorkflowId, n *notifier.Notifier) error {
 	return d.createStatusEvent(workflowId, models.StatusKindSuccess, nil, nil, n)
 }

@@ -12,6 +12,20 @@
     {{ block "sidebar" . }} {{ end }}
   </div>
   <div class="col-span-1 md:col-span-3">
+    <!-- TODO(boltless): explictly check for pipeline cancel permission -->
+    {{ if $.RepoInfo.Roles.IsOwner }}
+    <div class="flex justify-between mb-2">
+      <div id="workflow-error" class="text-red-500 dark:text-red-400"></div>
+      <button
+        class="btn"
+        hx-post="/{{ $.RepoInfo.FullName }}/pipelines/{{ .Pipeline.Id }}/workflow/{{ .Workflow }}/cancel"
+        hx-swap="none"
+        {{ if (index .Pipeline.Statuses .Workflow).Latest.Status.IsFinish -}}
+          disabled
+        {{- end }}
+      >Cancel</button>
+    </div>
+    {{ end }}
     {{ block "logs" . }} {{ end }}
   </div>
 </section>

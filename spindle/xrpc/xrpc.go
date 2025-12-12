@@ -10,6 +10,7 @@ import (
 
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/notifier"
 	"tangled.org/core/rbac"
 	"tangled.org/core/spindle/config"
 	"tangled.org/core/spindle/db"
@@ -29,6 +30,7 @@ type Xrpc struct {
 	Config      *config.Config
 	Resolver    *idresolver.Resolver
 	Vault       secrets.Manager
+	Notifier    *notifier.Notifier
 	ServiceAuth *serviceauth.ServiceAuth
 }
 
@@ -41,6 +43,7 @@ func (x *Xrpc) Router() http.Handler {
 		r.Post("/"+tangled.RepoAddSecretNSID, x.AddSecret)
 		r.Post("/"+tangled.RepoRemoveSecretNSID, x.RemoveSecret)
 		r.Get("/"+tangled.RepoListSecretsNSID, x.ListSecrets)
+		r.Post("/"+tangled.PipelineCancelPipelineNSID, x.CancelPipeline)
 	})
 
 	// service query endpoints (no auth required)

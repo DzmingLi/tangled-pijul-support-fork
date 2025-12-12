@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/config"
 	"tangled.org/core/appview/db"
+	"tangled.org/core/appview/middleware"
+	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/reporesolver"
@@ -36,11 +40,14 @@ type Pipelines struct {
 	logger        *slog.Logger
 }
 
-func (p *Pipelines) Router() http.Handler {
+func (p *Pipelines) Router(mw *middleware.Middleware) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", p.Index)
 	r.Get("/{pipeline}/workflow/{workflow}", p.Workflow)
 	r.Get("/{pipeline}/workflow/{workflow}/logs", p.Logs)
+	r.
+		With(mw.RepoPermissionMiddleware("repo:owner")).
+		Post("/{pipeline}/workflow/{workflow}/cancel", p.Cancel)
 
 	return r
 }
@@ -314,6 +321,83 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func (p *Pipelines) Cancel(w http.ResponseWriter, r *http.Request) {
+	l := p.logger.With("handler", "Cancel")
+
+	var (
+		pipelineId = chi.URLParam(r, "pipeline")
+		workflow   = chi.URLParam(r, "workflow")
+	)
+	if pipelineId == "" || workflow == "" {
+		http.Error(w, "missing pipeline ID or workflow", http.StatusBadRequest)
+		return
+	}
+
+	f, err := p.repoResolver.Resolve(r)
+	if err != nil {
+		l.Error("failed to get repo and knot", "err", err)
+		http.Error(w, "bad repo/knot", http.StatusBadRequest)
+		return
+	}
+
+	pipeline, err := func() (models.Pipeline, error) {
+		ps, err := db.GetPipelineStatuses(
+			p.db,
+			1,
+			orm.FilterEq("repo_owner", f.Did),
+			orm.FilterEq("repo_name", f.Name),
+			orm.FilterEq("knot", f.Knot),
+			orm.FilterEq("id", pipelineId),
+		)
+		if err != nil {
+			return models.Pipeline{}, err
+		}
+		if len(ps) != 1 {
+			return models.Pipeline{}, fmt.Errorf("wrong pipeline count %d", len(ps))
+		}
+		return ps[0], nil
+	}()
+	if err != nil {
+		l.Error("pipeline query failed", "err", err)
+		http.Error(w, "pipeline not found", http.StatusNotFound)
+	}
+	var (
+		spindle = f.Spindle
+		knot    = f.Knot
+		rkey    = pipeline.Rkey
+	)
+
+	if spindle == "" || knot == "" || rkey == "" {
+		http.Error(w, "invalid repo info", http.StatusBadRequest)
+		return
+	}
+
+	spindleClient, err := p.oauth.ServiceClient(
+		r,
+		oauth.WithService(f.Spindle),
+		oauth.WithLxm(tangled.PipelineCancelPipelineNSID),
+		oauth.WithDev(p.config.Core.Dev),
+		oauth.WithTimeout(time.Second*30), // workflow cleanup usually takes time
+	)
+
+	err = tangled.PipelineCancelPipeline(
+		r.Context(),
+		spindleClient,
+		&tangled.PipelineCancelPipeline_Input{
+			Repo:     string(f.RepoAt()),
+			Pipeline: pipeline.AtUri().String(),
+			Workflow: workflow,
+		},
+	)
+	errorId := "workflow-error"
+	if err != nil {
+		l.Error("failed to cancel workflow", "err", err)
+		p.pages.Notice(w, errorId, "Failed to cancel workflow")
+		return
+	}
+	l.Debug("canceled pipeline", "uri", pipeline.AtUri())
 }
 
 // either a message or an error

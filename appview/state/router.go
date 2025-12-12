@@ -94,7 +94,7 @@ func (s *State) UserRouter(mw *middleware.Middleware) http.Handler {
 			r.Mount("/", s.RepoRouter(mw))
 			r.Mount("/issues", s.IssuesRouter(mw))
 			r.Mount("/pulls", s.PullsRouter(mw))
-			r.Mount("/pipelines", s.PipelinesRouter())
+			r.Mount("/pipelines", s.PipelinesRouter(mw))
 			r.Mount("/labels", s.LabelsRouter())
 
 			// These routes get proxied to the knot
@@ -313,7 +313,7 @@ func (s *State) RepoRouter(mw *middleware.Middleware) http.Handler {
 	return repo.Router(mw)
 }
 
-func (s *State) PipelinesRouter() http.Handler {
+func (s *State) PipelinesRouter(mw *middleware.Middleware) http.Handler {
 	pipes := pipelines.New(
 		s.oauth,
 		s.repoResolver,
@@ -325,7 +325,7 @@ func (s *State) PipelinesRouter() http.Handler {
 		s.enforcer,
 		log.SubLogger(s.logger, "pipelines"),
 	)
-	return pipes.Router()
+	return pipes.Router(mw)
 }
 
 func (s *State) LabelsRouter() http.Handler {
