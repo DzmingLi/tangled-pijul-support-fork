@@ -12,9 +12,10 @@ import (
 type WorkflowLogger struct {
 	file    *os.File
 	encoder *json.Encoder
+	mask  *SecretMask
 }
 
-func NewWorkflowLogger(baseDir string, wid WorkflowId) (*WorkflowLogger, error) {
+func NewWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*WorkflowLogger, error) {
 	path := LogFilePath(baseDir, wid)
 
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -25,6 +26,7 @@ func NewWorkflowLogger(baseDir string, wid WorkflowId) (*WorkflowLogger, error) 
 	return &WorkflowLogger{
 		file:    file,
 		encoder: json.NewEncoder(file),
+		mask:  NewSecretMask(secretValues),
 	}, nil
 }
 
@@ -62,6 +64,9 @@ type dataWriter struct {
 
 func (w *dataWriter) Write(p []byte) (int, error) {
 	line := strings.TrimRight(string(p), "\r\n")
+	if w.logger.mask != nil {
+		line = w.logger.mask.Mask(line)
+	}
 	entry := NewDataLogLine(w.idx, line, w.stream)
 	if err := w.logger.encoder.Encode(entry); err != nil {
 		return 0, err

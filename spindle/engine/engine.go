@@ -70,7 +70,11 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 				}
 				defer eng.DestroyWorkflow(ctx, wid)
 
-				wfLogger, err := models.NewWorkflowLogger(cfg.Server.LogDir, wid)
+				secretValues := make([]string, len(allSecrets))
+				for i, s := range allSecrets {
+					secretValues[i] = s.Value
+				}
+				wfLogger, err := models.NewWorkflowLogger(cfg.Server.LogDir, wid, secretValues)
 				if err != nil {
 					l.Warn("failed to setup step logger; logs will not be persisted", "error", err)
 					wfLogger = nil
