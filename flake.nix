@@ -80,7 +80,6 @@
           }).buildGoApplication;
         modules = ./nix/gomod2nix.toml;
         sqlite-lib = self.callPackage ./nix/pkgs/sqlite-lib.nix {
-          inherit (pkgs) gcc;
           inherit sqlite-lib-src;
         };
         lexgen = self.callPackage ./nix/pkgs/lexgen.nix {inherit indigo;};
