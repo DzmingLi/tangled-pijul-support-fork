@@ -12,7 +12,7 @@ import (
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/idresolver"
 	"tangled.org/core/orm"
-	"tangled.org/oppi.li/sets"
+	"tangled.org/core/sets"
 )
 
 const (
