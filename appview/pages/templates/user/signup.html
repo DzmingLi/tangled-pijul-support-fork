@@ -43,20 +43,20 @@
                     page to complete your registration.
                     </span>
                     <div class="w-full mt-4 text-center">
-                      <div class="cf-turnstile" data-sitekey="{{ .CloudflareSiteKey }}"></div>
+                      <div class="cf-turnstile" data-sitekey="{{ .CloudflareSiteKey }}" data-size="flexible"></div>
                     </div>
                     <button class="btn text-base w-full my-2 mt-6" type="submit" id="signup-button" tabindex="7" >
                       <span>join now</span>
                     </button>
-                </form>
-                <p class="text-sm text-gray-500">
-                  Already have an AT Protocol account? <a href="/login" class="underline">Login to Tangled</a>.
-                </p>
+                    <p class="text-sm text-gray-500">
+                      Already have an AT Protocol account? <a href="/login" class="underline">Login to Tangled</a>.
+                    </p>
 
-                <p id="signup-msg" class="error w-full"></p>
-                <p class="text-sm text-gray-500 pt-4">
-                  By signing up, you agree to our <a href="/terms" class="underline">Terms of Service</a> and <a href="/privacy" class="underline">Privacy Policy</a>.
-                </p>
+                    <p id="signup-msg" class="error w-full"></p>
+                    <p class="text-sm text-gray-500 pt-4">
+                      By signing up, you agree to our <a href="/terms" class="underline">Terms of Service</a> and <a href="/privacy" class="underline">Privacy Policy</a>.
+                    </p>
+                </form>
             </main>
         </body>
     </html>
