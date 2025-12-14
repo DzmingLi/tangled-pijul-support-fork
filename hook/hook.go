@@ -48,15 +48,15 @@ func Command() *cli.Command {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:   "post-recieve",
-				Usage:  "sends a post-recieve hook to the knot (waits for stdin)",
-				Action: postRecieve,
+				Name:   "post-receive",
+				Usage:  "sends a post-receive hook to the knot (waits for stdin)",
+				Action: postReceive,
 			},
 		},
 	}
 }
 
-func postRecieve(ctx context.Context, cmd *cli.Command) error {
+func postReceive(ctx context.Context, cmd *cli.Command) error {
 	gitDir := cmd.String("git-dir")
 	userDid := cmd.String("user-did")
 	userHandle := cmd.String("user-handle")

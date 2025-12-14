@@ -138,7 +138,7 @@ for ((i=0; i<GIT_PUSH_OPTION_COUNT; i++)); do
     option_var="GIT_PUSH_OPTION_$i"
     push_options+=(-push-option "${!option_var}")
 done
-%s hook -git-dir "$GIT_DIR" -user-did "$GIT_USER_DID" -user-handle "$GIT_USER_HANDLE" -internal-api "%s" "${push_options[@]}" post-recieve
+%s hook -git-dir "$GIT_DIR" -user-did "$GIT_USER_DID" -user-handle "$GIT_USER_HANDLE" -internal-api "%s" "${push_options[@]}" post-receive
 	`, executablePath, config.internalApi)
 
 	return os.WriteFile(hookPath, []byte(hookContent), 0755)
