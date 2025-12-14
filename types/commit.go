@@ -174,13 +174,18 @@ var (
 
 func (commit Commit) CoAuthors() []object.Signature {
 	var coAuthors []object.Signature
-
+	seen := make(map[string]bool)
 	matches := coAuthorRegex.FindAllStringSubmatch(commit.Message, -1)
 
 	for _, match := range matches {
 		if len(match) >= 3 {
 			name := strings.TrimSpace(match[1])
 			email := strings.TrimSpace(match[2])
+
+			if seen[email] {
+				continue
+			}
+			seen[email] = true
 
 			coAuthors = append(coAuthors, object.Signature{
 				Name:  name,
