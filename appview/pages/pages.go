@@ -640,7 +640,7 @@ type StarBtnFragmentParams struct {
 }
 
 func (p *Pages) StarBtnFragment(w io.Writer, params StarBtnFragmentParams) error {
-	return p.executePlain("fragments/starBtn", w, params)
+	return p.executePlain("fragments/starBtn-oob", w, params)
 }
 
 type RepoIndexParams struct {

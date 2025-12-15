@@ -1,0 +1,5 @@
+{{ define "fragments/starBtn-oob" }}
+  <div hx-swap-oob='outerHTML:#starBtn[data-star-subject-at="{{ .SubjectAt }}"]'>
+    {{ template "fragments/starBtn" . }}
+  </div>
+{{ end }}
