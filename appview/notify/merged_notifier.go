@@ -39,7 +39,6 @@ func (m *mergedNotifier) fanout(method string, ctx context.Context, args ...any)
 			v.Call(in)
 		}(n)
 	}
-	wg.Wait()
 }
 
 func (m *mergedNotifier) NewRepo(ctx context.Context, repo *models.Repo) {

@@ -1366,12 +1366,20 @@ func (s *Pulls) createStackedPullRequest(
 			s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
 			return
 		}
+
 	}
 
 	if err = tx.Commit(); err != nil {
 		log.Println("failed to create pull request", err)
 		s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
 		return
+	}
+
+	// notify about each pull
+	//
+	// this is performed after tx.Commit, because it could result in a locked DB otherwise
+	for _, p := range stack {
+		s.notifier.NewPull(r.Context(), p)
 	}
 
 	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, repo)
