@@ -26,6 +26,7 @@ import (
 	"github.com/go-enry/go-enry/v2"
 	"github.com/yuin/goldmark"
 	emoji "github.com/yuin/goldmark-emoji"
+	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages/markup"
@@ -485,21 +486,45 @@ func (p *Pages) resolveDid(did string) string {
 	return identity.Handle.String()
 }
 
-func (p *Pages) AvatarUrl(handle, size string) string {
-	handle = strings.TrimPrefix(handle, "@")
+func (p *Pages) AvatarUrl(actor, size string) string {
+	actor = strings.TrimPrefix(actor, "@")
 
-	handle = p.resolveDid(handle)
+	identity, err := p.resolver.ResolveIdent(context.Background(), actor)
+	var did string
+	if err != nil {
+		did = actor
+	} else {
+		did = identity.DID.String()
+	}
 
 	secret := p.avatar.SharedSecret
 	h := hmac.New(sha256.New, []byte(secret))
-	h.Write([]byte(handle))
+	h.Write([]byte(did))
 	signature := hex.EncodeToString(h.Sum(nil))
 
-	sizeArg := ""
-	if size != "" {
-		sizeArg = fmt.Sprintf("size=%s", size)
+	// Get avatar CID for cache busting
+	profile, err := db.GetProfile(p.db, did)
+	version := ""
+	if err == nil && profile != nil && profile.Avatar != "" {
+		// Use first 8 chars of avatar CID as version
+		if len(profile.Avatar) > 8 {
+			version = profile.Avatar[:8]
+		} else {
+			version = profile.Avatar
+		}
 	}
-	return fmt.Sprintf("%s/%s/%s?%s", p.avatar.Host, signature, handle, sizeArg)
+
+	baseUrl := fmt.Sprintf("%s/%s/%s", p.avatar.Host, signature, did)
+	if size != "" {
+		if version != "" {
+			return fmt.Sprintf("%s?size=%s&v=%s", baseUrl, size, version)
+		}
+		return fmt.Sprintf("%s?size=%s", baseUrl, size)
+	}
+	if version != "" {
+		return fmt.Sprintf("%s?v=%s", baseUrl, version)
+	}
+	return baseUrl
 }
 
 func (p *Pages) icon(name string, classes []string) (template.HTML, error) {

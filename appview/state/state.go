@@ -92,7 +92,7 @@ func Make(ctx context.Context, config *config.Config) (*State, error) {
 		return nil, fmt.Errorf("failed to create posthog client: %w", err)
 	}
 
-	pages := pages.NewPages(config, res, log.SubLogger(logger, "pages"))
+	pages := pages.NewPages(config, res, d, log.SubLogger(logger, "pages"))
 	oauth, err := oauth.New(config, posthog, d, enforcer, res, log.SubLogger(logger, "oauth"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to start oauth handler: %w", err)
