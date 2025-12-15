@@ -186,7 +186,11 @@
       {{ end }}
     {{ end }}
 
-    {{ template "fragments/tinyAvatarList" (dict "all" $all "classes" "size-6") }}
+    {{ if $author }}
+      {{ template "fragments/tinyAvatarList" (dict "all" $all "classes" "size-6") }}
+    {{ else }}
+      {{ placeholderAvatar "tiny" }}
+    {{ end }}
     <a href="{{ if $author }}/{{ $author }}{{ else }}mailto:{{ $commit.Author.Email }}{{ end }}"
        class="no-underline hover:underline">
        {{ if $author }}{{ resolve $author }}{{ else }}{{ $commit.Author.Name }}{{ end }}

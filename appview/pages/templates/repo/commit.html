@@ -100,7 +100,10 @@
   {{ if $did }}
     {{ template "user/fragments/picHandleLink" $did }}
   {{ else }}
-    <a href="mailto:{{ $email }}" class="no-underline hover:underline text-gray-500 dark:text-gray-300">{{ $name }}</a>
+    <span class="flex items-center gap-1">
+      {{ placeholderAvatar "tiny" }}
+      <a href="mailto:{{ $email }}" class="no-underline hover:underline text-gray-500 dark:text-gray-300">{{ $name }}</a>
+    </span>
   {{ end }}
 {{ end }}
 
