@@ -21,9 +21,9 @@
             {{ $state = "open" }}
         {{ end }}
 
-        <span class="inline-flex items-center rounded px-2 py-[5px] {{ $bgColor }} text-sm">
+        <span class="inline-flex items-center rounded px-2 py-[5px] {{ $bgColor }}">
             {{ i $icon "w-3 h-3 mr-1.5 text-white dark:text-white" }}
-            <span class="text-white dark:text-white">{{ $state }}</span>
+            <span class="text-white dark:text-white text-sm">{{ $state }}</span>
         </span>
 
         <span class="ml-1">

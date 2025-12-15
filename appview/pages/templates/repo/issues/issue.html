@@ -58,11 +58,11 @@
       {{ $icon = "circle-dot" }}
   {{ end }}
   <div class="inline-flex items-center gap-2">
-    <div id="state"
-      class="inline-flex items-center rounded px-3 py-1 {{ $bgColor }}">
-      {{ i $icon "w-4 h-4 mr-1.5 text-white" }}
-      <span class="text-white">{{ .Issue.State }}</span>
-    </div>
+    <span class="inline-flex items-center rounded px-2 py-[5px] {{ $bgColor }}">
+        {{ i $icon "w-3 h-3 mr-1.5 text-white dark:text-white" }}
+        <span class="text-white dark:text-white text-sm">{{ .Issue.State }}</span>
+    </span>
+
     <span class="text-gray-500 dark:text-gray-400 text-sm flex flex-wrap items-center gap-1">
       opened by
       {{ template "user/fragments/picHandleLink" .Issue.Did }}
