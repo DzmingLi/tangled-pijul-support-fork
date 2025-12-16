@@ -26,7 +26,6 @@ import (
 	"github.com/go-enry/go-enry/v2"
 	"github.com/yuin/goldmark"
 	emoji "github.com/yuin/goldmark-emoji"
-	"tangled.org/core/appview/filetree"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages/markup"
@@ -335,7 +334,7 @@ func (p *Pages) funcMap() template.FuncMap {
 		},
 		"deref": func(v any) any {
 			val := reflect.ValueOf(v)
-			if val.Kind() == reflect.Ptr && !val.IsNil() {
+			if val.Kind() == reflect.Pointer && !val.IsNil() {
 				return val.Elem().Interface()
 			}
 			return nil
@@ -349,7 +348,6 @@ func (p *Pages) funcMap() template.FuncMap {
 			return template.HTML(data)
 		},
 		"cssContentHash": p.CssContentHash,
-		"fileTree":       filetree.FileTree,
 		"pathEscape": func(s string) string {
 			return url.PathEscape(s)
 		},
@@ -367,13 +365,26 @@ func (p *Pages) funcMap() template.FuncMap {
 			return p.AvatarUrl(handle, "")
 		},
 		"langColor": enry.GetColor,
-		"layoutSide": func() string {
-			return "col-span-1 md:col-span-2 lg:col-span-3"
-		},
-		"layoutCenter": func() string {
-			return "col-span-1 md:col-span-8 lg:col-span-6"
-		},
+		"reverse": func(s any) any {
+			if s == nil {
+				return nil
+			}
 
+			v := reflect.ValueOf(s)
+
+			if v.Kind() != reflect.Slice {
+				return s
+			}
+
+			length := v.Len()
+			reversed := reflect.MakeSlice(v.Type(), length, length)
+
+			for i := range length {
+				reversed.Index(i).Set(v.Index(length - 1 - i))
+			}
+
+			return reversed.Interface()
+		},
 		"normalizeForHtmlId": func(s string) string {
 			normalized := strings.ReplaceAll(s, ":", "_")
 			normalized = strings.ReplaceAll(normalized, ".", "_")
