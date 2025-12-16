@@ -146,7 +146,7 @@ func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
+func (s *Pulls) repoPullHelper(w http.ResponseWriter, r *http.Request, interdiff bool) {
 	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
@@ -166,6 +166,22 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to get pull backlinks", err)
 		s.pages.Notice(w, "pull-error", "Failed to get pull. Try again later.")
 		return
+	}
+
+	roundId := chi.URLParam(r, "round")
+	roundIdInt := pull.LastRoundNumber()
+	if r, err := strconv.Atoi(roundId); err == nil {
+		roundIdInt = r
+	}
+	if roundIdInt >= len(pull.Submissions) {
+		http.Error(w, "bad round id", http.StatusBadRequest)
+		log.Println("failed to parse round id", err)
+		return
+	}
+
+	var diffOpts types.DiffOpts
+	if d := r.URL.Query().Get("diff"); d == "split" {
+		diffOpts.Split = true
 	}
 
 	// can be nil  if this pull is not stacked
@@ -236,14 +252,29 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		defs[l.AtUri().String()] = &l
 	}
 
-	patch := pull.LatestSubmission().CombinedPatch()
-	diff := patchutil.AsNiceDiff(patch, pull.TargetBranch)
-	var diffOpts types.DiffOpts
-	if d := r.URL.Query().Get("diff"); d == "split" {
-		diffOpts.Split = true
+	patch := pull.Submissions[roundIdInt].CombinedPatch()
+	var diff types.DiffRenderer
+	diff = patchutil.AsNiceDiff(patch, pull.TargetBranch)
+
+	if interdiff {
+		currentPatch, err := patchutil.AsDiff(pull.Submissions[roundIdInt].CombinedPatch())
+		if err != nil {
+			log.Println("failed to interdiff; current patch malformed")
+			s.pages.Notice(w, fmt.Sprintf("interdiff-error-%d", roundIdInt), "Failed to calculate interdiff; current patch is invalid.")
+			return
+		}
+
+		previousPatch, err := patchutil.AsDiff(pull.Submissions[roundIdInt-1].CombinedPatch())
+		if err != nil {
+			log.Println("failed to interdiff; previous patch malformed")
+			s.pages.Notice(w, fmt.Sprintf("interdiff-error-%d", roundIdInt), "Failed to calculate interdiff; previous patch is invalid.")
+			return
+		}
+
+		diff = patchutil.Interdiff(previousPatch, currentPatch)
 	}
 
-	log.Println(s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
+	s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
 		LoggedInUser:       user,
 		RepoInfo:           s.repoResolver.GetRepoInfo(r, user),
 		Pull:               pull,
@@ -254,15 +285,21 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		MergeCheck:         mergeCheckResponse,
 		ResubmitCheck:      resubmitResult,
 		Pipelines:          m,
-		Diff:               &diff,
+		Diff:               diff,
 		DiffOpts:           diffOpts,
+		ActiveRound:        roundIdInt,
+		IsInterdiff:        interdiff,
 
 		OrderedReactionKinds: models.OrderedReactionKinds,
 		Reactions:            reactionMap,
 		UserReacted:          userReactions,
 
 		LabelDefs: defs,
-	}))
+	})
+}
+
+func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
+	s.repoPullHelper(w, r, false)
 }
 
 func (s *Pulls) mergeCheck(r *http.Request, f *models.Repo, pull *models.Pull, stack models.Stack) types.MergeCheckResponse {
@@ -447,99 +484,11 @@ func (s *Pulls) resubmitCheck(r *http.Request, repo *models.Repo, pull *models.P
 }
 
 func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetMultiAccountUser(r)
-
-	var diffOpts types.DiffOpts
-	if d := r.URL.Query().Get("diff"); d == "split" {
-		diffOpts.Split = true
-	}
-
-	pull, ok := r.Context().Value("pull").(*models.Pull)
-	if !ok {
-		log.Println("failed to get pull")
-		s.pages.Notice(w, "pull-error", "Failed to edit patch. Try again later.")
-		return
-	}
-
-	stack, _ := r.Context().Value("stack").(models.Stack)
-
-	roundId := chi.URLParam(r, "round")
-	roundIdInt, err := strconv.Atoi(roundId)
-	if err != nil || roundIdInt >= len(pull.Submissions) {
-		http.Error(w, "bad round id", http.StatusBadRequest)
-		log.Println("failed to parse round id", err)
-		return
-	}
-
-	patch := pull.Submissions[roundIdInt].CombinedPatch()
-	diff := patchutil.AsNiceDiff(patch, pull.TargetBranch)
-
-	s.pages.RepoPullPatchPage(w, pages.RepoPullPatchParams{
-		LoggedInUser: user,
-		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
-		Pull:         pull,
-		Stack:        stack,
-		Round:        roundIdInt,
-		Submission:   pull.Submissions[roundIdInt],
-		Diff:         &diff,
-		DiffOpts:     diffOpts,
-	})
-
+	s.repoPullHelper(w, r, false)
 }
 
 func (s *Pulls) RepoPullInterdiff(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetMultiAccountUser(r)
-
-	var diffOpts types.DiffOpts
-	if d := r.URL.Query().Get("diff"); d == "split" {
-		diffOpts.Split = true
-	}
-
-	pull, ok := r.Context().Value("pull").(*models.Pull)
-	if !ok {
-		log.Println("failed to get pull")
-		s.pages.Notice(w, "pull-error", "Failed to get pull.")
-		return
-	}
-
-	roundId := chi.URLParam(r, "round")
-	roundIdInt, err := strconv.Atoi(roundId)
-	if err != nil || roundIdInt >= len(pull.Submissions) {
-		http.Error(w, "bad round id", http.StatusBadRequest)
-		log.Println("failed to parse round id", err)
-		return
-	}
-
-	if roundIdInt == 0 {
-		http.Error(w, "bad round id", http.StatusBadRequest)
-		log.Println("cannot interdiff initial submission")
-		return
-	}
-
-	currentPatch, err := patchutil.AsDiff(pull.Submissions[roundIdInt].CombinedPatch())
-	if err != nil {
-		log.Println("failed to interdiff; current patch malformed")
-		s.pages.Notice(w, fmt.Sprintf("interdiff-error-%d", roundIdInt), "Failed to calculate interdiff; current patch is invalid.")
-		return
-	}
-
-	previousPatch, err := patchutil.AsDiff(pull.Submissions[roundIdInt-1].CombinedPatch())
-	if err != nil {
-		log.Println("failed to interdiff; previous patch malformed")
-		s.pages.Notice(w, fmt.Sprintf("interdiff-error-%d", roundIdInt), "Failed to calculate interdiff; previous patch is invalid.")
-		return
-	}
-
-	interdiff := patchutil.Interdiff(previousPatch, currentPatch)
-
-	s.pages.RepoPullInterdiffPage(w, pages.RepoPullInterdiffParams{
-		LoggedInUser: s.oauth.GetMultiAccountUser(r),
-		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
-		Pull:         pull,
-		Round:        roundIdInt,
-		Interdiff:    interdiff,
-		DiffOpts:     diffOpts,
-	})
+	s.repoPullHelper(w, r, true)
 }
 
 func (s *Pulls) RepoPullPatchRaw(w http.ResponseWriter, r *http.Request) {

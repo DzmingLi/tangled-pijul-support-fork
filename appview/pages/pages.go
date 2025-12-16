@@ -1110,8 +1110,10 @@ type RepoSinglePullParams struct {
 	MergeCheck         types.MergeCheckResponse
 	ResubmitCheck      ResubmitResult
 	Pipelines          map[string]models.Pipeline
-	Diff               *types.NiceDiff
+	Diff               types.DiffRenderer
 	DiffOpts           types.DiffOpts
+	ActiveRound        int
+	IsInterdiff        bool
 
 	OrderedReactionKinds []models.ReactionKind
 	Reactions            map[models.ReactionKind]models.ReactionDisplayData
