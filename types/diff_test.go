@@ -1,6 +1,8 @@
 package types
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestDiffId(t *testing.T) {
 	tests := []struct {
@@ -105,8 +107,15 @@ func TestChangedFilesMatchesDiffId(t *testing.T) {
 	}
 
 	for i, diff := range nd.Diff {
-		if changedFiles[i] != diff.Id() {
+		if changedFiles[i].Id() != diff.Id() {
 			t.Errorf("ChangedFiles()[%d] = %q, but Diff.Id() = %q", i, changedFiles[i], diff.Id())
 		}
 	}
 }
+
+func TestImplsInterfaces(t *testing.T) {
+	nd := NiceDiff{}
+	_ = isDiffsRenderer(nd)
+}
+
+func isDiffsRenderer[S DiffRenderer](S) bool { return true }

@@ -64,19 +64,14 @@ func (g *GitRepo) Diff() (*types.NiceDiff, error) {
 
 		for _, tf := range d.TextFragments {
 			ndiff.TextFragments = append(ndiff.TextFragments, *tf)
-			for _, l := range tf.Lines {
-				switch l.Op {
-				case gitdiff.OpAdd:
-					nd.Stat.Insertions += 1
-				case gitdiff.OpDelete:
-					nd.Stat.Deletions += 1
-				}
-			}
+			nd.Stat.Insertions += tf.LinesAdded
+			nd.Stat.Deletions += tf.LinesDeleted
 		}
 
 		nd.Diff = append(nd.Diff, ndiff)
 	}
 
+	nd.Stat.FilesChanged += len(diffs)
 	nd.Commit.FromGoGitCommit(c)
 
 	return &nd, nil

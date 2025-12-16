@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	"tangled.org/core/types"
 )
 
 func TestIsPatchValid(t *testing.T) {
@@ -323,3 +325,10 @@ content
 		})
 	}
 }
+
+func TestImplsInterfaces(t *testing.T) {
+	id := &InterdiffResult{}
+	_ = isDiffsRenderer(id)
+}
+
+func isDiffsRenderer[S types.DiffRenderer](S) bool { return true }

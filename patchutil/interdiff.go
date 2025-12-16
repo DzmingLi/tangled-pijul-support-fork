@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
+	"tangled.org/core/appview/filetree"
 	"tangled.org/core/types"
 )
 
@@ -12,12 +13,34 @@ type InterdiffResult struct {
 	Files []*InterdiffFile
 }
 
-func (i *InterdiffResult) AffectedFiles() []string {
-	files := make([]string, len(i.Files))
-	for _, f := range i.Files {
-		files = append(files, f.Name)
+func (i *InterdiffResult) Stats() types.DiffStat {
+	var ins, del int64
+	for _, s := range i.ChangedFiles() {
+		stat := s.Stats()
+		ins += stat.Insertions
+		del += stat.Deletions
 	}
-	return files
+	return types.DiffStat{
+		Insertions:   ins,
+		Deletions:    del,
+		FilesChanged: len(i.Files),
+	}
+}
+
+func (i *InterdiffResult) ChangedFiles() []types.DiffFileRenderer {
+	drs := make([]types.DiffFileRenderer, len(i.Files))
+	for i, s := range i.Files {
+		drs[i] = s
+	}
+	return drs
+}
+
+func (i *InterdiffResult) FileTree() *filetree.FileTreeNode {
+	fs := make([]string, len(i.Files))
+	for i, s := range i.Files {
+		fs[i] = s.Name
+	}
+	return filetree.FileTree(fs)
 }
 
 func (i *InterdiffResult) String() string {
@@ -36,7 +59,11 @@ type InterdiffFile struct {
 	Status InterdiffFileStatus
 }
 
-func (s *InterdiffFile) Split() *types.SplitDiff {
+func (s *InterdiffFile) Id() string {
+	return s.Name
+}
+
+func (s *InterdiffFile) Split() types.SplitDiff {
 	fragments := make([]types.SplitFragment, len(s.TextFragments))
 
 	for i, fragment := range s.TextFragments {
@@ -49,15 +76,44 @@ func (s *InterdiffFile) Split() *types.SplitDiff {
 		}
 	}
 
-	return &types.SplitDiff{
+	return types.SplitDiff{
 		Name:          s.Id(),
 		TextFragments: fragments,
 	}
 }
 
-// used by html elements as a unique ID for hrefs
-func (s *InterdiffFile) Id() string {
-	return s.Name
+func (s *InterdiffFile) CanRender() string {
+	if s.Status.IsUnchanged() {
+		return "This file has not been changed."
+	} else if s.Status.IsRebased() {
+		return "This patch was likely rebased, as context lines do not match."
+	} else if s.Status.IsError() {
+		return "Failed to calculate interdiff for this file."
+	} else {
+		return ""
+	}
+}
+
+func (s *InterdiffFile) Names() types.DiffFileName {
+	var n types.DiffFileName
+	n.New = s.Name
+	return n
+}
+
+func (s *InterdiffFile) Stats() types.DiffFileStat {
+	var ins, del int64
+
+	if s.File != nil {
+		for _, f := range s.TextFragments {
+			ins += f.LinesAdded
+			del += f.LinesDeleted
+		}
+	}
+
+	return types.DiffFileStat{
+		Insertions: ins,
+		Deletions:  del,
+	}
 }
 
 func (s *InterdiffFile) String() string {

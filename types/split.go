@@ -22,8 +22,7 @@ type SplitDiff struct {
 	TextFragments []SplitFragment `json:"fragments"`
 }
 
-// used by html elements as a unique ID for hrefs
-func (d *SplitDiff) Id() string {
+func (d SplitDiff) Id() string {
 	return d.Name
 }
 

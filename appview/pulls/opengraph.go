@@ -18,7 +18,7 @@ import (
 	"tangled.org/core/types"
 )
 
-func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commentCount int, diffStats types.DiffStat, filesChanged int) (*ogcard.Card, error) {
+func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commentCount int, diffStats types.DiffFileStat, filesChanged int) (*ogcard.Card, error) {
 	width, height := ogcard.DefaultSize()
 	mainCard, err := ogcard.NewCard(width, height)
 	if err != nil {
@@ -284,7 +284,7 @@ func (s *Pulls) PullOpenGraphSummary(w http.ResponseWriter, r *http.Request) {
 	commentCount := len(comments)
 
 	// Calculate diff stats from latest submission using patchutil
-	var diffStats types.DiffStat
+	var diffStats types.DiffFileStat
 	filesChanged := 0
 	if len(pull.Submissions) > 0 {
 		latestSubmission := pull.Submissions[len(pull.Submissions)-1]

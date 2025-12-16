@@ -1,16 +1,31 @@
 package types
 
 import (
+	"net/url"
+
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
+	"tangled.org/core/appview/filetree"
 )
 
 type DiffOpts struct {
 	Split bool `json:"split"`
 }
 
-type TextFragment struct {
-	Header string         `json:"comment"`
-	Lines  []gitdiff.Line `json:"lines"`
+func (d DiffOpts) Encode() string {
+	values := make(url.Values)
+	if d.Split {
+		values.Set("diff", "split")
+	} else {
+		values.Set("diff", "unified")
+	}
+	return values.Encode()
+}
+
+// A nicer git diff representation.
+type NiceDiff struct {
+	Commit Commit   `json:"commit"`
+	Stat   DiffStat `json:"stat"`
+	Diff   []Diff   `json:"diff"`
 }
 
 type Diff struct {
@@ -26,13 +41,8 @@ type Diff struct {
 	IsRename      bool                   `json:"is_rename"`
 }
 
-type DiffStat struct {
-	Insertions int64
-	Deletions  int64
-}
-
-func (d *Diff) Stats() DiffStat {
-	var stats DiffStat
+func (d Diff) Stats() DiffFileStat {
+	var stats DiffFileStat
 	for _, f := range d.TextFragments {
 		stats.Insertions += f.LinesAdded
 		stats.Deletions += f.LinesDeleted
@@ -40,15 +50,15 @@ func (d *Diff) Stats() DiffStat {
 	return stats
 }
 
-// A nicer git diff representation.
-type NiceDiff struct {
-	Commit Commit `json:"commit"`
-	Stat   struct {
-		FilesChanged int `json:"files_changed"`
-		Insertions   int `json:"insertions"`
-		Deletions    int `json:"deletions"`
-	} `json:"stat"`
-	Diff []Diff `json:"diff"`
+type DiffStat struct {
+	Insertions   int64 `json:"insertions"`
+	Deletions    int64 `json:"deletions"`
+	FilesChanged int   `json:"files_changed"`
+}
+
+type DiffFileStat struct {
+	Insertions int64
+	Deletions  int64
 }
 
 type DiffTree struct {
@@ -58,29 +68,67 @@ type DiffTree struct {
 	Diff  []*gitdiff.File `json:"diff"`
 }
 
-func (d *NiceDiff) ChangedFiles() []string {
-	files := make([]string, len(d.Diff))
-
-	for i, f := range d.Diff {
-		if f.IsDelete {
-			files[i] = f.Name.Old
-		} else {
-			files[i] = f.Name.New
-		}
-	}
-
-	return files
+type DiffFileName struct {
+	Old string
+	New string
 }
 
-// used by html elements as a unique ID for hrefs
-func (d *Diff) Id() string {
+func (d NiceDiff) ChangedFiles() []DiffFileRenderer {
+	drs := make([]DiffFileRenderer, len(d.Diff))
+	for i, s := range d.Diff {
+		drs[i] = s
+	}
+	return drs
+}
+
+func (d NiceDiff) FileTree() *filetree.FileTreeNode {
+	fs := make([]string, len(d.Diff))
+	for i, s := range d.Diff {
+		n := s.Names()
+		if n.New == "" {
+			fs[i] = n.Old
+		} else {
+			fs[i] = n.New
+		}
+	}
+	return filetree.FileTree(fs)
+}
+
+func (d NiceDiff) Stats() DiffStat {
+	return d.Stat
+}
+
+func (d Diff) Id() string {
 	if d.IsDelete {
 		return d.Name.Old
 	}
 	return d.Name.New
 }
 
-func (d *Diff) Split() *SplitDiff {
+func (d Diff) Names() DiffFileName {
+	var n DiffFileName
+	if d.IsDelete {
+		n.Old = d.Name.Old
+		return n
+	} else if d.IsCopy || d.IsRename {
+		n.Old = d.Name.Old
+		n.New = d.Name.New
+		return n
+	} else {
+		n.New = d.Name.New
+		return n
+	}
+}
+
+func (d Diff) CanRender() string {
+	if d.IsBinary {
+		return "This is a binary file and will not be displayed."
+	}
+
+	return ""
+}
+
+func (d Diff) Split() SplitDiff {
 	fragments := make([]SplitFragment, len(d.TextFragments))
 	for i, fragment := range d.TextFragments {
 		leftLines, rightLines := SeparateLines(&fragment)
@@ -91,7 +139,7 @@ func (d *Diff) Split() *SplitDiff {
 		}
 	}
 
-	return &SplitDiff{
+	return SplitDiff{
 		Name:          d.Id(),
 		TextFragments: fragments,
 	}
