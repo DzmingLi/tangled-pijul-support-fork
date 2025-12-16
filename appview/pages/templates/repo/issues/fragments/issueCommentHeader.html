@@ -1,7 +1,8 @@
 {{ define "repo/issues/fragments/issueCommentHeader" }}
   <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ">
-    {{ template "user/fragments/picHandleLink" .Comment.Did }}
+    {{ resolve .Comment.Did }}
     {{ template "hats" $ }}
+    <span class="before:content-['·']"></span>
     {{ template "timestamp" . }}
     {{ $isCommentOwner := and .LoggedInUser (eq .LoggedInUser.Did .Comment.Did) }}
     {{ if and $isCommentOwner (not .Comment.Deleted) }}

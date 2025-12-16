@@ -1,5 +1,5 @@
 {{ define "repo/issues/fragments/commentList" }}
-  <div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-4">
     {{ range $item := .CommentList }}
       {{ template "commentListing" (list $ .) }}
     {{ end }}
@@ -19,22 +19,17 @@
   <div class="rounded border border-gray-200 dark:border-gray-700 w-full overflow-hidden shadow-sm bg-gray-50 dark:bg-gray-800/50">
     {{ template "topLevelComment" $params }}
 
-    <div class="relative ml-4 border-l-2 border-gray-200 dark:border-gray-700">
+    <div class="relative ml-10 border-l-2 border-gray-200 dark:border-gray-700">
       {{ range $index, $reply := $comment.Replies }}
-        <div class="relative ">
-          <!-- Horizontal connector -->
-          <div class="absolute left-0 top-6 w-4 h-1 bg-gray-200 dark:bg-gray-700"></div>
-
-          <div class="pl-2">
-            {{
-              template "replyComment"
-              (dict
-                "RepoInfo" $root.RepoInfo
-                "LoggedInUser" $root.LoggedInUser
-                "Issue" $root.Issue
-                "Comment" $reply)
-            }}
-          </div>
+        <div class="-ml-4">
+          {{
+            template "replyComment"
+            (dict
+              "RepoInfo" $root.RepoInfo
+              "LoggedInUser" $root.LoggedInUser
+              "Issue" $root.Issue
+              "Comment" $reply)
+          }}
         </div>
       {{ end }}
     </div>
@@ -44,15 +39,33 @@
 {{ end }}
 
 {{ define "topLevelComment" }}
-<div class="rounded px-6 py-4 bg-white dark:bg-gray-800">
-  {{ template "repo/issues/fragments/issueCommentHeader" . }}
-  {{ template "repo/issues/fragments/issueCommentBody" . }}
+<div class="rounded px-6 py-4 bg-white dark:bg-gray-800 flex gap-2 ">
+  <div class="flex-shrink-0">
+    <img
+        src="{{ tinyAvatar .Comment.Did }}"
+        alt=""
+        class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
+    />
+  </div>
+  <div class="flex-1 min-w-0">
+    {{ template "repo/issues/fragments/issueCommentHeader" . }}
+    {{ template "repo/issues/fragments/issueCommentBody" . }}
+  </div>
 </div>
 {{ end }}
 
 {{ define "replyComment" }}
-<div class="p-4 w-full mx-auto overflow-hidden">
-  {{ template "repo/issues/fragments/issueCommentHeader" . }}
-  {{ template "repo/issues/fragments/issueCommentBody" . }}
+<div class="py-4 pr-4 w-full mx-auto overflow-hidden flex gap-2 ">
+  <div class="flex-shrink-0">
+    <img
+        src="{{ tinyAvatar .Comment.Did }}"
+        alt=""
+        class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
+    />
+  </div>
+  <div class="flex-1 min-w-0">
+    {{ template "repo/issues/fragments/issueCommentHeader" . }}
+    {{ template "repo/issues/fragments/issueCommentBody" . }}
+  </div>
 </div>
 {{ end }}
