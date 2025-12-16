@@ -6,15 +6,56 @@
   {{ template "repo/pulls/fragments/og" (dict "RepoInfo" .RepoInfo "Pull" .Pull) }}
 {{ end }}
 
-{{ define "repoContentLayout" }}
-  <div class="grid grid-cols-1 md:grid-cols-10 gap-4 w-full">
-    <div class="col-span-1 md:col-span-8">
-      <section class="bg-white dark:bg-gray-800 p-6 rounded relative w-full mx-auto dark:text-white">
-        {{ block "repoContent" . }}{{ end }}
-      </section>
-      {{ block "repoAfter" . }}{{ end }}
+{{ define "mainLayout" }}
+  <div class="px-1 flex-grow flex flex-col gap-4">
+    <div class="max-w-screen-lg mx-auto">
+      {{ block "contentLayout" . }}
+        {{ block "content" . }}{{ end }}
+      {{ end }}
     </div>
-    <div class="col-span-1 md:col-span-2 flex flex-col gap-6">
+    {{ block "contentAfterLayout" . }}
+      <main>
+        {{ block "contentAfter" . }}{{ end }}
+      </main>
+    {{ end }}
+  </div>
+  <script>
+    (function() {
+      const details = document.getElementById('bottomSheet');
+      const isDesktop = () => window.matchMedia('(min-width: 768px)').matches;
+
+      // close on mobile initially
+      if (!isDesktop()) {
+        details.open = false;
+      }
+
+      // prevent closing on desktop
+      details.addEventListener('toggle', function(e) {
+        if (isDesktop() && !this.open) {
+          this.open = true;
+        }
+      });
+
+      const mediaQuery = window.matchMedia('(min-width: 768px)');
+      mediaQuery.addEventListener('change', function(e) {
+        if (e.matches) {
+          // switched to desktop - keep open
+          details.open = true;
+        } else {
+          // switched to mobile - close
+          details.open = false;
+        }
+      });
+    })();
+  </script>
+{{ end }}
+
+{{ define "repoContentLayout" }}
+  <div class="grid grid-cols-1 md:grid-cols-10 gap-4">
+    <section class="bg-white col-span-1 md:col-span-8 dark:bg-gray-800 p-6 rounded relative w-full mx-auto dark:text-white h-full flex-shrink">
+      {{ block "repoContent" . }}{{ end }}
+    </section>
+    <div class="flex flex-col gap-6 col-span-1 md:col-span-2">
       {{ template "repo/fragments/labelPanel"
         (dict "RepoInfo" $.RepoInfo
               "Defs" $.LabelDefs
@@ -29,9 +70,12 @@
   </div>
 {{ end }}
 
+{{ define "contentAfter" }}
+  {{ template "repo/fragments/diff" (list .Diff .DiffOpts $) }}
+{{ end }}
+
 {{ define "repoContent" }}
   {{ template "repo/pulls/fragments/pullHeader" . }}
-
   {{ if .Pull.IsStacked }}
     <div class="mt-8">
       {{ template "repo/pulls/fragments/pullStack" . }}
@@ -39,184 +83,339 @@
   {{ end }}
 {{ end }}
 
-{{ define "repoAfter" }}
-    <section id="submissions" class="mt-4">
-      <div class="flex flex-col gap-4">
-        {{ block "submissions" . }} {{ end }}
-      </div>
-    </section>
+{{ define "diffLayout" }}
+  {{ $diff := index . 0 }}
+  {{ $opts := index . 1 }}
+  {{ $root := index . 2 }}
 
-    <div id="pull-close"></div>
-    <div id="pull-reopen"></div>
+  <div class="flex col-span-full">
+    <!-- left panel -->
+    <div id="files" class="w-0 hidden md:block overflow-hidden sticky top-12 max-h-screen overflow-y-auto pb-12">
+      <section class="overflow-x-auto text-sm px-6 py-2 border border-gray-200 dark:border-gray-700 w-full mx-auto min-h-full rounded bg-white dark:bg-gray-800 drop-shadow-sm">
+        {{ template "repo/fragments/fileTree" $diff.FileTree }}
+      </section>
+    </div>
+
+    <!-- main content -->
+    <div class="flex-1 min-w-0 sticky top-12 pb-12">
+      {{ template "diffFiles" (list $diff $opts) }}
+    </div>
+
+    <!-- right panel -->
+    {{ template "subsPanel" $ }}
+  </div>
 {{ end }}
+
+{{ define "subsPanel" }}
+  {{ $root := index . 2 }}
+  {{ $pull := $root.Pull }}
+
+  <!-- backdrop overlay - only visible on mobile when open -->
+  <div class="
+    fixed inset-0 bg-black/50 z-50 md:hidden opacity-0
+    pointer-events-none transition-opacity duration-300
+    has-[~#subs_details[open]]:opacity-100 has-[~#subs_details[open]]:pointer-events-auto">
+  </div>
+  <!-- right panel - bottom sheet on mobile, side panel on desktop -->
+  <div id="subs" class="fixed bottom-0 left-0 right-0 z-50 w-full md:static md:z-auto md:max-h-screen md:sticky md:top-12 overflow-hidden">
+    <details open id="bottomSheet" class="group rounded-t-2xl md:rounded-t-sm drop-shadow-lg md:drop-shadow-none">
+      <summary class="
+        flex gap-4 items-center justify-between
+        rounded-t-2xl md:rounded-t-sm cursor-pointer list-none p-4 md:h-12
+        text-white md:text-black md:dark:text-white
+        bg-green-600 dark:bg-green-600
+        md:bg-white md:dark:bg-gray-800
+        drop-shadow-sm
+        md:border-b md:border-x border-gray-200 dark:border-gray-700">
+        <h2 class="">Review Panel </h2>
+        {{ template "subsPanelSummary" $ }}
+      </summary>
+      <div class="max-h-[85vh] md:max-h-[calc(100vh-3rem-3rem)] w-full flex flex-col-reverse gap-4 overflow-y-auto bg-slate-100 dark:bg-gray-900 md:bg-transparent">
+        {{ template "submissions" $root }}
+      </div>
+    </details>
+  </div>
+{{ end }}
+
+{{ define "subsPanelSummary" }}
+  {{ $root := index . 2 }}
+  {{ $pull := $root.Pull }}
+  {{ $latest := $pull.LastRoundNumber }}
+  <div class="flex items-center gap-2 text-sm">
+    {{ if $root.IsInterdiff }}
+      <span>
+        viewing interdiff of
+        <span class="font-mono">#{{ $root.ActiveRound }}</span>
+        and
+        <span class="font-mono">#{{ sub $root.ActiveRound 1 }}</span>
+      </span>
+    {{ else }}
+      <span>
+        viewing round 
+        <span class="font-mono">#{{ $root.ActiveRound }}</span>
+      </span>
+      {{ if ne $root.ActiveRound $latest }}
+        <span>(outdated)</span>
+        <span class="before:content-['·']"></span>
+        <a class="underline" href="/{{ $root.RepoInfo.FullName }}/pulls/{{ $root.Pull.PullId }}/round/{{ $latest }}?{{ safeUrl $root.DiffOpts.Encode }}">
+          view latest
+        </a>
+      {{ end }}
+    {{ end }}
+    <span class="md:hidden inline">
+      <span class="inline group-open:hidden">{{ i "chevron-up" "size-4" }}</span>
+      <span class="hidden group-open:inline">{{ i "chevron-down" "size-4" }}</span>
+    </span>
+  </div>
+{{ end }}
+
+{{ define "subsCheckbox" }}
+  <input type="checkbox" id="subsToggle" class="peer/subs hidden" checked/>
+{{ end }}
+
+{{ define "subsToggle" }}
+  <style>
+    /* Mobile: full width */
+    #subsToggle:checked ~ div div#subs { 
+      width: 100%;
+      margin-left: 0;
+    }
+    #subsToggle:checked ~ div label[for="subsToggle"] .show-toggle { display: none; }
+    #subsToggle:checked ~ div label[for="subsToggle"] .hide-toggle { display: flex; }
+    #subsToggle:not(:checked) ~ div label[for="subsToggle"] .hide-toggle { display: none; }
+
+    /* Desktop: 25vw with left margin */
+    @media (min-width: 768px) {
+      #subsToggle:checked ~ div div#subs { 
+        width: 25vw;
+        margin-left: 1rem;
+      }
+      /* Unchecked state */
+      #subsToggle:not(:checked) ~ div div#subs {
+        width: 0;
+        display: none;
+        margin-left: 0;
+      }
+    }
+  </style>
+  <label title="Toggle review panel" for="subsToggle" class="hidden md:flex items-center justify-end rounded cursor-pointer">
+    <span class="show-toggle">{{ i "message-square-more" "size-4" }}</span>
+    <span class="hide-toggle w-[25vw] flex justify-end">{{ i "message-square" "size-4" }}</span>
+  </label>
+{{ end }}
+
 
 {{ define "submissions" }}
   {{ $lastIdx := sub (len .Pull.Submissions) 1 }}
-  {{ $targetBranch := .Pull.TargetBranch }}
-  {{ $repoName := .RepoInfo.FullName }}
-  {{ range $idx, $item := .Pull.Submissions }}
-    {{ with $item }}
-    <details {{ if eq $idx $lastIdx }}open{{ end }}>
-        <summary id="round-#{{ .RoundNumber }}" class="list-none cursor-pointer">
-          <div class="flex flex-wrap gap-2 items-stretch">
-            <!-- round number -->
-            <div class="rounded bg-white dark:bg-gray-800 drop-shadow-sm px-3 py-2 dark:text-white">
-              <span class="flex items-center">{{ i "hash" "w-4 h-4" }}{{ .RoundNumber }}</span>
-            </div>
-            <!-- round summary -->
-            <div class="flex-1 rounded drop-shadow-sm bg-white dark:bg-gray-800 p-2 text-gray-500 dark:text-gray-400">
-              <span class="gap-1 flex items-center">
-                {{ $owner := resolve $.Pull.OwnerDid }}
-                {{ $re := "re" }}
-                {{ if eq .RoundNumber 0 }}
-                  {{ $re = "" }}
-                {{ end }}
-                <span class="hidden md:inline">{{$re}}submitted</span>
-                by {{ template "user/fragments/picHandleLink" $.Pull.OwnerDid }}
-                <span class="select-none before:content-['\00B7']"></span>
-                <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500" href="#round-#{{ .RoundNumber }}">{{ template "repo/fragments/shortTime" .Created }}</a>
-                <span class="select-none before:content-['·']"></span>
-                {{ $s := "s" }}
-                {{ if eq (len .Comments) 1 }}
-                  {{ $s = "" }}
-                {{ end }}
-                {{ len .Comments }} comment{{$s}}
-              </span>
-            </div>
+  {{ range $ridx, $item := reverse .Pull.Submissions }}
+    {{ $idx := sub $lastIdx $ridx }}
+    {{ template "submission" (list $item $idx $lastIdx $) }}
+  {{ end }}
+{{ end }}
 
-            <a class="btn flex items-center gap-2 no-underline hover:no-underline p-2 group"
-               hx-boost="true"
-               href="/{{ $.RepoInfo.FullName }}/pulls/{{ $.Pull.PullId }}/round/{{.RoundNumber}}">
-              {{ i "file-diff" "w-4 h-4" }}
-              <span class="hidden md:inline">diff</span>
-              {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
-            </a>
-            {{ if ne $idx 0 }}
-              <a class="btn flex items-center gap-2 no-underline hover:no-underline p-2 group"
-                 hx-boost="true"
-                 href="/{{ $.RepoInfo.FullName }}/pulls/{{ $.Pull.PullId }}/round/{{.RoundNumber}}/interdiff">
-                {{ i "chevrons-left-right-ellipsis" "w-4 h-4 rotate-90" }}
-                <span class="hidden md:inline">interdiff</span>
-                {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
-              </a>
-            {{ end }}
-            <span id="interdiff-error-{{.RoundNumber}}"></span>
-          </div>
-        </summary>
+{{ define "submission" }}
+  {{ $item := index . 0 }}
+  {{ $idx := index . 1 }}
+  {{ $lastIdx := index . 2 }}
+  {{ $root := index . 3 }}
+  <div class="rounded border border-gray-200 dark:border-gray-700 w-full shadow-sm bg-gray-50 dark:bg-gray-800/50">
+    {{ template "submissionHeader" $ }}
+    {{ template "submissionComments" $ }}
 
-        {{ if .IsFormatPatch }}
-        {{ $patches := .AsFormatPatch }}
-        {{ $round := .RoundNumber }}
-        <details class="group py-2 md:ml-[3.5rem] text-gray-500 dark:text-gray-400 flex flex-col gap-2 relative text-sm">
-          <summary class="py-1 list-none cursor-pointer hover:text-gray-500 hover:dark:text-gray-400">
-            {{ $s := "s" }}
-            {{ if eq (len $patches) 1 }}
-            {{ $s = "" }}
-            {{ end }}
-            <div class="group-open:hidden flex items-center gap-2 ml-2">
-              {{ i "chevrons-up-down" "w-4 h-4" }} expand {{ len $patches }} commit{{$s}}
-            </div>
-            <div class="hidden group-open:flex items-center gap-2 ml-2">
-              {{ i "chevrons-down-up" "w-4 h-4" }} hide {{ len $patches }} commit{{$s}}
-            </div>
-          </summary>
-          {{ range $patches }}
-             <div id="commit-{{.SHA}}" class="py-1 px-2 relative w-full md:max-w-3/5 md:w-fit flex flex-col">
-               <div class="flex items-center gap-2">
-                 {{ i "git-commit-horizontal" "w-4 h-4" }}
-                 <div class="text-sm text-gray-500 dark:text-gray-400">
-                   <!-- attempt to resolve $fullRepo: this is possible only on non-deleted forks and branches -->
-                   {{ $fullRepo := "" }}
-                   {{ if and $.Pull.IsForkBased $.Pull.PullSource.Repo }}
-                     {{ $fullRepo = printf "%s/%s" $owner $.Pull.PullSource.Repo.Name }}
-                   {{ else if $.Pull.IsBranchBased }}
-                     {{ $fullRepo = $.RepoInfo.FullName }}
-                   {{ end }}
+    {{ if eq $lastIdx $item.RoundNumber }}
+      {{ block "mergeStatus" $root }} {{ end }}
+      {{ block "resubmitStatus" $root }} {{ end }}
+    {{ end }}
 
-                   <!-- if $fullRepo was resolved, link to it, otherwise just span without a link -->
-                   {{ if $fullRepo }}
-                     <a href="/{{ $fullRepo }}/commit/{{ .SHA }}" class="font-mono text-gray-500 dark:text-gray-400">{{ slice .SHA 0 8 }}</a>
-                   {{ else }}
-                     <span class="font-mono">{{ slice .SHA 0 8 }}</span>
-                   {{ end }}
-                 </div>
-                 <div class="flex items-center">
-                   <span>{{ .Title | description }}</span>
-                   {{ if gt (len .Body) 0 }}
-                   <button
-                       class="py-1/2 px-1 mx-2 bg-gray-200 hover:bg-gray-400 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
-                       hx-on:click="document.getElementById('body-{{$round}}-{{.SHA}}').classList.toggle('hidden')"
-                       >
-                       {{ i "ellipsis" "w-3 h-3" }}
-                   </button>
-                     {{ end }}
-                 </div>
-               </div>
-               {{ if gt (len .Body) 0 }}
-               <p id="body-{{$round}}-{{.SHA}}" class="hidden mt-1 text-sm pb-2">
-                 {{ nl2br .Body }}
-               </p>
-               {{ end }}
-             </div>
+    {{ if $root.LoggedInUser }}
+      {{ template "repo/pulls/fragments/pullActions"
+        (dict 
+          "LoggedInUser" $root.LoggedInUser
+          "Pull" $root.Pull
+          "RepoInfo" $root.RepoInfo
+          "RoundNumber" $item.RoundNumber
+          "MergeCheck" $root.MergeCheck
+          "ResubmitCheck" $root.ResubmitCheck
+          "BranchDeleteStatus" $root.BranchDeleteStatus
+          "Stack" $root.Stack) }}
+    {{ else }}
+      {{ template "loginPrompt" $ }}
+    {{ end }}
+  </div>
+{{ end }}
+
+{{ define "submissionHeader" }}
+  {{ $item := index . 0 }}
+  {{ $lastIdx := index . 2 }}
+  {{ $root := index . 3 }}
+  {{ $round := $item.RoundNumber }}
+  <div class="rounded px-6 py-4 pr-2 pt-2 bg-white dark:bg-gray-800 flex gap-2 sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
+    <!-- left column: just profile picture -->
+    <div class="flex-shrink-0 pt-2">
+      <img
+          src="{{ tinyAvatar $root.Pull.OwnerDid }}"
+          alt=""
+          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
+      />
+    </div>
+    <!-- right column -->
+    <div class="flex-1 min-w-0 flex flex-col gap-1">
+      {{ template "submissionInfo" $ }}
+      {{ template "submissionCommits" $ }}
+      {{ template "submissionPipeline" $ }}
+      {{ if eq $lastIdx $round }}
+        {{ block "mergeCheck" $root }} {{ end }}
+      {{ end }}
+    </div>
+  </div>
+{{ end }}
+
+{{ define "submissionInfo" }}
+  {{ $item := index . 0 }}
+  {{ $idx := index . 1 }}
+  {{ $root := index . 3 }}
+  {{ $round := $item.RoundNumber }}
+  <div class="flex gap-2 items-center justify-between mb-1">
+    <span class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 pt-2">
+      {{ resolve $root.Pull.OwnerDid }} submitted v{{ $round }}
+      <span class="select-none before:content-['\00B7']"></span>
+      <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500" href="#round-#{{ $round }}">
+        {{ template "repo/fragments/shortTimeAgo" $item.Created }}
+      </a>
+    </span>
+    <div class="flex gap-2 items-center">
+      {{ if ne $root.ActiveRound $round }}
+      <a class="btn-flat flex items-center gap-2 no-underline hover:no-underline text-sm"
+        href="/{{ $root.RepoInfo.FullName }}/pulls/{{ $root.Pull.PullId }}/round/{{ $round }}?{{ safeUrl $root.DiffOpts.Encode }}">
+        {{ i "diff" "w-4 h-4" }}
+        diff
+      </a>
+      {{ end }}
+      {{ if ne $idx 0 }}
+        <a class="btn-flat flex items-center gap-2 no-underline hover:no-underline text-sm"
+           href="/{{ $root.RepoInfo.FullName }}/pulls/{{ $root.Pull.PullId }}/round/{{ $round }}/interdiff?{{ safeUrl $root.DiffOpts.Encode }}">
+          {{ i "chevrons-left-right-ellipsis" "w-4 h-4 rotate-90" }}
+          interdiff
+        </a>
+      {{ end }}
+    </div>
+  </div>
+{{ end }}
+
+{{ define "submissionCommits" }}
+  {{ $item := index . 0 }}
+  {{ $root := index . 3 }}
+  {{ $round := $item.RoundNumber }}
+  {{ $patches := $item.AsFormatPatch }}
+  {{ if $patches }}
+    <details class="group/commit">
+      <summary class="list-none cursor-pointer flex items-center gap-2">
+        <span>{{ i "git-commit-horizontal" "w-4 h-4" }}</span>
+        {{ len $patches }} commit{{ if ne (len $patches) 1 }}s{{ end }}
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          <span class="group-open/commit:hidden inline">expand</span>
+          <span class="hidden group-open/commit:inline">collapse</span>
+        </div>
+      </summary>
+      {{ range $patches }}
+        {{ template "submissionCommit" (list . $item $root) }}
+      {{ end }}
+    </details>
+  {{ end }}
+{{ end }}
+
+{{ define "submissionCommit" }}
+  {{ $patch := index . 0 }}
+  {{ $item := index . 1 }}
+  {{ $root := index . 2 }}
+  {{ $round := $item.RoundNumber }}
+  {{ with $patch }}
+    <div id="commit-{{.SHA}}" class="py-1 relative w-full md:max-w-3/5 md:w-fit flex flex-col text-gray-600 dark:text-gray-300">
+      <div class="flex items-baseline gap-2">
+        <div class="text-xs">
+          <!-- attempt to resolve $fullRepo: this is possible only on non-deleted forks and branches -->
+          {{ $fullRepo := "" }}
+          {{ if and $root.Pull.IsForkBased $root.Pull.PullSource.Repo }}
+            {{ $fullRepo = printf "%s/%s" $root.Pull.OwnerDid $root.Pull.PullSource.Repo.Name }}
+          {{ else if $root.Pull.IsBranchBased }}
+            {{ $fullRepo = $root.RepoInfo.FullName }}
           {{ end }}
-        </details>
-        {{ end }}
 
-
-        <div class="md:pl-[3.5rem] flex flex-col gap-2 mt-2 relative">
-          {{ range $cidx, $c := .Comments }}
-            <div id="comment-{{$c.ID}}" class="bg-white dark:bg-gray-800 rounded drop-shadow-sm py-2 px-4 relative w-full">
-              {{ if gt $cidx 0 }}
-              <div class="absolute left-8 -top-2 w-px h-2 bg-gray-300 dark:bg-gray-600"></div>
-              {{ end }}
-              <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                {{ template "user/fragments/picHandleLink" $c.OwnerDid }}
-                <span class="before:content-['·']"></span>
-                <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="#comment-{{.ID}}">{{ template "repo/fragments/time" $c.Created }}</a>
-              </div>
-              <div class="prose dark:prose-invert">
-                {{ $c.Body | markdown }}
-              </div>
-            </div>
-          {{ end }}
-
-          {{ block "pipelineStatus" (list $ .) }} {{ end }}
-
-          {{ if eq $lastIdx .RoundNumber }}
-            {{ block "mergeStatus" $ }} {{ end }}
-            {{ block "resubmitStatus" $ }} {{ end }}
-          {{ end }}
-
-          {{ if $.LoggedInUser }}
-            {{ template "repo/pulls/fragments/pullActions" 
-              (dict 
-                "LoggedInUser" $.LoggedInUser
-                "Pull" $.Pull
-                "RepoInfo" $.RepoInfo
-                "RoundNumber" .RoundNumber
-                "MergeCheck" $.MergeCheck
-                "ResubmitCheck" $.ResubmitCheck
-                "BranchDeleteStatus" $.BranchDeleteStatus
-                "Stack" $.Stack) }}
+          <!-- if $fullRepo was resolved, link to it, otherwise just span without a link -->
+          {{ if $fullRepo }}
+            <a href="/{{ $fullRepo }}/commit/{{ .SHA }}" class="font-mono text-gray-600 dark:text-gray-300">{{ slice .SHA 0 8 }}</a>
           {{ else }}
-            <div class="bg-amber-50 dark:bg-amber-900 border border-amber-500 rounded drop-shadow-sm p-2 relative flex gap-2 items-center w-fit">
-              <a href="/signup" class="btn-create py-0 hover:no-underline hover:text-white flex items-center gap-2">
-                sign up
-              </a>
-              <span class="text-gray-500 dark:text-gray-400">or</span>
-              <a href="/login" class="underline">login</a>
-              to add to the discussion
-            </div>
+            <span class="font-mono">{{ slice .SHA 0 8 }}</span>
           {{ end }}
         </div>
+
+        <div>
+          <span>{{ .Title | description }}</span>
+          {{ if gt (len .Body) 0 }}
+            <button
+              class="py-1/2 px-1 mx-2 bg-gray-200 hover:bg-gray-400 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
+              hx-on:click="document.getElementById('body-{{$round}}-{{.SHA}}').classList.toggle('hidden')"
+              >
+              {{ i "ellipsis" "w-3 h-3" }}
+            </button>
+          {{ end }}
+          {{ if gt (len .Body) 0 }}
+            <p id="body-{{$round}}-{{.SHA}}" class="hidden mt-1 pb-2">{{ nl2br .Body }}</p>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  {{ end }}
+{{ end }}
+
+{{ define "mergeCheck" }}
+  {{ $isOpen := .Pull.State.IsOpen }}
+  {{ if and $isOpen .MergeCheck .MergeCheck.Error }}
+    <div class="flex items-center gap-2">
+      {{ i "triangle-alert" "w-4 h-4 text-red-600 dark:text-red-500" }}
+      {{ .MergeCheck.Error }}
+    </div>
+  {{ else if and $isOpen .MergeCheck .MergeCheck.IsConflicted }}
+    <details class="group/conflict">
+      <summary class="flex items-center justify-between cursor-pointer list-none">
+        <div class="flex items-center gap-2 ">
+          {{ i "triangle-alert" "text-red-600 dark:text-red-500 w-4 h-4" }}
+          <span class="font-medium">merge conflicts detected</span>
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="group-open/conflict:hidden inline">expand</span>
+            <span class="hidden group-open/conflict:inline">collapse</span>
+          </div>
+        </div>
+      </summary>
+      {{ if gt (len .MergeCheck.Conflicts) 0 }}
+        <ul class="space-y-1 mt-2 overflow-x-auto">
+          {{ range .MergeCheck.Conflicts }}
+            {{ if .Filename }}
+              <li class="flex items-center whitespace-nowrap">
+                {{ i "file-warning" "inline-flex w-4 h-4 mr-1.5 text-red-600 dark:text-red-500 flex-shrink-0" }}
+                <span class="font-mono">{{ .Filename }}</span>
+              </li>
+            {{ else if .Reason }}
+            <li class="flex items-center whitespace-nowrap">
+              {{ i "file-warning" "w-4 h-4 mr-1.5 text-red-600 dark:text-red-500 " }}
+              <span>{{.Reason}}</span>
+            </li>
+            {{ end }}
+          {{ end }}
+        </ul>
+      {{ end }}
     </details>
-    {{ end }}
+  {{ else if and $isOpen .MergeCheck }}
+    <div class="flex items-center gap-2">
+      {{ i "check" "w-4 h-4 text-green-600 dark:text-green-500" }}
+      <span>no conflicts, ready to merge</span>
+    </div>
   {{ end }}
 {{ end }}
 
 {{ define "mergeStatus" }}
   {{ if .Pull.State.IsClosed }}
-  <div class="bg-gray-50 dark:bg-gray-700 border border-black dark:border-gray-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
+  <div class="bg-gray-50 dark:bg-gray-700 border border-black dark:border-gray-500 rounded drop-shadow-sm px-6 py-2 relative">
     <div class="flex items-center gap-2 text-black dark:text-white">
       {{ i "ban" "w-4 h-4" }}
       <span class="font-medium">closed without merging</span
@@ -224,7 +423,7 @@
     </div>
   </div>
   {{ else if .Pull.State.IsMerged }}
-  <div class="bg-purple-50 dark:bg-purple-900 border border-purple-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
+  <div class="bg-purple-50 dark:bg-purple-900 border border-purple-500 rounded drop-shadow-sm px-6 py-2 relative">
     <div class="flex items-center gap-2 text-purple-500 dark:text-purple-300">
       {{ i "git-merge" "w-4 h-4" }}
       <span class="font-medium">pull request successfully merged</span
@@ -232,50 +431,10 @@
     </div>
   </div>
   {{ else if .Pull.State.IsDeleted }}
-  <div class="bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
+  <div class="bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-6 py-2 relative">
     <div class="flex items-center gap-2 text-red-500 dark:text-red-300">
       {{ i "git-pull-request-closed" "w-4 h-4" }}
       <span class="font-medium">This pull has been deleted (possibly by jj abandon or jj squash)</span>
-    </div>
-  </div>
-  {{ else if and .MergeCheck .MergeCheck.Error }}
-    <div class="bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
-      <div class="flex items-center gap-2 text-red-500 dark:text-red-300">
-        {{ i "triangle-alert" "w-4 h-4" }}
-        <span class="font-medium">{{ .MergeCheck.Error }}</span>
-      </div>
-    </div>
-  {{ else if and .MergeCheck .MergeCheck.IsConflicted }}
-    <div class="bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
-      <div class="flex flex-col gap-2 text-red-500 dark:text-red-300">
-        <div class="flex items-center gap-2">
-          {{ i "triangle-alert" "w-4 h-4" }}
-          <span class="font-medium">merge conflicts detected</span>
-        </div>
-        {{ if gt (len .MergeCheck.Conflicts) 0 }}
-          <ul class="space-y-1">
-            {{ range .MergeCheck.Conflicts }}
-              {{ if .Filename }}
-              <li class="flex items-center">
-                {{ i "file-warning" "w-4 h-4 mr-1.5 text-red-500 dark:text-red-300" }}
-                <span class="font-mono">{{ .Filename }}</span>
-              </li>
-              {{ else if .Reason }}
-              <li class="flex items-center">
-                {{ i "file-warning" "w-4 h-4 mr-1.5 text-red-500 dark:text-red-300" }}
-                <span>{{.Reason}}</span>
-              </li>
-              {{ end }}
-            {{ end }}
-          </ul>
-        {{ end }}
-      </div>
-    </div>
-  {{ else if .MergeCheck }}
-  <div class="bg-green-50 dark:bg-green-900 border border-green-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
-    <div class="flex items-center gap-2 text-green-500 dark:text-green-300">
-      {{ i "circle-check-big" "w-4 h-4" }}
-      <span class="font-medium">no conflicts, ready to merge</span>
     </div>
   </div>
   {{ end }}
@@ -283,7 +442,7 @@
 
 {{ define "resubmitStatus" }}
   {{ if .ResubmitCheck.Yes }}
-  <div class="bg-amber-50 dark:bg-amber-900 border border-amber-500 rounded drop-shadow-sm px-6 py-2 relative w-fit">
+  <div class="bg-amber-50 dark:bg-amber-900 border border-amber-500 rounded drop-shadow-sm px-6 py-2 relative">
     <div class="flex items-center gap-2 text-amber-500 dark:text-amber-300">
       {{ i "triangle-alert" "w-4 h-4" }}
       <span class="font-medium">this branch has been updated, consider resubmitting</span>
@@ -292,37 +451,94 @@
   {{ end }}
 {{ end }}
 
-{{ define "pipelineStatus" }}
-  {{ $root := index . 0 }}
-  {{ $submission := index . 1 }}
-  {{ $pipeline := index $root.Pipelines $submission.SourceRev }}
+{{ define "submissionPipeline" }}
+  {{ $item := index . 0 }}
+  {{ $root := index . 3 }}
+  {{ $pipeline := index $root.Pipelines $item.SourceRev }}
   {{ with $pipeline }}
     {{ $id := .Id }}
     {{ if .Statuses }}
-      <div class="max-w-80 grid grid-cols-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
-        {{ range $name, $all := .Statuses }}
-        <a href="/{{ $root.RepoInfo.FullName }}/pipelines/{{ $id }}/workflow/{{ $name }}" class="no-underline hover:no-underline hover:bg-gray-100/25 hover:dark:bg-gray-700/25">
-          <div
-            class="flex gap-2 items-center justify-between p-2">
-            {{ $lastStatus := $all.Latest }}
-            {{ $kind := $lastStatus.Status.String }}
-
-            <div id="left" class="flex items-center gap-2 flex-shrink-0">
-              {{ template "repo/pipelines/fragments/workflowSymbol" $all }}
-              {{ $name }}
-            </div>
-            <div id="right" class="flex items-center gap-2 flex-shrink-0">
-              <span class="font-bold">{{ $kind }}</span>
-              {{ if .TimeTaken }}
-              {{ template "repo/fragments/duration" .TimeTaken }}
-              {{ else }}
-              {{ template "repo/fragments/shortTimeAgo" $lastStatus.Created }}
-              {{ end }}
-            </div>
+      <details class="group/pipeline">
+        <summary class="cursor-pointer list-none flex items-center gap-2">
+          {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" false) }}
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            <span class="group-open/pipeline:hidden inline">expand</span>
+            <span class="hidden group-open/pipeline:inline">collapse</span>
           </div>
-        </a>
-        {{ end }}
-      </div>
+        </summary>
+          <div class="my-2 grid grid-cols-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+            {{ range $name, $all := .Statuses }}
+            <a href="/{{ $root.RepoInfo.FullName }}/pipelines/{{ $id }}/workflow/{{ $name }}" class="no-underline hover:no-underline hover:bg-gray-100/25 hover:dark:bg-gray-700/25">
+              <div
+                class="flex gap-2 items-center justify-between p-2">
+                {{ $lastStatus := $all.Latest }}
+                {{ $kind := $lastStatus.Status.String }}
+
+                <div id="left" class="flex items-center gap-2 flex-shrink-0">
+                  {{ template "repo/pipelines/fragments/workflowSymbol" $all }}
+                  {{ $name }}
+                </div>
+                <div id="right" class="flex items-center gap-2 flex-shrink-0">
+                  <span class="font-bold">{{ $kind }}</span>
+                  {{ if .TimeTaken }}
+                  {{ template "repo/fragments/duration" .TimeTaken }}
+                  {{ else }}
+                  {{ template "repo/fragments/shortTimeAgo" $lastStatus.Created }}
+                  {{ end }}
+                </div>
+              </div>
+            </a>
+            {{ end }}
+          </div>
+      </details>
     {{ end }}
   {{ end }}
+{{ end }}
+
+{{ define "submissionComments" }}
+  {{ $item := index . 0 }}
+  <div class="relative ml-10 border-l-2 border-gray-200 dark:border-gray-700">
+    {{ range $item.Comments }}
+      {{ template "submissionComment" . }}
+    {{ end }}
+  </div>
+{{ end }}
+
+{{ define "submissionComment" }}
+  <div id="comment-{{.ID}}" class="flex gap-2 -ml-4 py-4 w-full mx-auto">
+    <!-- left column: profile picture -->
+    <div class="flex-shrink-0">
+      <img
+          src="{{ tinyAvatar .OwnerDid }}"
+          alt=""
+          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
+      />
+    </div>
+    <!-- right column: name and body in two rows -->
+    <div class="flex-1 min-w-0">
+      <!-- Row 1: Author and timestamp -->
+      <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+        <span>{{ resolve .OwnerDid }}</span>
+        <span class="before:content-['·']"></span>
+        <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="#comment-{{.ID}}">
+          {{ template "repo/fragments/time" .Created }}
+        </a>
+      </div>
+      <!-- Row 2: Body text -->
+      <div class="prose dark:prose-invert mt-1">
+        {{ .Body | markdown }}
+      </div>
+    </div>
+  </div>
+{{ end }}
+
+{{ define "loginPrompt" }}
+  <div class="bg-amber-50 dark:bg-amber-900 border border-amber-500 rounded drop-shadow-sm p-2 relative flex gap-2 items-center">
+    <a href="/signup" class="btn-create py-0 hover:no-underline hover:text-white flex items-center gap-2">
+      sign up
+    </a>
+    <span class="text-gray-500 dark:text-gray-400">or</span>
+    <a href="/login" class="underline">login</a>
+    to add to the discussion
+  </div>
 {{ end }}
