@@ -1,74 +1,65 @@
 {{ define "repo/pipelines/fragments/pipelineSymbol" }}
-  <div class="cursor-pointer">
-    {{ $c := .Counts }}
-    {{ $statuses := .Statuses }}
-    {{ $total := len $statuses }}
-    {{ $success := index $c "success" }}
-    {{ $fail := index $c "failed" }}
-    {{ $timeout := index $c "timeout" }}
-    {{ $empty := eq $total 0 }}
-    {{ $allPass := eq $success $total }}
-    {{ $allFail := eq $fail $total }}
-    {{ $allTimeout := eq $timeout $total }}
-
-    {{ if $empty }}
-      <div class="flex gap-1 items-center">
-        {{ i "hourglass" "size-4 text-gray-600 dark:text-gray-400 " }}
-        <span>0/{{ $total }}</span>
-      </div>
-    {{ else if $allPass }}
-      <div class="flex gap-1 items-center">
-        {{ i "check" "size-4 text-green-600" }}
-        <span>{{ $total }}/{{ $total }}</span>
-      </div>
-    {{ else if $allFail }}
-      <div class="flex gap-1 items-center">
-        {{ i "x" "size-4 text-red-500" }}
-        <span>0/{{ $total }}</span>
-      </div>
-    {{ else if $allTimeout }}
-      <div class="flex gap-1 items-center">
-        {{ i "clock-alert" "size-4 text-orange-500" }}
-        <span>0/{{ $total }}</span>
-      </div>
+  <div class="cursor-pointer flex gap-2 items-center">
+    {{ template "symbol" .Pipeline }}
+    {{ if .ShortSummary }}
+      {{ .Pipeline.ShortStatusSummary }}
     {{ else }}
-      {{ $radius := f64 8 }}
-      {{ $circumference := mulf64 2.0 (mulf64 3.1416 $radius) }}
-      {{ $offset := 0.0 }}
-      <div class="flex gap-1 items-center">
-        <svg class="w-4 h-4 transform -rotate-90" viewBox="0 0 20 20">
-          <circle cx="10" cy="10" r="{{ $radius }}" fill="none" stroke="#f3f4f633" stroke-width="2"/>
-
-          {{ range $kind, $count := $c }}
-            {{ $color := "" }}
-            {{ if or (eq $kind "pending") (eq $kind "running") }}
-              {{ $color = "#eab308" }} {{/* amber-500 */}}
-            {{ else if eq $kind "success" }}
-              {{ $color = "#10b981" }} {{/* green-500 */}}
-            {{ else if eq $kind "cancelled" }}
-              {{ $color = "#6b7280" }} {{/* gray-500 */}}
-            {{ else if eq $kind "timeout" }}
-              {{ $color = "#fb923c" }} {{/* orange-400 */}}
-            {{ else }}
-              {{ $color = "#ef4444" }} {{/* red-500 for failed or unknown */}}
-            {{ end }}
-
-            {{ $percent := divf64 (f64 $count) (f64 $total) }}
-            {{ $length := mulf64 $percent $circumference }}
-
-            <circle
-              cx="10" cy="10" r="{{ $radius }}"
-              fill="none"
-              stroke="{{ $color }}"
-              stroke-width="2"
-              stroke-dasharray="{{ printf "%.2f %.2f" $length (subf64 $circumference $length) }}"
-              stroke-dashoffset="{{ printf "%.2f" (negf64 $offset) }}"
-            />
-            {{ $offset = addf64 $offset $length }}
-          {{ end }}
-        </svg>
-        <span>{{ $success }}/{{ $total }}</span>
-      </div>
+      {{ .Pipeline.LongStatusSummary }}
     {{ end }}
   </div>
+{{ end }}
+
+{{ define "symbol" }}
+  {{ $c := .Counts }}
+  {{ $statuses := .Statuses }}
+  {{ $total := len $statuses }}
+  {{ $success := index $c "success" }}
+  {{ $fail := index $c "failed" }}
+  {{ $timeout := index $c "timeout" }}
+  {{ $empty := eq $total 0 }}
+  {{ $allPass := eq $success $total }}
+  {{ $allFail := eq $fail $total }}
+  {{ $allTimeout := eq $timeout $total }}
+
+  {{ if $empty }}
+    {{ i "hourglass" "size-4 text-gray-600 dark:text-gray-400 " }}
+  {{ else if $allPass }}
+    {{ i "check" "size-4 text-green-600 dark:text-green-500" }}
+  {{ else if $allFail }}
+    {{ i "x" "size-4 text-red-600 dark:text-red-500" }}
+  {{ else if $allTimeout }}
+    {{ i "clock-alert" "size-4 text-orange-500" }}
+  {{ else }}
+    {{ $radius := f64 8 }}
+    {{ $circumference := mulf64 2.0 (mulf64 3.1416 $radius) }}
+    {{ $offset := 0.0 }}
+    <svg class="w-4 h-4 transform -rotate-90" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="{{ $radius }}" fill="none" class="stroke-gray-200 dark:stroke-gray-700" stroke-width="2"/>
+      {{ range $kind, $count := $c }}
+        {{ $colorClass := "" }}
+        {{ if or (eq $kind "pending") (eq $kind "running") }}
+          {{ $colorClass = "stroke-yellow-600 dark:stroke-yellow-500" }}
+        {{ else if eq $kind "success" }}
+          {{ $colorClass = "stroke-green-600 dark:stroke-green-500" }}
+        {{ else if eq $kind "cancelled" }}
+          {{ $colorClass = "stroke-gray-600 dark:stroke-gray-500" }}
+        {{ else if eq $kind "timeout" }}
+          {{ $colorClass = "stroke-orange-600 dark:stroke-orange-500" }}
+        {{ else }}
+          {{ $colorClass = "stroke-red-600 dark:stroke-red-500" }}
+        {{ end }}
+        {{ $percent := divf64 (f64 $count) (f64 $total) }}
+        {{ $length := mulf64 $percent $circumference }}
+        <circle
+          cx="10" cy="10" r="{{ $radius }}"
+          fill="none"
+          class="{{ $colorClass }}"
+          stroke-width="2"
+          stroke-dasharray="{{ printf "%.2f %.2f" $length (subf64 $circumference $length) }}"
+          stroke-dashoffset="{{ printf "%.2f" (negf64 $offset) }}"
+        />
+        {{ $offset = addf64 $offset $length }}
+      {{ end }}
+    </svg>
+  {{ end }}
 {{ end }}

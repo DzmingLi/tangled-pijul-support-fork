@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
@@ -56,6 +57,43 @@ func (w WorkflowStatus) TimeTaken() time.Duration {
 	}
 
 	return 0
+}
+
+// produces short summary of successes:
+// - "0/4" when zero successes of 4 workflows
+// - "4/4" when all successes of 4 workflows
+// - "0/0" when no workflows run in this pipeline
+func (p Pipeline) ShortStatusSummary() string {
+	counts := make(map[spindle.StatusKind]int)
+	for _, w := range p.Statuses {
+		counts[w.Latest().Status] += 1
+	}
+
+	total := len(p.Statuses)
+	successes := counts[spindle.StatusKindSuccess]
+
+	return fmt.Sprintf("%d/%d", successes, total)
+}
+
+// produces a string of the form "3/4 success, 2/4 failed, 1/4 pending"
+func (p Pipeline) LongStatusSummary() string {
+	counts := make(map[spindle.StatusKind]int)
+	for _, w := range p.Statuses {
+		counts[w.Latest().Status] += 1
+	}
+
+	total := len(p.Statuses)
+
+	var result []string
+	// finish states first, followed by start states
+	states := append(spindle.FinishStates[:], spindle.StartStates[:]...)
+	for _, state := range states {
+		if count, ok := counts[state]; ok {
+			result = append(result, fmt.Sprintf("%d/%d %s", count, total, state.String()))
+		}
+	}
+
+	return strings.Join(result, ", ")
 }
 
 func (p Pipeline) Counts() map[string]int {

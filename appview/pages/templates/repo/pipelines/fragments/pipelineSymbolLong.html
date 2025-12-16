@@ -4,7 +4,7 @@
   <div class="relative inline-block">
     <details class="relative">
       <summary class="cursor-pointer list-none">
-        {{ template "repo/pipelines/fragments/pipelineSymbol" .Pipeline }}
+        {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" true) }}
       </summary>
       {{ template "repo/pipelines/fragments/tooltip" $ }}
     </details>
