@@ -112,18 +112,9 @@
                         {{ template "repo/fragments/time" .Created }}
                     </span>
 
-
-                    {{ $latestRound := .LastRoundNumber }}
-                    {{ $lastSubmission := index .Submissions $latestRound }}
-
                     <span class="before:content-['·']">
-                      {{ $commentCount := len $lastSubmission.Comments }}
-                      {{ $s := "s" }}
-                      {{ if eq $commentCount 1 }}
-                        {{ $s = "" }}
-                      {{ end }}
-
-                      {{ len $lastSubmission.Comments}} comment{{$s}}
+                      {{ $commentCount := .TotalComments }}
+                      {{ $commentCount }} comment{{ if ne $commentCount 1 }}s{{ end }}
                     </span>
 
                     <span class="before:content-['·']">
@@ -136,7 +127,7 @@
                     {{ $pipeline := index $.Pipelines .LatestSha }}
                     {{ if and $pipeline $pipeline.Id }}
                       <span class="before:content-['·']"></span>
-                      {{ template "repo/pipelines/fragments/pipelineSymbol" $pipeline }}
+                      {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" true) }}
                     {{ end }}
 
                     {{ $state := .Labels }}

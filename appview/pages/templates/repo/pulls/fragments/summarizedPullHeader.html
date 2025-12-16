@@ -15,10 +15,9 @@
 
       <div class="flex-shrink-0 flex items-center gap-2">
         {{ $latestRound := .LastRoundNumber }}
-        {{ $lastSubmission := index .Submissions $latestRound }}
-        {{ $commentCount := len $lastSubmission.Comments }}
+        {{ $commentCount := .TotalComments }}
         {{ if and $pipeline $pipeline.Id }}
-          {{ template "repo/pipelines/fragments/pipelineSymbol" $pipeline }}
+          {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" true) }}
           <span class="before:content-['·'] before:select-none text-gray-500 dark:text-gray-400"></span>
         {{ end }}
         <span>
