@@ -1,59 +1,180 @@
 {{ define "repo/fragments/diff" }}
+  <style>
+    #filesToggle:checked ~ div label[for="filesToggle"] .show-text { display: none; }
+    #filesToggle:checked ~ div label[for="filesToggle"] .hide-text { display: inline; }
+    #filesToggle:not(:checked) ~ div label[for="filesToggle"] .hide-text { display: none; }
+    #filesToggle:checked ~ div div#files { width: fit-content; max-width: 15vw; margin-right: 1rem; }
+    #filesToggle:not(:checked) ~ div div#files { width: 0; display: hidden; margin-right: 0; }
+  </style>
+
+  {{ template "diffTopbar" . }}
+  {{ block "diffLayout" . }} {{ end }}
+{{ end }}
+
+{{ define "diffTopbar" }}
   {{ $diff := index . 0 }}
   {{ $opts := index . 1 }}
 
-  {{ $commit := $diff.Commit }}
-  {{ $diff := $diff.Diff }}
-  {{ $isSplit := $opts.Split }}
-  {{ $this := $commit.This }}
-  {{ $parent := $commit.Parent }}
-  {{ $last := sub (len $diff) 1 }}
+  {{ block "filesCheckbox" $ }} {{ end }}
+  {{ block "subsCheckbox" $ }} {{ end }}
 
+  <!-- top bar -->
+  <div class="sticky top-0 z-30 bg-slate-100 dark:bg-gray-900 flex items-center gap-2 col-span-full h-12 p-2">
+    <!-- left panel toggle -->
+    {{ template "filesToggle" . }}
+
+    <!-- stats -->
+    {{ $stat := $diff.Stats }}
+    {{ $count := len $diff.ChangedFiles }}
+    {{ template "repo/fragments/diffStatPill" $stat }}
+    {{ $count }} changed file{{ if ne $count 1 }}s{{ end }}
+
+    <!-- spacer -->
+    <div class="flex-grow"></div>
+
+    <!-- collapse diffs -->
+    {{ template "collapseToggle" }}
+
+    <!-- diff options -->
+    {{ template "repo/fragments/diffOpts" $opts }}
+
+    <!-- right panel toggle -->
+    {{ block "subsToggle" $ }} {{ end }}
+  </div>
+
+{{ end }}
+
+{{ define "diffLayout" }}
+  {{ $diff := index . 0 }}
+  {{ $opts := index . 1 }}
+
+  <div class="flex col-span-full flex-grow">
+    <!-- left panel -->
+    <div id="files" class="w-0 hidden md:block overflow-hidden sticky top-12 max-h-screen overflow-y-auto pb-12">
+      <section class="overflow-x-auto text-sm px-6 py-2 border border-gray-200 dark:border-gray-700 w-full mx-auto min-h-full rounded bg-white dark:bg-gray-800 drop-shadow-sm">
+        {{ template "repo/fragments/fileTree" $diff.FileTree }}
+      </section>
+    </div>
+
+    <!-- main content -->
+    <div class="flex-1 min-w-0 sticky top-12 pb-12">
+      {{ template "diffFiles" (list $diff $opts) }}
+    </div>
+
+  </div>
+{{ end }}
+
+{{ define "diffFiles" }}
+  {{ $diff := index . 0 }}
+  {{ $opts := index . 1 }}
+  {{ $files := $diff.ChangedFiles }}
+  {{ $isSplit := $opts.Split }}
   <div class="flex flex-col gap-4">
-    {{ if eq (len $diff) 0 }}
+    {{ if eq (len $files) 0 }}
       <div class="text-center text-gray-500 dark:text-gray-400 py-8">
         <p>No differences found between the selected revisions.</p>
       </div>
     {{ else }}
-    {{ range $idx, $hunk := $diff }}
-      {{ with $hunk }}
-        <details open id="file-{{ .Id }}" class="group border border-gray-200 dark:border-gray-700 w-full mx-auto rounded bg-white dark:bg-gray-800 drop-shadow-sm" tabindex="{{ add $idx 1 }}">
-          <summary class="list-none cursor-pointer sticky top-0">
-            <div id="diff-file-header" class="rounded cursor-pointer bg-white dark:bg-gray-800 flex justify-between">
-              <div id="left-side-items" class="p-2 flex gap-2 items-center overflow-x-auto">
-                <span class="group-open:hidden inline">{{ i "chevron-right" "w-4 h-4" }}</span>
-                <span class="hidden group-open:inline">{{ i "chevron-down" "w-4 h-4" }}</span>
-                {{ template "repo/fragments/diffStatPill" .Stats }}
-
-                <div class="flex gap-2 items-center overflow-x-auto">
-                  {{ if .IsDelete }}
-                    {{ .Name.Old }}
-                  {{ else if (or .IsCopy .IsRename) }}
-                    {{ .Name.Old }} {{ i "arrow-right" "w-4 h-4" }} {{ .Name.New }}
-                  {{ else }}
-                    {{ .Name.New }}
-                  {{ end }}
-                </div>
-              </div>
-            </div>
-          </summary>
-
-          <div class="transition-all duration-700 ease-in-out">
-            {{ if .IsBinary }}
-              <p class="text-center text-gray-400 dark:text-gray-500 p-4">
-              This is a binary file and will not be displayed.
-              </p>
-            {{ else }}
-              {{ if $isSplit }}
-                {{- template "repo/fragments/splitDiff" .Split -}}
-              {{ else }}
-                {{- template "repo/fragments/unifiedDiff" . -}}
-              {{ end }}
-            {{- end -}}
-          </div>
-        </details>
+      {{ range $idx, $file := $files }}
+        {{ template "diffFile" (list $idx $file $isSplit) }}
       {{ end }}
     {{ end }}
-    {{ end }}
   </div>
+{{ end }}
+
+{{ define "diffFile" }}
+  {{ $idx := index . 0 }}
+  {{ $file := index . 1 }}
+  {{ $isSplit := index . 2 }}
+  {{ with $file }}
+    <details open id="file-{{ .Id }}" class="group border border-gray-200 dark:border-gray-700 w-full mx-auto rounded bg-white dark:bg-gray-800 drop-shadow-sm" tabindex="{{ add $idx 1 }}">
+      <summary class="list-none cursor-pointer sticky top-12 group-open:border-b border-gray-200 dark:border-gray-700">
+        <div id="diff-file-header" class="rounded cursor-pointer bg-white dark:bg-gray-800 flex justify-between">
+          <div id="left-side-items" class="p-2 flex gap-2 items-center overflow-x-auto">
+            <span class="group-open:hidden inline">{{ i "chevron-right" "w-4 h-4" }}</span>
+            <span class="hidden group-open:inline">{{ i "chevron-down" "w-4 h-4" }}</span>
+            {{ template "repo/fragments/diffStatPill" .Stats }}
+
+            <div class="flex gap-2 items-center overflow-x-auto">
+              {{ $n := .Names }}
+              {{ if and $n.New $n.Old (ne $n.New $n.Old)}}
+                {{ $n.Old }} {{ i "arrow-right" "w-4 h-4" }} {{ $n.New }}
+              {{ else if $n.New }}
+                {{ $n.New }}
+              {{ else }}
+                {{ $n.Old }}
+              {{ end }}
+            </div>
+          </div>
+        </div>
+      </summary>
+
+      <div class="transition-all duration-700 ease-in-out">
+        {{ $reason := .CanRender }}
+        {{ if $reason }}
+          <p class="text-center text-gray-400 dark:text-gray-500 p-4">{{ $reason }}</p>
+        {{ else }}
+          {{ if $isSplit }}
+            {{- template "repo/fragments/splitDiff" .Split -}}
+          {{ else }}
+            {{- template "repo/fragments/unifiedDiff" . -}}
+          {{ end }}
+        {{- end -}}
+      </div>
+    </details>
+  {{ end }}
+{{ end }}
+
+{{ define "filesCheckbox" }}
+  <input type="checkbox" id="filesToggle" class="peer/files hidden" checked/>
+{{ end }}
+
+{{ define "filesToggle" }}
+  <label title="Toggle filetree panel" for="filesToggle" class="hidden md:inline-flex items-center justify-center rounded cursor-pointer text-normal font-normal normalcase">
+    <span class="show-text">{{ i "panel-left-open" "size-4" }}</span>
+    <span class="hide-text">{{ i "panel-left-close" "size-4" }}</span>
+  </label>
+{{ end }}
+
+{{ define "collapseToggle" }}
+  <label 
+    title="Expand/Collapse diffs"
+    for="collapseToggle"
+    class="btn font-normal normal-case p-2"
+  >
+    <input type="checkbox" id="collapseToggle" class="peer/collapse hidden" checked/>
+    <span class="peer-checked/collapse:hidden inline-flex items-center gap-2">
+      {{ i "fold-vertical" "w-4 h-4" }}
+      <span class="hidden md:inline">expand all</span>
+    </span>
+    <span class="peer-checked/collapse:inline-flex hidden flex items-center gap-2">
+      {{ i "unfold-vertical" "w-4 h-4" }}
+      <span class="hidden md:inline">collapse all</span>
+    </span>
+  </label>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const checkbox = document.getElementById('collapseToggle');
+      const details = document.querySelectorAll('details[id^="file-"]');
+
+      checkbox.addEventListener('change', function() {
+        details.forEach(detail => {
+          detail.open = checkbox.checked;
+        });
+      });
+
+      details.forEach(detail => {
+        detail.addEventListener('toggle', function() {
+          const allOpen = Array.from(details).every(d => d.open);
+          const allClosed = Array.from(details).every(d => !d.open);
+
+          if (allOpen) {
+            checkbox.checked = true;
+          } else if (allClosed) {
+            checkbox.checked = false;
+          }
+        });
+      });
+    });
+  </script>
 {{ end }}
