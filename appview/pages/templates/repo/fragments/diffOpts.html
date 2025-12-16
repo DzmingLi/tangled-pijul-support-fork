@@ -1,30 +1,27 @@
 {{ define "repo/fragments/diffOpts" }}
-  <section class="flex flex-col gap-2 overflow-x-auto text-sm px-6 py-2 border border-gray-200 dark:border-gray-700 w-full mx-auto rounded bg-white dark:bg-gray-800 drop-shadow-sm">
-    <strong class="text-sm uppercase dark:text-gray-200">options</strong>
-    {{ $active := "unified" }}
-    {{ if .Split }}
-      {{ $active = "split" }}
-    {{ end }}
+  {{ $active := "unified" }}
+  {{ if .Split }}
+    {{ $active = "split" }}
+  {{ end }}
 
-    {{ $unified := 
-       (dict
-         "Key" "unified"
-         "Value" "unified"
-         "Icon" "square-split-vertical"
-         "Meta" "") }}
-    {{ $split := 
-       (dict
-         "Key" "split"
-         "Value" "split"
-         "Icon" "square-split-horizontal"
-         "Meta" "") }}
-    {{ $values := list $unified $split }}
+  {{ $unified := 
+     (dict
+       "Key" "unified"
+       "Value" "unified"
+       "Icon" "square-split-vertical"
+       "Meta" "") }}
+  {{ $split := 
+     (dict
+       "Key" "split"
+       "Value" "split"
+       "Icon" "square-split-horizontal"
+       "Meta" "") }}
+  {{ $values := list $unified $split }}
 
-    {{ template "fragments/tabSelector" 
-       (dict
-         "Name" "diff"
-         "Values" $values
-         "Active" $active) }}
-  </section>
+  {{ template "fragments/tabSelector" 
+     (dict
+       "Name" "diff"
+       "Values" $values
+       "Active" $active) }}
 {{ end }}
 
