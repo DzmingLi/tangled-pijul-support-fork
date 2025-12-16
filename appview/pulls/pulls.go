@@ -236,7 +236,14 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		defs[l.AtUri().String()] = &l
 	}
 
-	s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
+	patch := pull.LatestSubmission().CombinedPatch()
+	diff := patchutil.AsNiceDiff(patch, pull.TargetBranch)
+	var diffOpts types.DiffOpts
+	if d := r.URL.Query().Get("diff"); d == "split" {
+		diffOpts.Split = true
+	}
+
+	log.Println(s.pages.RepoSinglePull(w, pages.RepoSinglePullParams{
 		LoggedInUser:       user,
 		RepoInfo:           s.repoResolver.GetRepoInfo(r, user),
 		Pull:               pull,
@@ -247,13 +254,15 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 		MergeCheck:         mergeCheckResponse,
 		ResubmitCheck:      resubmitResult,
 		Pipelines:          m,
+		Diff:               &diff,
+		DiffOpts:           diffOpts,
 
 		OrderedReactionKinds: models.OrderedReactionKinds,
 		Reactions:            reactionMap,
 		UserReacted:          userReactions,
 
 		LabelDefs: defs,
-	})
+	}))
 }
 
 func (s *Pulls) mergeCheck(r *http.Request, f *models.Repo, pull *models.Pull, stack models.Stack) types.MergeCheckResponse {

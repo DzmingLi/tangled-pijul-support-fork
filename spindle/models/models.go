@@ -53,10 +53,10 @@ var (
 		StatusKindRunning,
 	}
 	FinishStates [4]StatusKind = [4]StatusKind{
-		StatusKindCancelled,
 		StatusKindFailed,
-		StatusKindSuccess,
 		StatusKindTimeout,
+		StatusKindCancelled,
+		StatusKindSuccess,
 	}
 )
 
