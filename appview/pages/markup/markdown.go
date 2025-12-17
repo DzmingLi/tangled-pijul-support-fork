@@ -13,6 +13,7 @@ import (
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark-emoji"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -66,6 +67,7 @@ func NewMarkdown() goldmark.Markdown {
 			),
 			callout.CalloutExtention,
 			textension.AtExt,
+			emoji.Emoji,
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),

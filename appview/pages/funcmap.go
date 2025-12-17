@@ -25,6 +25,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/yuin/goldmark"
+	emoji "github.com/yuin/goldmark-emoji"
 	"tangled.org/core/appview/filetree"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages/markup"
@@ -261,7 +262,11 @@ func (p *Pages) funcMap() template.FuncMap {
 		},
 		"description": func(text string) template.HTML {
 			p.rctx.RendererType = markup.RendererTypeDefault
-			htmlString := p.rctx.RenderMarkdownWith(text, goldmark.New())
+			htmlString := p.rctx.RenderMarkdownWith(text, goldmark.New(
+				goldmark.WithExtensions(
+					emoji.Emoji,
+				),
+			))
 			sanitized := p.rctx.SanitizeDescription(htmlString)
 			return template.HTML(sanitized)
 		},
