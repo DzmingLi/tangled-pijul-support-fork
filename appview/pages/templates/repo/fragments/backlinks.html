@@ -14,26 +14,26 @@
           <div class="flex gap-2 items-center">
             {{ if .State.IsClosed }}
               <span class="text-gray-500 dark:text-gray-400">
-                {{ i "ban" "w-4 h-4" }}
+                {{ i "ban" "size-3" }}
               </span>
             {{ else if eq .Kind.String "issues" }}
               <span class="text-green-600 dark:text-green-500">
-                {{ i "circle-dot" "w-4 h-4" }}
+                {{ i "circle-dot" "size-3" }}
               </span>
             {{ else if .State.IsOpen }}
               <span class="text-green-600 dark:text-green-500">
-                {{ i "git-pull-request" "w-4 h-4" }}
+                {{ i "git-pull-request" "size-3" }}
               </span>
             {{ else if .State.IsMerged }}
               <span class="text-purple-600 dark:text-purple-500">
-                {{ i "git-merge" "w-4 h-4" }}
+                {{ i "git-merge" "size-3" }}
               </span>
             {{ else }}
               <span class="text-gray-600 dark:text-gray-300">
-                {{ i "git-pull-request-closed" "w-4 h-4" }}
+                {{ i "git-pull-request-closed" "size-3" }}
               </span>
             {{ end }}
-            <a href="{{ . }}"><span class="text-gray-500 dark:text-gray-400">#{{ .SubjectId }}</span> {{ .Title }}</a>
+            <a href="{{ . }}" class="line-clamp-1 text-sm"><span class="text-gray-500 dark:text-gray-400">#{{ .SubjectId }}</span> {{ .Title }}</a>
           </div>
           {{ if not (eq $.RepoInfo.FullName $repoUrl) }}
           <div>
