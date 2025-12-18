@@ -16,6 +16,7 @@ func (d *DB) Knots() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var knots []string
 	for rows.Next() {
