@@ -165,6 +165,7 @@ func GetRepoStars(e Execer, limit int, filters ...orm.Filter) ([]models.RepoStar
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	starMap := make(map[string][]models.Star)
 	for rows.Next() {

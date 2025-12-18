@@ -56,10 +56,10 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 		limitClause,
 	)
 	rows, err := e.Query(repoQuery, args...)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute repo query: %w ", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var repo models.Repo
@@ -128,6 +128,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute labels query: %w ", err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var repoat, labelat string
 		if err := rows.Scan(&repoat, &labelat); err != nil {
@@ -165,6 +167,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute lang query: %w ", err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var repoat, lang string
 		if err := rows.Scan(&repoat, &lang); err != nil {
@@ -191,6 +195,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute star-count query: %w ", err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var repoat string
 		var count int
@@ -220,6 +226,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute issue-count query: %w ", err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var repoat string
 		var open, closed int
@@ -261,6 +269,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute pulls-count query: %w ", err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var repoat string
 		var open, merged, closed, deleted int

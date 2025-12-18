@@ -230,6 +230,7 @@ func GetProfiles(e Execer, filters ...orm.Filter) (map[string]*models.Profile, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	profileMap := make(map[string]*models.Profile)
 	for rows.Next() {
@@ -270,6 +271,8 @@ func GetProfiles(e Execer, filters ...orm.Filter) (map[string]*models.Profile, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	idxs := make(map[string]int)
 	for did := range profileMap {
 		idxs[did] = 0
@@ -290,6 +293,8 @@ func GetProfiles(e Execer, filters ...orm.Filter) (map[string]*models.Profile, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	idxs = make(map[string]int)
 	for did := range profileMap {
 		idxs[did] = 0

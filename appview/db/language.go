@@ -28,10 +28,10 @@ func GetRepoLanguages(e Execer, filters ...orm.Filter) ([]models.RepoLanguage, e
 		whereClause,
 	)
 	rows, err := e.Query(query, args...)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w ", err)
 	}
+	defer rows.Close()
 
 	var langs []models.RepoLanguage
 	for rows.Next() {

@@ -38,6 +38,7 @@ func GetRegistrations(e Execer, filters ...orm.Filter) ([]models.Registration, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var createdAt string

@@ -452,6 +452,7 @@ func GetIssueComments(e Execer, filters ...orm.Filter) ([]models.IssueComment, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var comment models.IssueComment

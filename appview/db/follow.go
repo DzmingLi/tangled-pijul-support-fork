@@ -167,6 +167,8 @@ func GetFollows(e Execer, limit int, filters ...orm.Filter) ([]models.Follow, er
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var follow models.Follow
 		var followedAt string
