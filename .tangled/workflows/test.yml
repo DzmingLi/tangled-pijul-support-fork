@@ -14,6 +14,23 @@ steps:
     command: |
       mkdir -p appview/pages/static; touch appview/pages/static/x
 
+  - name: run go mod tidy
+    command: go mod tidy
+
+  - name: run gomod2nix
+    command: |
+      HOME=$(mktemp -d)
+      echo $HOME
+      nix run .#gomod2nix
+
+  - name: verify no changes
+    command: |
+      if ! git diff --quiet; then
+        echo "Error: gomod2nix produced changes. Please commit the updated files."
+        git diff
+        exit 1
+      fi
+
   - name: run linter
     environment:
       CGO_ENABLED: 1
