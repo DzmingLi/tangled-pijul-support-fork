@@ -530,6 +530,9 @@ schema = 3
   [mod."github.com/yuin/goldmark"]
     version = "v1.7.13"
     hash = "sha256-vBCxZrPYPc8x/nvAAv3Au59dCCyfS80Vw3/a9EXK7TE="
+  [mod."github.com/yuin/goldmark-emoji"]
+    version = "v1.0.6"
+    hash = "sha256-+d6bZzOPE+JSFsZbQNZMCWE+n3jgcQnkPETVk47mxSY="
   [mod."github.com/yuin/goldmark-highlighting/v2"]
     version = "v2.0.0-20230729083705-37449abec8cc"
     hash = "sha256-HpiwU7jIeDUAg2zOpTIiviQir8dpRPuXYh2nqFFccpg="
