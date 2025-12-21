@@ -26,7 +26,7 @@
     {{ else if (and .LoggedInUser (eq .LoggedInUser.Did .RepoInfo.OwnerDid)) }}
       {{ $knot := .RepoInfo.Knot }}
       {{ if eq $knot "knot1.tangled.sh" }}
-          {{ $knot = "tangled.sh" }}
+          {{ $knot = "tangled.org" }}
       {{ end }}
       <div class="w-full flex place-content-center">
         <div class="py-6 w-fit flex flex-col gap-4">
