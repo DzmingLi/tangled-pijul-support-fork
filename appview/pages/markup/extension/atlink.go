@@ -35,7 +35,7 @@ func (n *AtNode) Kind() ast.NodeKind {
 	return KindAt
 }
 
-var atRegexp = regexp.MustCompile(`(^|\s|\()(@)([a-zA-Z0-9.-]+)(\b)`)
+var atRegexp = regexp.MustCompile(`(^|\s|\()(@)([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\b)`)
 var markdownLinkRegexp = regexp.MustCompile(`(?ms)\[.*\]\(.*\)`)
 
 type atParser struct{}
@@ -54,10 +54,6 @@ func (s *atParser) Parse(parent ast.Node, block text.Reader, pc parser.Context) 
 	line, segment := block.PeekLine()
 	m := atRegexp.FindSubmatchIndex(line)
 	if m == nil {
-		return nil
-	}
-
-	if !util.IsSpaceRune(block.PrecendingCharacter()) {
 		return nil
 	}
 
