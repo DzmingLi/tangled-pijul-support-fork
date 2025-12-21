@@ -36,6 +36,7 @@ func (n *AtNode) Kind() ast.NodeKind {
 }
 
 var atRegexp = regexp.MustCompile(`(^|\s|\()(@)([a-zA-Z0-9.-]+)(\b)`)
+var markdownLinkRegexp = regexp.MustCompile(`(?ms)\[.*\]\(.*\)`)
 
 type atParser struct{}
 
@@ -55,6 +56,19 @@ func (s *atParser) Parse(parent ast.Node, block text.Reader, pc parser.Context) 
 	if m == nil {
 		return nil
 	}
+
+	if !util.IsSpaceRune(block.PrecendingCharacter()) {
+		return nil
+	}
+
+	// Check for all links in the markdown to see if the handle found is inside one
+	linksIndexes := markdownLinkRegexp.FindAllIndex(block.Source(), -1)
+	for _, linkMatch := range linksIndexes {
+		if linkMatch[0] < segment.Start && segment.Start < linkMatch[1] {
+			return nil
+		}
+	}
+
 	atSegment := text.NewSegment(segment.Start, segment.Start+m[1])
 	block.Advance(m[1])
 	node := &AtNode{}
