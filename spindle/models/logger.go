@@ -12,7 +12,7 @@ import (
 type WorkflowLogger struct {
 	file    *os.File
 	encoder *json.Encoder
-	mask  *SecretMask
+	mask    *SecretMask
 }
 
 func NewWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*WorkflowLogger, error) {
@@ -26,7 +26,7 @@ func NewWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*
 	return &WorkflowLogger{
 		file:    file,
 		encoder: json.NewEncoder(file),
-		mask:  NewSecretMask(secretValues),
+		mask:    NewSecretMask(secretValues),
 	}, nil
 }
 
