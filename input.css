@@ -162,7 +162,7 @@
         }
 
         .prose a.mention {
-            @apply no-underline hover:underline;
+            @apply no-underline hover:underline font-bold;
         }
 
         .prose li {

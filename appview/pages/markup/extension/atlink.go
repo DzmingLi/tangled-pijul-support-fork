@@ -101,9 +101,9 @@ func (r *atHtmlRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) 
 
 func (r *atHtmlRenderer) renderAt(w util.BufWriter, source []byte, n ast.Node, entering bool) (ast.WalkStatus, error) {
 	if entering {
-		w.WriteString(`<a href="/@`)
+		w.WriteString(`<a href="/`)
 		w.WriteString(n.(*AtNode).Handle)
-		w.WriteString(`" class="mention font-bold">`)
+		w.WriteString(`" class="mention">`)
 	} else {
 		w.WriteString("</a>")
 	}
