@@ -1,0 +1,41 @@
+{
+  pandoc,
+  tailwindcss,
+  runCommandLocal,
+  inter-fonts-src,
+  ibm-plex-mono-src,
+  lucide-src,
+  src,
+}:
+runCommandLocal "docs" {} ''
+  mkdir -p working
+
+  # copy templates, themes, styles, filters to working directory
+  cp ${src}/docs/*.html working/
+  cp ${src}/docs/*.theme working/
+  cp ${src}/docs/*.css working/
+
+  # icons
+  cp -rf ${lucide-src}/*.svg working/
+
+  # content
+  ${pandoc}/bin/pandoc ${src}/docs/DOCS.md \
+    -o $out/ \
+    -t chunkedhtml \
+    --variable toc \
+    --toc-depth=2 \
+    --css=stylesheet.css \
+    --chunk-template="%i.html" \
+    --highlight-style=working/highlight.theme \
+    --template=working/template.html
+
+  # fonts
+  mkdir -p $out/static/fonts
+  cp -f ${inter-fonts-src}/web/InterVariable*.woff2 $out/static/fonts/
+  cp -f ${inter-fonts-src}/web/InterDisplay*.woff2 $out/static/fonts/
+  cp -f ${inter-fonts-src}/InterVariable*.ttf $out/static/fonts/
+  cp -f ${ibm-plex-mono-src}/fonts/complete/woff2/IBMPlexMono*.woff2 $out/static/fonts/
+
+  # styles
+  cd ${src} && ${tailwindcss}/bin/tailwindcss -i input.css -o $out/stylesheet.css
+''

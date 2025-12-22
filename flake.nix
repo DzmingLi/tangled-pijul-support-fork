@@ -88,13 +88,16 @@
           inherit htmx-src htmx-ws-src lucide-src inter-fonts-src ibm-plex-mono-src actor-typeahead-src;
         };
         appview = self.callPackage ./nix/pkgs/appview.nix {};
+        docs = self.callPackage ./nix/pkgs/docs.nix {
+          inherit inter-fonts-src ibm-plex-mono-src lucide-src;
+        };
         spindle = self.callPackage ./nix/pkgs/spindle.nix {};
         knot-unwrapped = self.callPackage ./nix/pkgs/knot-unwrapped.nix {};
         knot = self.callPackage ./nix/pkgs/knot.nix {};
       });
   in {
     overlays.default = final: prev: {
-      inherit (mkPackageSet final) lexgen goat sqlite-lib spindle knot-unwrapped knot appview;
+      inherit (mkPackageSet final) lexgen goat sqlite-lib spindle knot-unwrapped knot appview docs;
     };
 
     packages = forAllSystems (system: let
@@ -103,7 +106,7 @@
       staticPackages = mkPackageSet pkgs.pkgsStatic;
       crossPackages = mkPackageSet pkgs.pkgsCross.gnu64.pkgsStatic;
     in {
-      inherit (packages) appview appview-static-files lexgen goat spindle knot knot-unwrapped sqlite-lib;
+      inherit (packages) appview appview-static-files lexgen goat spindle knot knot-unwrapped sqlite-lib docs;
 
       pkgsStatic-appview = staticPackages.appview;
       pkgsStatic-knot = staticPackages.knot;
