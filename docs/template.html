@@ -37,32 +37,32 @@
     <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
 
   </head>
-  <body class="bg-white dark:bg-gray-900 min-h-screen">
+  <body class="bg-white dark:bg-gray-900 min-h-screen flex flex-col min-h-screen">
     $for(include-before)$
       $include-before$
     $endfor$
-    $if(toc)$
-    <!-- mobile topbar toc -->
-    <details id="mobile-$idprefix$TOC" role="doc-toc" class="md:hidden bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 space-y-4 group px-6 py-4">
-      <summary class="cursor-pointer list-none text-sm font-semibold select-none flex gap-2 justify-between items-center dark:text-white">
-        $if(toc-title)$$toc-title$$else$Table of Contents$endif$
-        <span class="group-open:hidden inline">${ menu.svg() }</span>
-        <span class="hidden group-open:inline">${ x.svg() }</span>
-      </summary>
-      ${ table-of-contents:toc.html() }
-    </details>
 
-    <!-- desktop sidebar toc -->
-    <nav id="$idprefix$TOC" role="doc-toc" class="hidden md:block fixed left-0 top-0 w-80 h-screen bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 z-50">
-      $if(toc-title)$
-      <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
-      $endif$
-      ${ table-of-contents:toc.html() }
-    </nav>
+    $if(toc)$
+      <!-- mobile topbar toc -->
+      <details id="mobile-$idprefix$TOC" role="doc-toc" class="md:hidden bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 space-y-4 group px-6 py-4">
+        <summary class="cursor-pointer list-none text-sm font-semibold select-none flex gap-2 justify-between items-center dark:text-white">
+          $if(toc-title)$$toc-title$$else$Table of Contents$endif$
+          <span class="group-open:hidden inline">${ menu.svg() }</span>
+          <span class="hidden group-open:inline">${ x.svg() }</span>
+        </summary>
+        ${ table-of-contents:toc.html() }
+      </details>
+      <!-- desktop sidebar toc -->
+      <nav id="$idprefix$TOC" role="doc-toc" class="hidden md:block fixed left-0 top-0 w-80 h-screen bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 z-50">
+        $if(toc-title)$
+        <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
+        $endif$
+        ${ table-of-contents:toc.html() }
+      </nav>
     $endif$
 
-    <div class="min-h-screen flex-1 flex flex-col $if(toc)$md:ml-80$endif$">
-      <main class="flex-1 max-w-4xl w-full mx-auto p-6">
+    <div class="$if(toc)$md:ml-80$endif$ flex-1 flex flex-col">
+      <main class="max-w-4xl w-full mx-auto p-6 flex-1">
         $if(top)$
         $-- only print title block if this is NOT the top page
         $else$
@@ -76,7 +76,7 @@
           <p class="text-sm text-gray-500 dark:text-gray-400">$author$</p>
           $endfor$
           $if(date)$
-          <p class="text-sm text-gray-500 dark:text-gray-400">$date$</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Updated on $date$</p>
           $endif$
           $if(abstract)$
           <div class="mt-6 p-4 bg-gray-50 rounded-lg">
