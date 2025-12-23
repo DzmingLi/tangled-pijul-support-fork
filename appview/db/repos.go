@@ -158,6 +158,7 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 			from repo_languages
 			where repo_at in (%s)
 			and is_default_ref = 1
+			and language <> ''
 		)
 		where rn = 1
 		`,
