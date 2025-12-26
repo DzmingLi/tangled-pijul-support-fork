@@ -10,9 +10,9 @@ libera.chat](https://web.libera.chat/#tangled).
 
 ## docs
 
-* [knot hosting guide](/docs/knot-hosting.md)
-* [contributing guide](/docs/contributing.md) **please read before opening a PR!**
-* [hacking on tangled](/docs/hacking.md)
+- [knot hosting guide](https://docs.tangled.org/knot-self-hosting-guide.html#knot-self-hosting-guide)
+- [contributing guide](https://docs.tangled.org/contribution-guide.html#contribution-guide) **please read before opening a PR!**
+- [hacking on tangled](https://docs.tangled.org/hacking-on-tangled.html#hacking-on-tangled)
 
 ## security
 

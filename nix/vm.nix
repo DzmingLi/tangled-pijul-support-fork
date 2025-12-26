@@ -8,7 +8,7 @@
     var = builtins.getEnv name;
   in
     if var == ""
-    then throw "\$${name} must be defined, see docs/hacking.md for more details"
+    then throw "\$${name} must be defined, see https://docs.tangled.org/hacking-on-tangled.html#hacking-on-tangled for more details"
     else var;
   envVarOr = name: default: let
     var = builtins.getEnv name;

@@ -858,7 +858,7 @@ The base image for the container is constructed on the fly using
 [Nixery](https://nixery.dev), which is handy for caching layers for frequently
 used packages.
 
-The pipeline manifest is [specified here](/docs/spindle/pipeline.md).
+The pipeline manifest is [specified here](https://docs.tangled.org/spindles.html#pipelines).
 
 ## Secrets with openbao
 
