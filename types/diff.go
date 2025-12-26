@@ -74,6 +74,9 @@ func (d *NiceDiff) ChangedFiles() []string {
 
 // used by html elements as a unique ID for hrefs
 func (d *Diff) Id() string {
+	if d.IsDelete {
+		return d.Name.Old
+	}
 	return d.Name.New
 }
 
