@@ -1,5 +1,5 @@
 ---
-title: Tangled Documentation
+title: Tangled docs
 author: The Tangled Contributors
 date: 21 Sun, Dec 2025
 ---
@@ -8,14 +8,14 @@ date: 21 Sun, Dec 2025
 
 Tangled is a decentralized code hosting and collaboration
 platform. Every component of Tangled is open-source and
-selfhostable. [tangled.org](https://tangled.org) also
+self-hostable. [tangled.org](https://tangled.org) also
 provides hosting and CI services that are free to use.
 
 There are several models for decentralized code
 collaboration platforms, ranging from ActivityPub’s
 (Forgejo) federated model, to Radicle’s entirely P2P model.
 Our approach attempts to be the best of both worlds by
-adopting atproto—a protocol for building decentralized
+adopting the AT Protocol—a protocol for building decentralized
 social applications with a central identity
 
 Our approach to this is the idea of “knots”. Knots are
@@ -26,35 +26,34 @@ Raspberry Pi at home, or larger “community” servers. By
 default, Tangled provides managed knots where you can host
 your repositories for free.
 
-The "appview" at tangled.org acts as a consolidated “view”
+The appview at tangled.org acts as a consolidated "view"
 into the whole network, allowing users to access, clone and
 contribute to repositories hosted across different knots
 seamlessly.
 
-# Quick Start Guide
+# Quick start guide
 
-## Login or Sign up
+## Login or sign up
 
-You can [login](https://tangled.org) by using your AT
+You can [login](https://tangled.org) by using your AT Protocol
 account. If you are unclear on what that means, simply head
 to the [signup](https://tangled.org/signup) page and create
 an account. By doing so, you will be choosing Tangled as
 your account provider (you will be granted a handle of the
 form `user.tngl.sh`).
 
-In the AT network, users are free to choose their account
+In the AT Protocol network, users are free to choose their account
 provider (known as a "Personal Data Service", or PDS), and
 login to applications that support AT accounts.
 
-You can think of it as "one account for all of the
-atmosphere"!
+You can think of it as "one account for all of the atmosphere"!
 
 If you already have an AT account (you may have one if you
 signed up to Bluesky, for example), you can login with the
 same handle on Tangled (so just use `user.bsky.social` on
 the login page).
 
-## Add an SSH Key
+## Add an SSH key
 
 Once you are logged in, you can start creating repositories
 and pushing code. Tangled supports pushing git repositories
@@ -87,7 +86,7 @@ Now, navigate to 'Settings' -> 'Keys' and hit 'Add Key',
 paste your public key, give it a descriptive name, and hit
 save.
 
-## Create a Repository
+## Create a repository
 
 Once your SSH key is added, create your first repository:
 
@@ -98,7 +97,7 @@ Once your SSH key is added, create your first repository:
 4. Choose a knotserver to host this repository on
 5. Hit create
 
-"Knots" are selfhostable, lightweight git servers that can
+Knots are self-hostable, lightweight Git servers that can
 host your repository. Unlike traditional code forges, your
 code can live on any server. Read the [Knots](TODO) section
 for more.
@@ -125,9 +124,9 @@ Note that this configuration only works for knotservers that
 are hosted by tangled.org. If you use a custom knot, refer
 to the [Knots](TODO) section.
 
-## Push Your First Repository
+## Push your first repository
 
-Initialize a new git repository:
+Initialize a new Git repository:
 
 ```bash
 mkdir my-project
@@ -165,7 +164,7 @@ Navigate to your existing local repository:
 cd /path/to/your/existing/repo
 ```
 
-You can inspect your existing git remote like so:
+You can inspect your existing Git remote like so:
 
 ```bash
 git remote -v
@@ -197,7 +196,7 @@ origin  git@tangled.org:user.tngl.sh/my-project (fetch)
 origin  git@tangled.org:user.tngl.sh/my-project (push)
 ```
 
-Push all your branches and tags to tangled:
+Push all your branches and tags to Tangled:
 
 ```bash
 git push -u origin --all
@@ -232,7 +231,7 @@ git remote set-url --add --push origin git@tangled.org:user.tngl.sh/my-project
 ```
 
 You also need to re-add the original URL as a push
-destination (git replaces the push URL when you use `--add`
+destination (Git replaces the push URL when you use `--add`
 the first time):
 
 ```bash
@@ -249,7 +248,7 @@ origin  git@github.com:username/repo (push)
 ```
 
 Notice that there's one fetch URL (the primary remote) and
-two push URLs. Now, whenever you push, git will
+two push URLs. Now, whenever you push, Git will
 automatically push to both remotes:
 
 ```bash
@@ -301,7 +300,7 @@ for a full list of options. Sample configurations:
 ## Docker
 
 Refer to
-[@tangled.org/knot-docker](https://tangled.sh/@tangled.sh/knot-docker).
+[@tangled.org/knot-docker](https://tangled.org/@tangled.org/knot-docker).
 Note that this is community maintained.
 
 ## Manual setup
@@ -372,7 +371,7 @@ DID, you can find your DID in the [Settings](https://tangled.sh/settings) page.
 ```
 KNOT_REPO_SCAN_PATH=/home/git
 KNOT_SERVER_HOSTNAME=knot.example.com
-APPVIEW_ENDPOINT=https://tangled.sh
+APPVIEW_ENDPOINT=https://tangled.org
 KNOT_SERVER_OWNER=did:plc:foobar
 KNOT_SERVER_INTERNAL_LISTEN_ADDR=127.0.0.1:5444
 KNOT_SERVER_LISTEN_ADDR=127.0.0.1:5555
@@ -603,7 +602,7 @@ supported engines are:
 - `nixery`: This uses an instance of
   [Nixery](https://nixery.dev) to run steps, which allows
   you to add [dependencies](#dependencies) from
-  [Nixpkgs](https://github.com/NixOS/nixpkgs). You can
+  Nixpkgs (https://github.com/NixOS/nixpkgs). You can
   search for packages on https://search.nixos.org, and
   there's a pretty good chance the package(s) you're looking
   for will be there.
@@ -630,8 +629,8 @@ repository. You can customize this behavior using the
   default, the depth is set to 1, meaning only the most
   recent commit will be fetched, which is the commit that
   triggered the workflow.
-- `submodules`: If you use [git
-  submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- `submodules`: If you use Git submodules
+  (https://git-scm.com/book/en/v2/Git-Tools-Submodules)
   in your repository, setting this field to `true` will
   recursively fetch all submodules. This is `false` by
   default.
@@ -657,7 +656,7 @@ dependencies to fetch.
 Say you want to fetch Node.js and Go from `nixpkgs`, and a
 package called `my_pkg` you've made from your own registry
 at your repository at
-`https://tangled.sh/@example.com/my_pkg`. You can define
+`https://tangled.org/@example.com/my_pkg`. You can define
 those dependencies like so:
 
 ```yaml
@@ -779,7 +778,7 @@ steps:
 
 If you want another example of a workflow, you can look at
 the one [Tangled uses to build the
-project](https://tangled.sh/@tangled.sh/core/blob/master/.tangled/workflows/build.yml).
+project](https://tangled.org/@tangled.org/core/blob/master/.tangled/workflows/build.yml).
 
 ## Self-hosting guide
 
@@ -836,21 +835,21 @@ Spindle will now start, connect to the Jetstream server, and begin processing pi
 
 ## Architecture
 
-Spindle is a small CI runner service. Here's a high level overview of how it operates:
+Spindle is a small CI runner service. Here's a high-level overview of how it operates:
 
-* listens for [`sh.tangled.spindle.member`](/lexicons/spindle/member.json) and
+* Listens for [`sh.tangled.spindle.member`](/lexicons/spindle/member.json) and
 [`sh.tangled.repo`](/lexicons/repo.json) records on the Jetstream.
-* when a new repo record comes through (typically when you add a spindle to a
+* When a new repo record comes through (typically when you add a spindle to a
 repo from the settings), spindle then resolves the underlying knot and
 subscribes to repo events (see:
 [`sh.tangled.pipeline`](/lexicons/pipeline.json)).
-* the spindle engine then handles execution of the pipeline, with results and
-logs beamed on the spindle event stream over wss
+* The spindle engine then handles execution of the pipeline, with results and
+logs beamed on the spindle event stream over WebSocket
 
 ### The engine
 
 At present, the only supported backend is Docker (and Podman, if Docker
-compatibility is enabled, so that `/run/docker.sock` is created). Spindle
+compatibility is enabled, so that `/run/docker.sock` is created). spindle
 executes each step in the pipeline in a fresh container, with state persisted
 across steps within the `/tangled/workspace` directory.
 
@@ -862,13 +861,13 @@ The pipeline manifest is [specified here](https://docs.tangled.org/spindles.html
 
 ## Secrets with openbao
 
-This document covers setting up Spindle to use OpenBao for secrets
+This document covers setting up spindle to use OpenBao for secrets
 management via OpenBao Proxy instead of the default SQLite backend.
 
 ### Overview
 
 Spindle now uses OpenBao Proxy for secrets management. The proxy handles
-authentication automatically using AppRole credentials, while Spindle
+authentication automatically using AppRole credentials, while spindle
 connects to the local proxy instead of directly to the OpenBao server.
 
 This approach provides better security, automatic token renewal, and
@@ -876,7 +875,7 @@ simplified application code.
 
 ### Installation
 
-Install OpenBao from nixpkgs:
+Install OpenBao from Nixpkgs:
 
 ```bash
 nix shell nixpkgs#openbao   # for a local server
@@ -1029,7 +1028,7 @@ auto_auth {
   }
 }
 
-# Proxy listener for Spindle
+# Proxy listener for spindle
 listener "tcp" {
   address     = "127.0.0.1:8201"
   tls_disable = true
@@ -1062,7 +1061,7 @@ The proxy will authenticate with OpenBao and start listening on
 
 #### Configure spindle
 
-Set these environment variables for Spindle:
+Set these environment variables for spindle:
 
 ```bash
 export SPINDLE_SERVER_SECRETS_PROVIDER=openbao
@@ -1070,7 +1069,7 @@ export SPINDLE_SERVER_SECRETS_OPENBAO_PROXY_ADDR=http://127.0.0.1:8201
 export SPINDLE_SERVER_SECRETS_OPENBAO_MOUNT=spindle
 ```
 
-On startup, the spindle will now connect to the local proxy,
+On startup, spindle will now connect to the local proxy,
 which handles all authentication automatically.
 
 ### Production setup for proxy
@@ -1099,7 +1098,7 @@ Test OpenBao operations through the server:
 # List all secrets
 bao kv list spindle/
 
-# Add a test secret via Spindle API, then check it exists
+# Add a test secret via the spindle API, then check it exists
 bao kv list spindle/repos/
 
 # Get a specific secret
@@ -1112,7 +1111,7 @@ bao kv get spindle/repos/your_repo_path/SECRET_NAME
   port 8200 or 8201)
 - The proxy authenticates with OpenBao using AppRole
   credentials
-- All Spindle requests go through the proxy, which injects
+- All spindle requests go through the proxy, which injects
   authentication tokens
 - Secrets are stored at
   `spindle/repos/{sanitized_repo_path}/{secret_key}`
@@ -1131,7 +1130,7 @@ running and listening on the configured address.
 and the policy has the necessary permissions.
 
 **404 route errors**: The spindle KV mount probably doesn't
-exist - run the mount creation step again.
+exist—run the mount creation step again.
 
 **Proxy authentication failures**: Check the proxy logs and
 verify the role-id and secret-id files are readable and
@@ -1159,7 +1158,7 @@ bao write auth/approle/login \
     secret_id="$(cat /tmp/openbao/secret-id)"
 ```
 
-# Migrating knots & spindles
+# Migrating knots and spindles
 
 Sometimes, non-backwards compatible changes are made to the
 knot/spindle XRPC APIs. If you host a knot or a spindle, you
@@ -1172,20 +1171,20 @@ are further down the page.
 
 ## Upgrading from v1.8.x
 
-After v1.8.2, the HTTP API for knot and spindles have been
+After v1.8.2, the HTTP API for knots and spindles has been
 deprecated and replaced with XRPC. Repositories on outdated
 knots will not be viewable from the appview. Upgrading is
 straightforward however.
 
 For knots:
 
-- Upgrade to latest tag (v1.9.0 or above)
+- Upgrade to the latest tag (v1.9.0 or above)
 - Head to the [knot dashboard](https://tangled.org/settings/knots) and
   hit the "retry" button to verify your knot
 
 For spindles:
 
-- Upgrade to latest tag (v1.9.0 or above)
+- Upgrade to the latest tag (v1.9.0 or above)
 - Head to the [spindle
   dashboard](https://tangled.org/settings/spindles) and hit the
   "retry" button to verify your spindle
@@ -1227,8 +1226,8 @@ latest revision, and change your config block like so:
 # Hacking on Tangled
 
 We highly recommend [installing
-nix](https://nixos.org/download/) (the package manager)
-before working on the codebase. The nix flake provides a lot
+Nix](https://nixos.org/download/) (the package manager)
+before working on the codebase. The Nix flake provides a lot
 of helpers to get started and most importantly, builds and
 dev shells are entirely deterministic.
 
@@ -1238,12 +1237,12 @@ To set up your dev environment:
 nix develop
 ```
 
-Non-nix users can look at the `devShell` attribute in the
+Non-Nix users can look at the `devShell` attribute in the
 `flake.nix` file to determine necessary dependencies.
 
 ## Running the appview
 
-The nix flake also exposes a few `app` attributes (run `nix
+The Nix flake also exposes a few `app` attributes (run `nix
 flake show` to see a full list of what the flake provides),
 one of the apps runs the appview with the `air`
 live-reloader:
@@ -1258,11 +1257,11 @@ TANGLED_DEV=true nix run .#watch-appview
 nix run .#watch-tailwind
 ```
 
-To authenticate with the appview, you will need redis and
-OAUTH JWKs to be setup:
+To authenticate with the appview, you will need Redis and
+OAuth JWKs to be set up:
 
 ```
-# oauth jwks should already be setup by the nix devshell:
+# OAuth JWKs should already be set up by the Nix devshell:
 echo $TANGLED_OAUTH_CLIENT_SECRET
 z42ty4RT1ovnTopY8B8ekz9NuziF2CuMkZ7rbRFpAR9jBqMc
 
@@ -1280,19 +1279,19 @@ Public Key (DID Key Syntax): share or publish this (eg, in DID document)
 # the secret key from above
 export TANGLED_OAUTH_CLIENT_SECRET="z42tuP..."
 
-# run redis in at a new shell to store oauth sessions
+# Run Redis in a new shell to store OAuth sessions
 redis-server
 ```
 
 ## Running knots and spindles
 
 An end-to-end knot setup requires setting up a machine with
-`sshd`, `AuthorizedKeysCommand`, and git user, which is
-quite cumbersome. So the nix flake provides a
+`sshd`, `AuthorizedKeysCommand`, and a Git user, which is
+quite cumbersome. So the Nix flake provides a
 `nixosConfiguration` to do so.
 
 <details>
-  <summary><strong>MacOS users will have to setup a Nix Builder first</strong></summary>
+  <summary><strong>macOS users will have to set up a Nix Builder first</strong></summary>
 
   In order to build Tangled's dev VM on macOS, you will
   first need to set up a Linux Nix builder. The recommended
@@ -1303,7 +1302,7 @@ quite cumbersome. So the nix flake provides a
   you are using Apple Silicon).
 
   > IMPORTANT: You must build `darwin.linux-builder` somewhere other than inside
-  > the tangled repo so that it doesn't conflict with the other VM. For example,
+  > the Tangled repo so that it doesn't conflict with the other VM. For example,
   > you can do
   >
   > ```shell
@@ -1316,7 +1315,7 @@ quite cumbersome. So the nix flake provides a
   >  avoid subtle problems.
 
   Alternatively, you can use any other method to set up a
-  Linux machine with `nix` installed that you can `sudo ssh`
+  Linux machine with Nix installed that you can `sudo ssh`
   into (in other words, root user on your Mac has to be able
   to ssh into the Linux machine without entering a password)
   and that has the same architecture as your Mac. See
@@ -1347,7 +1346,7 @@ This starts a knot on port 6444, a spindle on port 6555
 with `ssh` exposed on port 2222.
 
 Once the services are running, head to
-http://localhost:3000/settings/knots and hit verify. It should
+http://localhost:3000/settings/knots and hit "Verify". It should
 verify the ownership of the services instantly if everything
 went smoothly.
 
@@ -1371,19 +1370,19 @@ git push local-dev main
 
 The above VM should already be running a spindle on
 `localhost:6555`. Head to http://localhost:3000/settings/spindles and
-hit verify. You can then configure each repository to use
+hit "Verify". You can then configure each repository to use
 this spindle and run CI jobs.
 
 Of interest when debugging spindles:
 
 ```
-# service logs from journald:
+# Service logs from journald:
 journalctl -xeu spindle
 
 # CI job logs from disk:
 ls /var/log/spindle
 
-# debugging spindle db:
+# Debugging spindle database:
 sqlite3 /var/lib/spindle/spindle.db
 
 # litecli has a nicer REPL interface:
@@ -1432,8 +1431,8 @@ knotserver/git/service: improve error checking in upload-pack
 
 ### General notes
 
-- PRs get merged "as-is" (fast-forward) -- like applying a patch-series
-using `git am`. At present, there is no squashing -- so please author
+- PRs get merged "as-is" (fast-forward)—like applying a patch-series
+using `git am`. At present, there is no squashing—so please author
 your commits as they would appear on `master`, following the above
 guidelines.
 - If there is a lot of nesting, for example "appview:
@@ -1454,7 +1453,7 @@ before submitting if necessary.
 ## Code formatting
 
 We use a variety of tools to format our code, and multiplex them with
-[`treefmt`](https://treefmt.com): all you need to do to format your changes
+[`treefmt`](https://treefmt.com). All you need to do to format your changes
 is run `nix run .#fmt` (or just `treefmt` if you're in the devshell).
 
 ## Proposals for bigger changes
@@ -1482,7 +1481,7 @@ In the description, explain:
 We'll use the issue thread to discuss and refine the idea before moving
 forward.
 
-## Developer certificate of origin (DCO)
+## Developer Certificate of Origin (DCO)
 
 We require all contributors to certify that they have the right to
 submit the code they're contributing. To do this, we follow the
