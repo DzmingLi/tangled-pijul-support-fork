@@ -78,7 +78,7 @@ func MakePunchcard(e Execer, filters ...orm.Filter) (*models.Punchcard, error) {
 			punch.Count = int(count.Int64)
 		}
 
-		punchcard.Punches[punch.Date.YearDay()] = punch
+		punchcard.Punches[punch.Date.YearDay()-1] = punch
 		punchcard.Total += punch.Count
 	}
 
