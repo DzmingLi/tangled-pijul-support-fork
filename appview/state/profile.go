@@ -163,11 +163,13 @@ func (s *State) profileOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// populate commit counts in the timeline, using the punchcard
-	currentMonth := time.Now().Month()
+	now := time.Now()
 	for _, p := range profile.Punchcard.Punches {
-		idx := currentMonth - p.Date.Month()
-		if int(idx) < len(timeline.ByMonth) {
-			timeline.ByMonth[idx].Commits += p.Count
+		years := now.Year() - p.Date.Year()
+		months := int(now.Month() - p.Date.Month())
+		monthsAgo := years*12 + months
+		if monthsAgo >= 0 && monthsAgo < len(timeline.ByMonth) {
+			timeline.ByMonth[monthsAgo].Commits += p.Count
 		}
 	}
 

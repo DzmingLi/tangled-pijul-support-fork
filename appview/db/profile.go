@@ -20,7 +20,7 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 	timeline := models.ProfileTimeline{
 		ByMonth: make([]models.ByMonth, TimeframeMonths),
 	}
-	currentMonth := time.Now().Month()
+	now := time.Now()
 	timeframe := fmt.Sprintf("-%d months", TimeframeMonths)
 
 	pulls, err := GetPullsByOwnerDid(e, forDid, timeframe)
@@ -30,14 +30,14 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 
 	// group pulls by month
 	for _, pull := range pulls {
-		pullMonth := pull.Created.Month()
+		monthsAgo := monthsBetween(pull.Created, now)
 
-		if currentMonth-pullMonth >= TimeframeMonths {
+		if monthsAgo >= TimeframeMonths {
 			// shouldn't happen; but times are weird
 			continue
 		}
 
-		idx := currentMonth - pullMonth
+		idx := monthsAgo
 		items := &timeline.ByMonth[idx].PullEvents.Items
 
 		*items = append(*items, &pull)
@@ -53,14 +53,14 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 	}
 
 	for _, issue := range issues {
-		issueMonth := issue.Created.Month()
+		monthsAgo := monthsBetween(issue.Created, now)
 
-		if currentMonth-issueMonth >= TimeframeMonths {
+		if monthsAgo >= TimeframeMonths {
 			// shouldn't happen; but times are weird
 			continue
 		}
 
-		idx := currentMonth - issueMonth
+		idx := monthsAgo
 		items := &timeline.ByMonth[idx].IssueEvents.Items
 
 		*items = append(*items, &issue)
@@ -77,18 +77,19 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 		if repo.Source != "" {
 			sourceRepo, err = GetRepoByAtUri(e, repo.Source)
 			if err != nil {
-				return nil, err
+				// the source repo was not found, skip this bit
+				log.Println("profile", "err", err)
 			}
 		}
 
-		repoMonth := repo.Created.Month()
+		monthsAgo := monthsBetween(repo.Created, now)
 
-		if currentMonth-repoMonth >= TimeframeMonths {
+		if monthsAgo >= TimeframeMonths {
 			// shouldn't happen; but times are weird
 			continue
 		}
 
-		idx := currentMonth - repoMonth
+		idx := monthsAgo
 
 		items := &timeline.ByMonth[idx].RepoEvents
 		*items = append(*items, models.RepoEvent{
@@ -98,6 +99,12 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 	}
 
 	return &timeline, nil
+}
+
+func monthsBetween(from, to time.Time) int {
+	years := to.Year() - from.Year()
+	months := int(to.Month() - from.Month())
+	return years*12 + months
 }
 
 func UpsertProfile(tx *sql.Tx, profile *models.Profile) error {
