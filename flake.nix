@@ -76,7 +76,7 @@
           };
         buildGoApplication =
           (self.callPackage "${gomod2nix}/builder" {
-            gomod2nix = gomod2nix.legacyPackages.${pkgs.system}.gomod2nix;
+            gomod2nix = gomod2nix.legacyPackages.${pkgs.stdenv.hostPlatform.system}.gomod2nix;
           }).buildGoApplication;
         modules = ./nix/gomod2nix.toml;
         sqlite-lib = self.callPackage ./nix/pkgs/sqlite-lib.nix {
