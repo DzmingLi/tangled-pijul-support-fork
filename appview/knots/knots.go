@@ -666,11 +666,6 @@ func (k *Knots) removeMember(w http.ResponseWriter, r *http.Request) {
 		k.Pages.Notice(w, noticeId, "Failed to remove member, identity resolution failed.")
 		return
 	}
-	if memberId.Handle.IsInvalidHandle() {
-		l.Error("failed to resolve member identity to handle")
-		k.Pages.Notice(w, noticeId, "Failed to remove member, identity resolution failed.")
-		return
-	}
 
 	// remove from enforcer
 	err = k.Enforcer.RemoveKnotMember(domain, memberId.DID.String())

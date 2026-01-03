@@ -653,11 +653,6 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 		s.Pages.Notice(w, noticeId, "Failed to remove member, identity resolution failed.")
 		return
 	}
-	if memberId.Handle.IsInvalidHandle() {
-		l.Error("failed to resolve member identity to handle")
-		s.Pages.Notice(w, noticeId, "Failed to remove member, identity resolution failed.")
-		return
-	}
 
 	tx, err := s.Db.Begin()
 	if err != nil {
