@@ -109,6 +109,7 @@ func (s *State) UserRouter(mw *middleware.Middleware) http.Handler {
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
 		s.pages.Error404(w)
 	})
 
@@ -182,6 +183,7 @@ func (s *State) StandardRouter(mw *middleware.Middleware) http.Handler {
 	r.Get("/brand", s.Brand)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
 		s.pages.Error404(w)
 	})
 	return r
