@@ -18,6 +18,7 @@ func (rp *Repo) DownloadArchive(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "DownloadArchive")
 	ref := chi.URLParam(r, "ref")
 	ref, _ = url.PathUnescape(ref)
+	ref = strings.TrimSuffix(ref, ".tar.gz")
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
