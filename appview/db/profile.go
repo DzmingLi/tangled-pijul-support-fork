@@ -450,6 +450,9 @@ func GetVanityStat(e Execer, did string, stat models.VanityStatKind) (uint64, er
 	case models.VanityStatRepositoryCount:
 		query = `select count(id) from repos where did = ?`
 		args = append(args, did)
+	case models.VanityStatStarCount:
+		query = `select count(id) from stars where did = ?`
+		args = append(args, did)
 	}
 
 	var result uint64

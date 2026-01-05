@@ -59,6 +59,7 @@ const (
 	VanityStatOpenIssueCount   VanityStatKind = "open-issue-count"
 	VanityStatClosedIssueCount VanityStatKind = "closed-issue-count"
 	VanityStatRepositoryCount  VanityStatKind = "repository-count"
+	VanityStatStarCount        VanityStatKind = "star-count"
 )
 
 func (v VanityStatKind) String() string {
@@ -75,6 +76,8 @@ func (v VanityStatKind) String() string {
 		return "Closed Issues"
 	case VanityStatRepositoryCount:
 		return "Repositories"
+	case VanityStatStarCount:
+		return "Stars"
 	}
 	return ""
 }
