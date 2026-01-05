@@ -43,15 +43,40 @@
     $endfor$
 
     $if(toc)$
-      <!-- mobile topbar toc -->
-      <details id="mobile-$idprefix$TOC" role="doc-toc" class="md:hidden bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 space-y-4 group px-6 py-4">
-        <summary class="cursor-pointer list-none text-sm font-semibold select-none flex gap-2 justify-between items-center dark:text-white">
+      <!-- mobile TOC trigger -->
+      <div class="md:hidden px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          popovertarget="mobile-toc-popover"
+          popovertargetaction="toggle"
+          class="w-full flex gap-2 items-center text-sm font-semibold dark:text-white"
+        >
+          ${ menu.svg() }
           $if(toc-title)$$toc-title$$else$Table of Contents$endif$
-          <span class="group-open:hidden inline">${ menu.svg() }</span>
-          <span class="hidden group-open:inline">${ x.svg() }</span>
-        </summary>
+        </button>
+      </div>
+
+      <div
+        id="mobile-toc-popover"
+        popover
+        class="mobile-toc-popover
+               bg-white dark:bg-gray-800
+               border-b border-gray-200 dark:border-gray-700
+               h-full overflow-y-auto
+               px-6 py-4 fixed inset-x-0 top-0 w-fit max-w-4/5 m-0"
+      >
+        <button
+          type="button"
+          popovertarget="mobile-toc-popover"
+          popovertargetaction="toggle"
+          class="w-full flex gap-2 items-center text-sm font-semibold dark:text-white mb-4">
+          ${ x.svg() }
+          $if(toc-title)$$toc-title$$else$Table of Contents$endif$
+        </button>
         ${ table-of-contents:toc.html() }
-      </details>
+      </div>
+
+
       <!-- desktop sidebar toc -->
       <nav id="$idprefix$TOC" role="doc-toc" class="hidden md:block fixed left-0 top-0 w-80 h-screen bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 z-50">
         $if(toc-title)$
