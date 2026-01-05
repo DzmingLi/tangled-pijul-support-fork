@@ -18,14 +18,26 @@ runCommandLocal "docs" {} ''
   # icons
   cp -rf ${lucide-src}/*.svg working/
 
-  # content
+  # content - chunked
   ${pandoc}/bin/pandoc ${src}/docs/DOCS.md \
     -o $out/ \
     -t chunkedhtml \
     --variable toc \
+    --variable-json single-page=false \
     --toc-depth=2 \
     --css=stylesheet.css \
     --chunk-template="%i.html" \
+    --highlight-style=working/highlight.theme \
+    --template=working/template.html
+
+  # content - single page
+  ${pandoc}/bin/pandoc ${src}/docs/DOCS.md \
+    -o $out/single-page.html \
+    --toc \
+    --variable toc \
+    --variable single-page \
+    --toc-depth=2 \
+    --css=stylesheet.css \
     --highlight-style=working/highlight.theme \
     --template=working/template.html
 

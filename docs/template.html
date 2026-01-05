@@ -74,6 +74,7 @@
           $if(toc-title)$$toc-title$$else$Table of Contents$endif$
         </button>
         ${ table-of-contents:toc.html() }
+        ${ single-page:mode.html() }
       </div>
 
 
@@ -83,6 +84,7 @@
         <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
         $endif$
         ${ table-of-contents:toc.html() }
+        ${ single-page:mode.html() }
       </nav>
     $endif$
 
