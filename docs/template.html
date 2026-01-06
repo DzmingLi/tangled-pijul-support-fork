@@ -61,29 +61,39 @@
         popover
         class="mobile-toc-popover
                bg-white dark:bg-gray-800
-               border-b border-gray-200 dark:border-gray-700
+               border-r border-gray-200 dark:border-gray-700
                h-full overflow-y-auto
                px-6 py-4 fixed inset-x-0 top-0 w-fit max-w-4/5 m-0"
       >
-        <button
-          type="button"
-          popovertarget="mobile-toc-popover"
-          popovertargetaction="toggle"
-          class="w-full flex gap-2 items-center text-sm font-semibold dark:text-white mb-4">
-          ${ x.svg() }
-          $if(toc-title)$$toc-title$$else$Table of Contents$endif$
-        </button>
-        ${ table-of-contents:toc.html() }
-        ${ single-page:mode.html() }
+        <div class="flex flex-col min-h-full">
+          <div class="flex-1">
+            <button
+              type="button"
+              popovertarget="mobile-toc-popover"
+              popovertargetaction="toggle"
+              class="w-full flex gap-2 items-center text-sm font-semibold dark:text-white mb-4">
+              ${ x.svg() }
+              $if(toc-title)$$toc-title$$else$Table of Contents$endif$
+            </button>
+            ${ table-of-contents:toc.html() }
+          </div>
+          ${ single-page:mode.html() }
+        </div>
       </div>
 
-
       <!-- desktop sidebar toc -->
-      <nav id="$idprefix$TOC" role="doc-toc" class="hidden md:block fixed left-0 top-0 w-80 h-screen bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4 z-50">
-        $if(toc-title)$
-        <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
-        $endif$
-        ${ table-of-contents:toc.html() }
+      <nav
+        id="$idprefix$TOC"
+        role="doc-toc"
+        class="hidden md:flex md:flex-col fixed left-0 top-0 w-80 h-screen
+               bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+               p-4 z-50 overflow-y-auto">
+        <div class="flex-1">
+          $if(toc-title)$
+          <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
+          $endif$
+          ${ table-of-contents:toc.html() }
+        </div>
         ${ single-page:mode.html() }
       </nav>
     $endif$
@@ -118,7 +128,7 @@
           $body$
         </article>
       </main>
-      <nav id="sitenav" class="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 ">
+      <nav id="sitenav" class="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div class="max-w-4xl mx-auto px-8 py-4">
           <div class="flex justify-between gap-4">
             <span class="flex-1">
