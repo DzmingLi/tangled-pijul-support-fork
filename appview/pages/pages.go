@@ -612,12 +612,13 @@ func (p *Pages) ProfileFollowing(w io.Writer, params ProfileFollowingParams) err
 }
 
 type FollowFragmentParams struct {
-	UserDid      string
-	FollowStatus models.FollowStatus
+	UserDid        string
+	FollowStatus   models.FollowStatus
+	FollowersCount int64
 }
 
 func (p *Pages) FollowFragment(w io.Writer, params FollowFragmentParams) error {
-	return p.executePlain("user/fragments/follow", w, params)
+	return p.executePlain("user/fragments/follow-oob", w, params)
 }
 
 type EditBioParams struct {

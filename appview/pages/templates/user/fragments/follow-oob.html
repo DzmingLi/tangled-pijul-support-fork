@@ -1,0 +1,6 @@
+{{ define "user/fragments/follow-oob" }}
+  {{ template "user/fragments/follow" . }}
+  <span hx-swap-oob='innerHTML:[data-followers-did="{{ .UserDid }}"]'>
+    <a href="/{{ resolve .UserDid }}?tab=followers">{{ .FollowersCount }} followers</a>
+  </span>
+{{ end }}

@@ -75,9 +75,15 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 
 		s.notifier.NewFollow(r.Context(), follow)
 
+		followStats, err := db.GetFollowerFollowingCount(s.db, subjectIdent.DID.String())
+		if err != nil {
+			log.Println("failed to get follow stats", err)
+		}
+
 		s.pages.FollowFragment(w, pages.FollowFragmentParams{
-			UserDid:      subjectIdent.DID.String(),
-			FollowStatus: models.IsFollowing,
+			UserDid:        subjectIdent.DID.String(),
+			FollowStatus:   models.IsFollowing,
+			FollowersCount: followStats.Followers,
 		})
 
 		return
@@ -106,9 +112,15 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 			// this is not an issue, the firehose event might have already done this
 		}
 
+		followStats, err := db.GetFollowerFollowingCount(s.db, subjectIdent.DID.String())
+		if err != nil {
+			log.Println("failed to get follow stats", err)
+		}
+
 		s.pages.FollowFragment(w, pages.FollowFragmentParams{
-			UserDid:      subjectIdent.DID.String(),
-			FollowStatus: models.IsNotFollowing,
+			UserDid:        subjectIdent.DID.String(),
+			FollowStatus:   models.IsNotFollowing,
+			FollowersCount: followStats.Followers,
 		})
 
 		s.notifier.DeleteFollow(r.Context(), follow)

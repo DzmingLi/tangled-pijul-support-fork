@@ -9,14 +9,16 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 w-full min-w-0">
       <div class="flex-1 min-h-0 justify-around flex flex-col">
         <a href="/{{ $userIdent }}">
-          <span class="font-bold dark:text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full">{{ $userIdent | truncateAt30 }}</span>
+          <span class="font-bold dark:text-white overflow-hidden text-ellipsis whitespace-nowrap max-w-full">{{
+            $userIdent | truncateAt30 }}</span>
         </a>
         {{ with .Profile }}
         <p class="text-sm pb-2 md:pb-2 break-words">{{.Description}}</p>
         {{ end }}
         <div class="text-sm flex items-center gap-2 my-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
           <span class="flex-shrink-0">{{ i "users" "size-4" }}</span>
-          <span id="followers"><a href="/{{ $userIdent }}?tab=followers">{{ .FollowersCount }} followers</a></span>
+          <span id="followers" data-followers-did="{{ .UserDid }}"><a href="/{{ $userIdent }}?tab=followers">{{
+              .FollowersCount }} followers</a></span>
           <span class="select-none after:content-['·']"></span>
           <span id="following"><a href="/{{ $userIdent }}?tab=following">{{ .FollowingCount }} following</a></span>
         </div>

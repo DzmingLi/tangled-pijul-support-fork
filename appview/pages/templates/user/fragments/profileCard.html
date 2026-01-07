@@ -1,114 +1,112 @@
 {{ define "user/fragments/profileCard" }}
-  {{ $userIdent := resolve .UserDid }}
-    <div class="grid grid-cols-3 md:grid-cols-1 gap-1 items-center">
-      <div id="avatar" class="col-span-1 flex justify-center items-center">
-        <div class="w-3/4 aspect-square relative">
-          <img class="absolute inset-0 w-full h-full object-cover rounded-full p-2" src="{{ fullAvatar .UserDid }}" />
-        </div>
-      </div>
-      <div class="col-span-2">
-        <div class="flex items-center flex-row flex-nowrap gap-2">
-          <p title="{{ $userIdent }}"
-          class="text-lg font-bold dark:text-white overflow-hidden text-ellipsis whitespace-nowrap">
-            {{ $userIdent }}
-          </p>
-          {{ with .Profile }}
-            {{ if .Pronouns }}
-              <p class="text-gray-500 dark:text-gray-400">{{ .Pronouns }}</p>
-            {{ end }}
-          {{ end }}
-        </div>
-
-        <div class="md:hidden">
-          {{ block "followerFollowing" (list . $userIdent) }} {{ end }}
-        </div>
-      </div>
-      <div class="col-span-3 md:col-span-full">
-        <div id="profile-bio" class="text-sm">
-          {{ $profile := .Profile }}
-          {{ with .Profile }}
-
-          {{ if .Description }}
-            <p class="text-base pb-4 md:pb-2">{{ .Description }}</p>
-          {{ end }}
-
-          <div class="hidden md:block">
-            {{ block "followerFollowing" (list $ $userIdent) }} {{ end }}
-          </div>
-
-          <div class="flex flex-col gap-2 mb-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-full"> 
-            {{ if .Location }}
-            <div class="flex items-center gap-2">
-              <span class="flex-shrink-0">{{ i "map-pin" "size-4" }}</span>
-              <span>{{ .Location }}</span>
-            </div>
-            {{ end }}
-            {{ if .IncludeBluesky }}
-            <div class="flex items-center gap-2">
-              <span class="flex-shrink-0">{{ template "user/fragments/bluesky" "w-4 h-4 text-black dark:text-white" }}</span>
-              <a id="bluesky-link" href="https://bsky.app/profile/{{ $.UserDid }}">{{ $userIdent }}</a>
-            </div>
-            {{ end }}
-            {{ range $link := .Links }}
-              {{ if $link }}
-              <div class="flex items-center gap-2">
-                <span class="flex-shrink-0">{{ i "link" "size-4" }}</span>
-                <a href="{{ $link }}">{{ $link }}</a>
-              </div>
-              {{ end }}
-            {{ end }}
-            {{ if not $profile.IsStatsEmpty }}
-            <div class="flex items-center justify-evenly gap-2 py-2">
-              {{ range $stat := .Stats }}
-                {{ if $stat.Kind }}
-                  <div class="flex flex-col items-center gap-2">
-                    <span class="text-xl font-bold">{{ $stat.Value }}</span>
-                    <span>{{ $stat.Kind.String }}</span>
-                  </div>
-                {{ end }}
-              {{ end }}
-            </div>
-            {{ end }}
-          </div>
-          {{ end }}
-
-          <div class="flex mt-2 items-center gap-2">
-            {{ if ne .FollowStatus.String "IsSelf" }}
-              {{ template "user/fragments/follow" . }}
-            {{ else }}
-            <button id="editBtn"
-              class="btn w-full flex items-center gap-2 group"
-              hx-target="#profile-bio"
-              hx-get="/profile/edit-bio"
-              hx-swap="innerHTML">
-              {{ i "pencil" "w-4 h-4" }}
-              edit
-              {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
-            </button>
-            {{ end }}
-
-            <a class="btn text-sm no-underline hover:no-underline flex items-center gap-2 group"
-              href="/{{ $userIdent }}/feed.atom">
-              {{ i "rss" "size-4" }}
-            </a>
-          </div>
-
-        </div>
-        <div id="update-profile" class="text-red-400 dark:text-red-500"></div>
-      </div>
+{{ $userIdent := resolve .UserDid }}
+<div class="grid grid-cols-3 md:grid-cols-1 gap-1 items-center">
+  <div id="avatar" class="col-span-1 flex justify-center items-center">
+    <div class="w-3/4 aspect-square relative">
+      <img class="absolute inset-0 w-full h-full object-cover rounded-full p-2" src="{{ fullAvatar .UserDid }}" />
     </div>
+  </div>
+  <div class="col-span-2">
+    <div class="flex items-center flex-row flex-nowrap gap-2">
+      <p title="{{ $userIdent }}"
+        class="text-lg font-bold dark:text-white overflow-hidden text-ellipsis whitespace-nowrap">
+        {{ $userIdent }}
+      </p>
+      {{ with .Profile }}
+      {{ if .Pronouns }}
+      <p class="text-gray-500 dark:text-gray-400">{{ .Pronouns }}</p>
+      {{ end }}
+      {{ end }}
+    </div>
+
+    <div class="md:hidden">
+      {{ block "followerFollowing" (list . $userIdent) }} {{ end }}
+    </div>
+  </div>
+  <div class="col-span-3 md:col-span-full">
+    <div id="profile-bio" class="text-sm">
+      {{ $profile := .Profile }}
+      {{ with .Profile }}
+
+      {{ if .Description }}
+      <p class="text-base pb-4 md:pb-2">{{ .Description }}</p>
+      {{ end }}
+
+      <div class="hidden md:block">
+        {{ block "followerFollowing" (list $ $userIdent) }} {{ end }}
+      </div>
+
+      <div class="flex flex-col gap-2 mb-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-full">
+        {{ if .Location }}
+        <div class="flex items-center gap-2">
+          <span class="flex-shrink-0">{{ i "map-pin" "size-4" }}</span>
+          <span>{{ .Location }}</span>
+        </div>
+        {{ end }}
+        {{ if .IncludeBluesky }}
+        <div class="flex items-center gap-2">
+          <span class="flex-shrink-0">{{ template "user/fragments/bluesky" "w-4 h-4 text-black dark:text-white"
+            }}</span>
+          <a id="bluesky-link" href="https://bsky.app/profile/{{ $.UserDid }}">{{ $userIdent }}</a>
+        </div>
+        {{ end }}
+        {{ range $link := .Links }}
+        {{ if $link }}
+        <div class="flex items-center gap-2">
+          <span class="flex-shrink-0">{{ i "link" "size-4" }}</span>
+          <a href="{{ $link }}">{{ $link }}</a>
+        </div>
+        {{ end }}
+        {{ end }}
+        {{ if not $profile.IsStatsEmpty }}
+        <div class="flex items-center justify-evenly gap-2 py-2">
+          {{ range $stat := .Stats }}
+          {{ if $stat.Kind }}
+          <div class="flex flex-col items-center gap-2">
+            <span class="text-xl font-bold">{{ $stat.Value }}</span>
+            <span>{{ $stat.Kind.String }}</span>
+          </div>
+          {{ end }}
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+      {{ end }}
+
+      <div class="flex mt-2 items-center gap-2">
+        {{ if ne .FollowStatus.String "IsSelf" }}
+        {{ template "user/fragments/follow" . }}
+        {{ else }}
+        <button id="editBtn" class="btn w-full flex items-center gap-2 group" hx-target="#profile-bio"
+          hx-get="/profile/edit-bio" hx-swap="innerHTML">
+          {{ i "pencil" "w-4 h-4" }}
+          edit
+          {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
+        </button>
+        {{ end }}
+
+        <a class="btn text-sm no-underline hover:no-underline flex items-center gap-2 group"
+          href="/{{ $userIdent }}/feed.atom">
+          {{ i "rss" "size-4" }}
+        </a>
+      </div>
+
+    </div>
+    <div id="update-profile" class="text-red-400 dark:text-red-500"></div>
+  </div>
+</div>
 {{ end }}
 
 {{ define "followerFollowing" }}
-  {{ $root := index . 0 }}
-  {{ $userIdent := index . 1 }}
-  {{ with $root }}
-    <div class="flex items-center gap-2 my-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-full text-sm">
-      <span class="flex-shrink-0">{{ i "users" "size-4" }}</span>
-      <span id="followers"><a href="/{{ $userIdent }}?tab=followers">{{ .Stats.FollowersCount }} followers</a></span>
-      <span class="select-none after:content-['·']"></span>
-      <span id="following"><a href="/{{ $userIdent }}?tab=following">{{ .Stats.FollowingCount }} following</a></span>
-    </div>
-  {{ end }}
+{{ $root := index . 0 }}
+{{ $userIdent := index . 1 }}
+{{ with $root }}
+<div class="flex items-center gap-2 my-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-full text-sm">
+  <span class="flex-shrink-0">{{ i "users" "size-4" }}</span>
+  <span id="followers" data-followers-did="{{ .UserDid }}"><a href="/{{ $userIdent }}?tab=followers">{{
+      .Stats.FollowersCount }} followers</a></span>
+  <span class="select-none after:content-['·']"></span>
+  <span id="following"><a href="/{{ $userIdent }}?tab=following">{{ .Stats.FollowingCount }} following</a></span>
+</div>
 {{ end }}
-
+{{ end }}
