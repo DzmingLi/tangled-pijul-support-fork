@@ -2,34 +2,32 @@
 title: Tangled docs
 author: The Tangled Contributors
 date: 21 Sun, Dec 2025
+abstract: |
+    Tangled is a decentralized code hosting and collaboration
+    platform. Every component of Tangled is open-source and
+    self-hostable. [tangled.org](https://tangled.org) also
+    provides hosting and CI services that are free to use.
+
+    There are several models for decentralized code
+    collaboration platforms, ranging from ActivityPub’s
+    (Forgejo) federated model, to Radicle’s entirely P2P model.
+    Our approach attempts to be the best of both worlds by
+    adopting the AT Protocol—a protocol for building decentralized
+    social applications with a central identity
+
+    Our approach to this is the idea of “knots”. Knots are
+    lightweight, headless servers that enable users to host Git
+    repositories with ease. Knots are designed for either single
+    or multi-tenant use which is perfect for self-hosting on a
+    Raspberry Pi at home, or larger “community” servers. By
+    default, Tangled provides managed knots where you can host
+    your repositories for free.
+
+    The appview at tangled.org acts as a consolidated "view"
+    into the whole network, allowing users to access, clone and
+    contribute to repositories hosted across different knots
+    seamlessly.
 ---
-
-# Introduction
-
-Tangled is a decentralized code hosting and collaboration
-platform. Every component of Tangled is open-source and
-self-hostable. [tangled.org](https://tangled.org) also
-provides hosting and CI services that are free to use.
-
-There are several models for decentralized code
-collaboration platforms, ranging from ActivityPub’s
-(Forgejo) federated model, to Radicle’s entirely P2P model.
-Our approach attempts to be the best of both worlds by
-adopting the AT Protocol—a protocol for building decentralized
-social applications with a central identity
-
-Our approach to this is the idea of “knots”. Knots are
-lightweight, headless servers that enable users to host Git
-repositories with ease. Knots are designed for either single
-or multi-tenant use which is perfect for self-hosting on a
-Raspberry Pi at home, or larger “community” servers. By
-default, Tangled provides managed knots where you can host
-your repositories for free.
-
-The appview at tangled.org acts as a consolidated "view"
-into the whole network, allowing users to access, clone and
-contribute to repositories hosted across different knots
-seamlessly.
 
 # Quick start guide
 

@@ -90,7 +90,7 @@
                p-4 z-50 overflow-y-auto">
         <div class="flex-1">
           $if(toc-title)$
-          <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
+            <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
           $endif$
           ${ table-of-contents:toc.html() }
         </div>
@@ -101,29 +101,30 @@
     <div class="$if(toc)$md:ml-80$endif$ flex-1 flex flex-col">
       <main class="max-w-4xl w-full mx-auto p-6 flex-1">
         $if(top)$
-        $-- only print title block if this is NOT the top page
+          $-- only print title block if this is NOT the top page
         $else$
         $if(title)$
-        <header id="title-block-header" class="mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
-          <h1 class="text-4xl font-bold mb-2 text-black dark:text-white">$title$</h1>
-          $if(subtitle)$
-          <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">$subtitle$</p>
-          $endif$
-          $for(author)$
-          <p class="text-sm text-gray-500 dark:text-gray-400">$author$</p>
-          $endfor$
-          $if(date)$
-          <p class="text-sm text-gray-500 dark:text-gray-400">Updated on $date$</p>
-          $endif$
-          $if(abstract)$
-          <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-            <div class="text-sm font-semibold text-gray-700 uppercase mb-2">$abstract-title$</div>
-            <div class="text-gray-700">$abstract$</div>
-          </div>
-          $endif$
-          $endif$
-        </header>
+          <header id="title-block-header" class="mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
+            <h1 class="text-4xl font-bold mb-2 text-black dark:text-white">$title$</h1>
+              $if(subtitle)$
+                <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">$subtitle$</p>
+              $endif$
+              $for(author)$
+                <p class="text-sm text-gray-500 dark:text-gray-400">$author$</p>
+              $endfor$
+              $if(date)$
+                <p class="text-sm text-gray-500 dark:text-gray-400">Updated on $date$</p>
+              $endif$
+            $endif$
+          </header>
         $endif$
+
+        $if(abstract)$
+          <article class="prose dark:prose-invert max-w-none">
+            $abstract$
+          </article>
+        $endif$
+
         <article class="prose dark:prose-invert max-w-none">
           $body$
         </article>
