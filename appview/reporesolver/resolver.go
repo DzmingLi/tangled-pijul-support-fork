@@ -63,7 +63,7 @@ func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.User) repoinfo.
 	}
 
 	// get dir/ref
-	currentDir := path.Dir(extractPathAfterRef(r.URL.EscapedPath()))
+	currentDir := extractCurrentDir(r.URL.EscapedPath())
 	ref := chi.URLParam(r, "ref")
 
 	repoAt := repo.RepoAt()
@@ -130,6 +130,31 @@ func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.User) repoinfo.
 	}
 
 	return repoInfo
+}
+
+// extractCurrentDir gets the current directory for markdown link resolution.
+// for blob paths, returns the parent dir. for tree paths, returns the path itself.
+//
+//	/@user/repo/blob/main/docs/README.md => docs
+//	/@user/repo/tree/main/docs           => docs
+func extractCurrentDir(fullPath string) string {
+	fullPath = strings.TrimPrefix(fullPath, "/")
+
+	blobPattern := regexp.MustCompile(`blob/[^/]+/(.*)$`)
+	if matches := blobPattern.FindStringSubmatch(fullPath); len(matches) > 1 {
+		return path.Dir(matches[1])
+	}
+
+	treePattern := regexp.MustCompile(`tree/[^/]+/(.*)$`)
+	if matches := treePattern.FindStringSubmatch(fullPath); len(matches) > 1 {
+		dir := strings.TrimSuffix(matches[1], "/")
+		if dir == "" {
+			return "."
+		}
+		return dir
+	}
+
+	return "."
 }
 
 // extractPathAfterRef gets the actual repository path
