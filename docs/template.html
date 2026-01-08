@@ -37,7 +37,7 @@
     <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
 
   </head>
-  <body class="bg-white dark:bg-gray-900 min-h-screen flex flex-col min-h-screen">
+  <body class="bg-white dark:bg-gray-900 flex flex-col min-h-svh">
     $for(include-before)$
       $include-before$
     $endfor$
@@ -60,13 +60,12 @@
         id="mobile-toc-popover"
         popover
         class="mobile-toc-popover
-               bg-white dark:bg-gray-800
-               border-r border-gray-200 dark:border-gray-700
-               h-full overflow-y-auto
+               bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+               h-full overflow-y-auto shadow-sm
                px-6 py-4 fixed inset-x-0 top-0 w-fit max-w-4/5 m-0"
       >
         <div class="flex flex-col min-h-full">
-          <div class="flex-1">
+          <div class="flex-1 space-y-4">
             <button
               type="button"
               popovertarget="mobile-toc-popover"
@@ -75,6 +74,7 @@
               ${ x.svg() }
               $if(toc-title)$$toc-title$$else$Table of Contents$endif$
             </button>
+            ${ search.html() }
             ${ table-of-contents:toc.html() }
           </div>
           ${ single-page:mode.html() }
@@ -85,9 +85,10 @@
       <nav
         id="$idprefix$TOC"
         role="doc-toc"
-        class="hidden md:flex md:flex-col fixed left-0 top-0 w-80 h-screen
+        class="hidden md:flex md:flex-col gap-4 fixed left-0 top-0 w-80 h-screen
                bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
                p-4 z-50 overflow-y-auto">
+        ${ search.html() }
         <div class="flex-1">
           $if(toc-title)$
             <h2 id="$idprefix$toc-title" class="text-lg font-semibold mb-4 text-gray-900">$toc-title$</h2>
