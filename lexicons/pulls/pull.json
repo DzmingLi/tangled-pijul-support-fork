@@ -32,7 +32,9 @@
           },
           "patchBlob": {
             "type": "blob",
-            "accept": "text/x-patch",
+            "accept": [
+              "text/x-patch"
+            ],
             "description": "patch content"
           },
           "source": {
