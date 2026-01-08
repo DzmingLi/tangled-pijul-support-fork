@@ -210,8 +210,19 @@ func (p *Pages) executeProfile(name string, w io.Writer, params any) error {
 	return tpl.ExecuteTemplate(w, "layouts/base", params)
 }
 
+type DollyParams struct {
+	Classes   string
+	FillColor string
+}
+
+func (p *Pages) Dolly(w io.Writer, params DollyParams) error {
+	return p.executePlain("fragments/dolly/logo", w, params)
+}
+
 func (p *Pages) Favicon(w io.Writer) error {
-	return p.executePlain("fragments/dolly/silhouette", w, nil)
+	return p.Dolly(w, DollyParams{
+		Classes: "text-black dark:text-white",
+	})
 }
 
 type LoginParams struct {
