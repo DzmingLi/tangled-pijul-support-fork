@@ -94,10 +94,11 @@
         spindle = self.callPackage ./nix/pkgs/spindle.nix {};
         knot-unwrapped = self.callPackage ./nix/pkgs/knot-unwrapped.nix {};
         knot = self.callPackage ./nix/pkgs/knot.nix {};
+        dolly = self.callPackage ./nix/pkgs/dolly.nix {};
       });
   in {
     overlays.default = final: prev: {
-      inherit (mkPackageSet final) lexgen goat sqlite-lib spindle knot-unwrapped knot appview docs;
+      inherit (mkPackageSet final) lexgen goat sqlite-lib spindle knot-unwrapped knot appview docs dolly;
     };
 
     packages = forAllSystems (system: let
@@ -106,18 +107,32 @@
       staticPackages = mkPackageSet pkgs.pkgsStatic;
       crossPackages = mkPackageSet pkgs.pkgsCross.gnu64.pkgsStatic;
     in {
-      inherit (packages) appview appview-static-files lexgen goat spindle knot knot-unwrapped sqlite-lib docs;
+      inherit
+        (packages)
+        appview
+        appview-static-files
+        lexgen
+        goat
+        spindle
+        knot
+        knot-unwrapped
+        sqlite-lib
+        docs
+        dolly
+        ;
 
       pkgsStatic-appview = staticPackages.appview;
       pkgsStatic-knot = staticPackages.knot;
       pkgsStatic-knot-unwrapped = staticPackages.knot-unwrapped;
       pkgsStatic-spindle = staticPackages.spindle;
       pkgsStatic-sqlite-lib = staticPackages.sqlite-lib;
+      pkgsStatic-dolly = staticPackages.dolly;
 
       pkgsCross-gnu64-pkgsStatic-appview = crossPackages.appview;
       pkgsCross-gnu64-pkgsStatic-knot = crossPackages.knot;
       pkgsCross-gnu64-pkgsStatic-knot-unwrapped = crossPackages.knot-unwrapped;
       pkgsCross-gnu64-pkgsStatic-spindle = crossPackages.spindle;
+      pkgsCross-gnu64-pkgsStatic-dolly = crossPackages.dolly;
 
       treefmt-wrapper = pkgs.treefmt.withConfig {
         settings.formatter = {
