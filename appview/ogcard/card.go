@@ -334,16 +334,16 @@ func (c *Card) DrawLucideIcon(name string, x, y, size int, iconColor color.Color
 	return nil
 }
 
-func (c *Card) DrawDollySilhouette(x, y, size int, iconColor color.Color) error {
+func (c *Card) DrawDolly(x, y, size int, iconColor color.Color) error {
 	tpl, err := template.New("dolly").
-		ParseFS(pages.Files, "templates/fragments/dolly/silhouette.html")
+		ParseFS(pages.Files, "templates/fragments/dolly/logo.html")
 	if err != nil {
-		return fmt.Errorf("failed to read dolly silhouette template: %w", err)
+		return fmt.Errorf("failed to read dolly template: %w", err)
 	}
 
 	var svgData bytes.Buffer
-	if err = tpl.ExecuteTemplate(&svgData, "fragments/dolly/silhouette", nil); err != nil {
-		return fmt.Errorf("failed to execute dolly silhouette template: %w", err)
+	if err = tpl.ExecuteTemplate(&svgData, "fragments/dolly/logo", nil); err != nil {
+		return fmt.Errorf("failed to execute dolly template: %w", err)
 	}
 
 	icon, err := BuildSVGIconFromData(svgData.Bytes(), iconColor)

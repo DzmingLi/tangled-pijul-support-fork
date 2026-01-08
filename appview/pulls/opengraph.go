@@ -242,7 +242,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	dollyX := dollyBounds.Min.X + (dollyBounds.Dx() / 2) - (dollySize / 2)
 	dollyY := statsY + iconBaselineOffset - dollySize/2 + 25
 	dollyColor := color.RGBA{180, 180, 180, 255} // light gray
-	err = dollyArea.DrawDollySilhouette(dollyX, dollyY, dollySize, dollyColor)
+	err = dollyArea.DrawDolly(dollyX, dollyY, dollySize, dollyColor)
 	if err != nil {
 		log.Printf("dolly silhouette not available (this is ok): %v", err)
 	}

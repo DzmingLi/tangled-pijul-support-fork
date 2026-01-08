@@ -193,9 +193,9 @@ func (rp *Issues) drawIssueSummaryCard(issue *models.Issue, repo *models.Repo, c
 	dollyX := dollyBounds.Min.X + (dollyBounds.Dx() / 2) - (dollySize / 2)
 	dollyY := statsY + iconBaselineOffset - dollySize/2 + 25
 	dollyColor := color.RGBA{180, 180, 180, 255} // light gray
-	err = dollyArea.DrawDollySilhouette(dollyX, dollyY, dollySize, dollyColor)
+	err = dollyArea.DrawDolly(dollyX, dollyY, dollySize, dollyColor)
 	if err != nil {
-		log.Printf("dolly silhouette not available (this is ok): %v", err)
+		log.Printf("dolly not available (this is ok): %v", err)
 	}
 
 	// Draw "opened by @author" and date at the bottom with more spacing
