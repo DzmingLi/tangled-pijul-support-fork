@@ -202,19 +202,6 @@ func (s *State) Close() error {
 	return s.db.Close()
 }
 
-func (s *State) Favicon(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Cache-Control", "public, max-age=31536000") // one year
-	w.Header().Set("ETag", `"favicon-svg-v1"`)
-
-	if match := r.Header.Get("If-None-Match"); match == `"favicon-svg-v1"` {
-		w.WriteHeader(http.StatusNotModified)
-		return
-	}
-
-	s.pages.Favicon(w)
-}
-
 func (s *State) RobotsTxt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Set("Cache-Control", "public, max-age=86400") // one day

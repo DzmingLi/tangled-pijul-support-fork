@@ -32,8 +32,6 @@ func (s *State) Router() http.Handler {
 		s.pages,
 	)
 
-	router.Get("/favicon.svg", s.Favicon)
-	router.Get("/favicon.ico", s.Favicon)
 	router.Get("/pwa-manifest.json", s.PWAManifest)
 	router.Get("/robots.txt", s.RobotsTxt)
 
