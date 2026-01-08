@@ -453,7 +453,7 @@ func (c *Card) fetchExternalImage(url string) (image.Image, bool) {
 
 	// Handle SVG separately
 	if contentType == "image/svg+xml" || strings.HasSuffix(url, ".svg") {
-		return c.convertSVGToPNG(bodyBytes)
+		return convertSVGToPNG(bodyBytes)
 	}
 
 	// Support content types are in-sync with the allowed custom avatar file types
@@ -493,7 +493,7 @@ func (c *Card) fetchExternalImage(url string) (image.Image, bool) {
 }
 
 // convertSVGToPNG converts SVG data to a PNG image
-func (c *Card) convertSVGToPNG(svgData []byte) (image.Image, bool) {
+func convertSVGToPNG(svgData []byte) (image.Image, bool) {
 	// Parse the SVG
 	icon, err := oksvg.ReadIconStream(bytes.NewReader(svgData))
 	if err != nil {
@@ -547,8 +547,8 @@ func (c *Card) DrawCircularExternalImage(url string, x, y, size int) error {
 	draw.CatmullRom.Scale(scaledImg, scaledImg.Bounds(), img, srcBounds, draw.Src, nil)
 
 	// Draw the image with circular clipping
-	for cy := 0; cy < size; cy++ {
-		for cx := 0; cx < size; cx++ {
+	for cy := range size {
+		for cx := range size {
 			// Calculate distance from center
 			dx := float64(cx - center)
 			dy := float64(cy - center)
