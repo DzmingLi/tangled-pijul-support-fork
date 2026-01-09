@@ -5,6 +5,7 @@
   inter-fonts-src,
   ibm-plex-mono-src,
   lucide-src,
+  dolly,
   src,
 }:
 runCommandLocal "docs" {} ''
@@ -17,6 +18,9 @@ runCommandLocal "docs" {} ''
 
   # icons
   cp -rf ${lucide-src}/*.svg working/
+
+  # logo
+  ${dolly}/bin/dolly -output working/dolly.svg -color currentColor
 
   # content - chunked
   ${pandoc}/bin/pandoc ${src}/docs/DOCS.md \

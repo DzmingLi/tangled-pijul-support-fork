@@ -74,6 +74,7 @@
               ${ x.svg() }
               $if(toc-title)$$toc-title$$else$Table of Contents$endif$
             </button>
+            ${ logo.html() }
             ${ search.html() }
             ${ table-of-contents:toc.html() }
           </div>
@@ -88,6 +89,7 @@
         class="hidden md:flex md:flex-col gap-4 fixed left-0 top-0 w-80 h-screen
                bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
                p-4 z-50 overflow-y-auto">
+        ${ logo.html() }
         ${ search.html() }
         <div class="flex-1">
           $if(toc-title)$

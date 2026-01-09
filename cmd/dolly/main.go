@@ -47,7 +47,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !isValidHexColor(fillColor) {
+	if fillColor != "currentColor" && !isValidHexColor(fillColor) {
 		fmt.Fprintf(os.Stderr, "Invalid color format: %s. Use hex format like #FF5733\n", fillColor)
 		os.Exit(1)
 	}
