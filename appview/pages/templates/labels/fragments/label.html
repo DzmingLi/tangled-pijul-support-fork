@@ -2,28 +2,41 @@
   {{ $d := .def }}
   {{ $v := .val }}
   {{ $withPrefix := .withPrefix }}
-  <span class="w-fit flex items-center gap-2 font-normal normal-case rounded py-1 px-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
-    {{ template "repo/fragments/colorBall" (dict "color" $d.GetColor) }}
 
-    {{ $lhs := printf "%s" $d.Name }}
-    {{ $rhs := "" }}
+  {{ $lhs := printf "%s" $d.Name }}
+  {{ $rhs := "" }}
+  {{ $isDid := false }}
+  {{ $resolvedVal := "" }}
 
-    {{ if not $d.ValueType.IsNull }}
-      {{ if $d.ValueType.IsDidFormat }}
-        {{ $v = resolve $v }}
-      {{ end }}
-
-      {{ if not $withPrefix }}
-        {{ $lhs = "" }}
-      {{ else }}
-        {{ $lhs = printf "%s/" $d.Name }}
-      {{ end }}
-
-      {{ $rhs = printf "%s" $v }}
+  {{ if not $d.ValueType.IsNull }}
+    {{ $isDid = $d.ValueType.IsDidFormat }}
+    {{ if $isDid }}
+      {{ $resolvedVal = resolve $v }}
+      {{ $v = $resolvedVal }}
     {{ end }}
 
-    {{ printf "%s%s" $lhs $rhs }}
-  </span>
+    {{ if not $withPrefix }}
+      {{ $lhs = "" }}
+    {{ else }}
+      {{ $lhs = printf "%s/" $d.Name }}
+    {{ end }}
+
+    {{ $rhs = printf "%s" $v }}
+  {{ end }}
+
+  {{ $chipClasses := "w-fit flex items-center gap-2 font-normal normal-case rounded py-1 px-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm" }}
+
+  {{ if $isDid }}
+    <a href="/{{ $resolvedVal }}" class="{{ $chipClasses }} no-underline hover:underline">
+      {{ template "repo/fragments/colorBall" (dict "color" $d.GetColor) }}
+      {{ printf "%s%s" $lhs $rhs }}
+    </a>
+  {{ else }}
+    <span class="{{ $chipClasses }}">
+      {{ template "repo/fragments/colorBall" (dict "color" $d.GetColor) }}
+      {{ printf "%s%s" $lhs $rhs }}
+    </span>
+  {{ end }}
 {{ end }}
 
 
