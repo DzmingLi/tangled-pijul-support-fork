@@ -32,7 +32,7 @@ func (s *State) Router() http.Handler {
 		s.pages,
 	)
 
-	router.Get("/pwa-manifest.json", s.PWAManifest)
+	router.Get("/pwa-manifest.json", s.WebAppManifest)
 	router.Get("/robots.txt", s.RobotsTxt)
 
 	userRouter := s.UserRouter(&middleware)

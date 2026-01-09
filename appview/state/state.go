@@ -212,29 +212,6 @@ Allow: /
 	w.Write([]byte(robotsTxt))
 }
 
-// https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest
-const manifestJson = `{
-  "name": "tangled",
-  "description": "tightly-knit social coding.",
-  "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "144x144"
-    }
-  ],
-  "start_url": "/",
-  "id": "org.tangled",
-
-  "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827"
-}`
-
-func (p *State) PWAManifest(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(manifestJson))
-}
-
 func (s *State) TermsOfService(w http.ResponseWriter, r *http.Request) {
 	user := s.oauth.GetUser(r)
 	s.pages.TermsOfService(w, pages.TermsOfServiceParams{
