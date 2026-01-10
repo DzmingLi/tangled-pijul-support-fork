@@ -55,6 +55,9 @@ func (o *OAuth) callback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	l := o.Logger.With("query", r.URL.Query())
 
+	authReturn := o.GetAuthReturn(r)
+	_ = o.ClearAuthReturn(w, r)
+
 	sessData, err := o.ClientApp.ProcessCallback(ctx, r.URL.Query())
 	if err != nil {
 		var callbackErr *oauth.AuthRequestCallbackError
@@ -70,7 +73,11 @@ func (o *OAuth) callback(w http.ResponseWriter, r *http.Request) {
 
 	if err := o.SaveSession(w, r, sessData); err != nil {
 		l.Error("failed to save session", "data", sessData, "err", err)
-		http.Redirect(w, r, "/login?error=session", http.StatusFound)
+		errorCode := "session"
+		if errors.Is(err, ErrMaxAccountsReached) {
+			errorCode = "max_accounts"
+		}
+		http.Redirect(w, r, fmt.Sprintf("/login?error=%s", errorCode), http.StatusFound)
 		return
 	}
 
@@ -88,7 +95,12 @@ func (o *OAuth) callback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	redirectURL := "/"
+	if authReturn.ReturnURL != "" {
+		redirectURL = authReturn.ReturnURL
+	}
+
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 func (o *OAuth) addToDefaultSpindle(did string) {
