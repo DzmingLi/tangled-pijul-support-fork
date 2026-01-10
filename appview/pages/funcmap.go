@@ -28,6 +28,7 @@ import (
 	emoji "github.com/yuin/goldmark-emoji"
 	"tangled.org/core/appview/filetree"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/appview/oauth"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/crypto"
 )
@@ -384,6 +385,15 @@ func (p *Pages) funcMap() template.FuncMap {
 				return "error"
 			}
 			return fp
+		},
+		"otherAccounts": func(activeDid string, accounts []oauth.AccountInfo) []oauth.AccountInfo {
+			result := make([]oauth.AccountInfo, 0, len(accounts))
+			for _, acc := range accounts {
+				if acc.Did != activeDid {
+					result = append(result, acc)
+				}
+			}
+			return result
 		},
 	}
 }

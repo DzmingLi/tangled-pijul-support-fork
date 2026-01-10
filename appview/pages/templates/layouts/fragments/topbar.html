@@ -45,7 +45,7 @@
 {{ define "profileDropdown" }}
 <details class="relative inline-block text-left nav-dropdown">
     <summary class="cursor-pointer list-none flex items-center gap-1">
-        {{ $user := .Did }}
+        {{ $user := .Active.Did }}
         <img
             src="{{ tinyAvatar $user }}"
             alt=""
@@ -53,17 +53,55 @@
         />
         <span class="hidden md:inline">{{ $user | resolve | truncateAt30 }}</span>
     </summary>
-    <div class="absolute flex flex-col right-0 mt-4 p-4 rounded w-48 bg-white dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700">
-        <a href="/{{ $user }}">profile</a>
-        <a href="/{{ $user }}?tab=repos">repositories</a>
-        <a href="/{{ $user }}?tab=strings">strings</a>
-        <a href="/settings">settings</a>
-        <a href="#"
-           hx-post="/logout"
-           hx-swap="none"
-           class="text-red-400 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
-          logout
+    <div class="absolute right-0 mt-4 p-4 rounded bg-white dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-lg z-50" style="width: 14rem;">
+        {{ $active := .Active.Did }}
+
+        <div class="pb-2 mb-2 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+                <img src="{{ tinyAvatar $active }}" alt="" class="rounded-full h-8 w-8 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
+                <div class="flex-1 overflow-hidden">
+                    <p class="font-medium text-sm truncate">{{ $active | resolve }}</p>
+                    <p class="text-xs text-green-600 dark:text-green-400">active</p>
+                </div>
+            </div>
+        </div>
+
+        {{ $others := .Accounts | otherAccounts $active }}
+        {{ if $others }}
+        <div class="pb-2 mb-2 border-b border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Switch Account</p>
+            {{ range $others }}
+            <button
+                type="button"
+                hx-post="/account/switch"
+                hx-vals='{"did": "{{ .Did }}"}'
+                hx-swap="none"
+                class="flex items-center gap-2 w-full py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
+            >
+                <img src="{{ tinyAvatar .Did }}" alt="" class="rounded-full h-6 w-6 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
+                <span class="text-sm truncate flex-1">{{ .Did | resolve }}</span>
+            </button>
+            {{ end }}
+        </div>
+        {{ end }}
+
+        <a href="/login?mode=add_account" class="flex items-center gap-2 py-1 text-sm">
+            {{ i "plus" "w-4 h-4 flex-shrink-0" }}
+            <span>Add another account</span>
         </a>
+
+        <div class="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+            <a href="/{{ $active }}" class="block py-1 text-sm">profile</a>
+            <a href="/{{ $active }}?tab=repos" class="block py-1 text-sm">repositories</a>
+            <a href="/{{ $active }}?tab=strings" class="block py-1 text-sm">strings</a>
+            <a href="/settings" class="block py-1 text-sm">settings</a>
+            <a href="#"
+               hx-post="/logout"
+               hx-swap="none"
+               class="block py-1 text-sm text-red-400 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+              logout
+            </a>
+        </div>
     </div>
 </details>
 

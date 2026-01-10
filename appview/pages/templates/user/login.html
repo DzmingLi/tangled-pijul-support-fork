@@ -20,6 +20,56 @@
                 <h2 class="text-center text-xl italic dark:text-white">
                     tightly-knit social coding.
                 </h2>
+
+                {{ if .AddAccount }}
+                <div class="flex gap-2 my-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-sky-800 rounded px-3 py-2 text-blue-600 dark:text-blue-300">
+                    <span class="py-1">{{ i "user-plus" "w-4 h-4" }}</span>
+                    <div>
+                        <h5 class="font-medium">Add another account</h5>
+                        <p class="text-sm">Sign in with a different account to add it to your account list.</p>
+                    </div>
+                </div>
+                {{ end }}
+
+                {{ if and .LoggedInUser .LoggedInUser.Accounts }}
+                {{ $accounts := .LoggedInUser.Accounts }}
+                {{ if $accounts }}
+                <div class="my-4 border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
+                    <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                        <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Saved accounts</span>
+                    </div>
+                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                        {{ range $accounts }}
+                        <div class="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <button
+                                type="button"
+                                hx-post="/account/switch"
+                                hx-vals='{"did": "{{ .Did }}"}'
+                                hx-swap="none"
+                                class="flex items-center gap-2 flex-1 text-left min-w-0"
+                            >
+                                <img src="{{ tinyAvatar .Did }}" alt="" class="rounded-full h-8 w-8 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-sm font-medium dark:text-white truncate">{{ .Did | resolve | truncateAt30 }}</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">Click to switch</span>
+                                </div>
+                            </button>
+                            <button
+                                type="button"
+                                hx-delete="/account/{{ .Did }}"
+                                hx-swap="none"
+                                class="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
+                                title="Remove account"
+                            >
+                                {{ i "x" "w-4 h-4" }}
+                            </button>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+                {{ end }}
+                {{ end }}
+
                 <form
                     class="mt-4"
                     hx-post="/login"
@@ -46,6 +96,7 @@
                         </span>
                     </div>
                     <input type="hidden" name="return_url" value="{{ .ReturnUrl }}">
+                    <input type="hidden" name="add_account" value="{{ if .AddAccount }}true{{ end }}">
 
                     <button
                         class="btn w-full my-2 mt-6 text-base "
@@ -66,6 +117,8 @@
                         You have not authorized the app.
                         {{ else if eq .ErrorCode "session" }}
                         Server failed to create user session.
+                        {{ else if eq .ErrorCode "max_accounts" }}
+                        You have reached the maximum of 20 linked accounts. Please remove an account before adding a new one.
                         {{ else }}
                         Internal Server error.
                         {{ end }}

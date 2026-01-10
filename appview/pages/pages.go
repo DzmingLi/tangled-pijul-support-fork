@@ -226,8 +226,10 @@ func (p *Pages) Favicon(w io.Writer) error {
 }
 
 type LoginParams struct {
-	ReturnUrl string
-	ErrorCode string
+	ReturnUrl    string
+	ErrorCode    string
+	AddAccount   bool
+	LoggedInUser *oauth.MultiAccountUser
 }
 
 func (p *Pages) Login(w io.Writer, params LoginParams) error {
@@ -247,7 +249,7 @@ func (p *Pages) CompleteSignup(w io.Writer) error {
 }
 
 type TermsOfServiceParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Content      template.HTML
 }
 
@@ -275,7 +277,7 @@ func (p *Pages) TermsOfService(w io.Writer, params TermsOfServiceParams) error {
 }
 
 type PrivacyPolicyParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Content      template.HTML
 }
 
@@ -303,7 +305,7 @@ func (p *Pages) PrivacyPolicy(w io.Writer, params PrivacyPolicyParams) error {
 }
 
 type BrandParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 }
 
 func (p *Pages) Brand(w io.Writer, params BrandParams) error {
@@ -311,7 +313,7 @@ func (p *Pages) Brand(w io.Writer, params BrandParams) error {
 }
 
 type TimelineParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Timeline     []models.TimelineEvent
 	Repos        []models.Repo
 	GfiLabel     *models.LabelDefinition
@@ -322,7 +324,7 @@ func (p *Pages) Timeline(w io.Writer, params TimelineParams) error {
 }
 
 type GoodFirstIssuesParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Issues       []models.Issue
 	RepoGroups   []*models.RepoGroup
 	LabelDefs    map[string]*models.LabelDefinition
@@ -335,7 +337,7 @@ func (p *Pages) GoodFirstIssues(w io.Writer, params GoodFirstIssuesParams) error
 }
 
 type UserProfileSettingsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Tabs         []map[string]any
 	Tab          string
 }
@@ -345,7 +347,7 @@ func (p *Pages) UserProfileSettings(w io.Writer, params UserProfileSettingsParam
 }
 
 type NotificationsParams struct {
-	LoggedInUser  *oauth.User
+	LoggedInUser  *oauth.MultiAccountUser
 	Notifications []*models.NotificationWithEntity
 	UnreadCount   int
 	Page          pagination.Page
@@ -373,7 +375,7 @@ func (p *Pages) NotificationCount(w io.Writer, params NotificationCountParams) e
 }
 
 type UserKeysSettingsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	PubKeys      []models.PublicKey
 	Tabs         []map[string]any
 	Tab          string
@@ -384,7 +386,7 @@ func (p *Pages) UserKeysSettings(w io.Writer, params UserKeysSettingsParams) err
 }
 
 type UserEmailsSettingsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Emails       []models.Email
 	Tabs         []map[string]any
 	Tab          string
@@ -395,7 +397,7 @@ func (p *Pages) UserEmailsSettings(w io.Writer, params UserEmailsSettingsParams)
 }
 
 type UserNotificationSettingsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Preferences  *models.NotificationPreferences
 	Tabs         []map[string]any
 	Tab          string
@@ -415,7 +417,7 @@ func (p *Pages) UpgradeBanner(w io.Writer, params UpgradeBannerParams) error {
 }
 
 type KnotsParams struct {
-	LoggedInUser  *oauth.User
+	LoggedInUser  *oauth.MultiAccountUser
 	Registrations []models.Registration
 	Tabs          []map[string]any
 	Tab           string
@@ -426,7 +428,7 @@ func (p *Pages) Knots(w io.Writer, params KnotsParams) error {
 }
 
 type KnotParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Registration *models.Registration
 	Members      []string
 	Repos        map[string][]models.Repo
@@ -448,7 +450,7 @@ func (p *Pages) KnotListing(w io.Writer, params KnotListingParams) error {
 }
 
 type SpindlesParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Spindles     []models.Spindle
 	Tabs         []map[string]any
 	Tab          string
@@ -469,7 +471,7 @@ func (p *Pages) SpindleListing(w io.Writer, params SpindleListingParams) error {
 }
 
 type SpindleDashboardParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Spindle      models.Spindle
 	Members      []string
 	Repos        map[string][]models.Repo
@@ -482,7 +484,7 @@ func (p *Pages) SpindleDashboard(w io.Writer, params SpindleDashboardParams) err
 }
 
 type NewRepoParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Knots        []string
 }
 
@@ -491,7 +493,7 @@ func (p *Pages) NewRepo(w io.Writer, params NewRepoParams) error {
 }
 
 type ForkRepoParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Knots        []string
 	RepoInfo     repoinfo.RepoInfo
 }
@@ -529,7 +531,7 @@ func (p *ProfileCard) GetTabs() [][]any {
 }
 
 type ProfileOverviewParams struct {
-	LoggedInUser       *oauth.User
+	LoggedInUser       *oauth.MultiAccountUser
 	Repos              []models.Repo
 	CollaboratingRepos []models.Repo
 	ProfileTimeline    *models.ProfileTimeline
@@ -543,7 +545,7 @@ func (p *Pages) ProfileOverview(w io.Writer, params ProfileOverviewParams) error
 }
 
 type ProfileReposParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Repos        []models.Repo
 	Card         *ProfileCard
 	Active       string
@@ -555,7 +557,7 @@ func (p *Pages) ProfileRepos(w io.Writer, params ProfileReposParams) error {
 }
 
 type ProfileStarredParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Repos        []models.Repo
 	Card         *ProfileCard
 	Active       string
@@ -567,7 +569,7 @@ func (p *Pages) ProfileStarred(w io.Writer, params ProfileStarredParams) error {
 }
 
 type ProfileStringsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Strings      []models.String
 	Card         *ProfileCard
 	Active       string
@@ -580,7 +582,7 @@ func (p *Pages) ProfileStrings(w io.Writer, params ProfileStringsParams) error {
 
 type FollowCard struct {
 	UserDid        string
-	LoggedInUser   *oauth.User
+	LoggedInUser   *oauth.MultiAccountUser
 	FollowStatus   models.FollowStatus
 	FollowersCount int64
 	FollowingCount int64
@@ -588,7 +590,7 @@ type FollowCard struct {
 }
 
 type ProfileFollowersParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Followers    []FollowCard
 	Card         *ProfileCard
 	Active       string
@@ -600,7 +602,7 @@ func (p *Pages) ProfileFollowers(w io.Writer, params ProfileFollowersParams) err
 }
 
 type ProfileFollowingParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Following    []FollowCard
 	Card         *ProfileCard
 	Active       string
@@ -622,7 +624,7 @@ func (p *Pages) FollowFragment(w io.Writer, params FollowFragmentParams) error {
 }
 
 type EditBioParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Profile      *models.Profile
 }
 
@@ -631,7 +633,7 @@ func (p *Pages) EditBioFragment(w io.Writer, params EditBioParams) error {
 }
 
 type EditPinsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Profile      *models.Profile
 	AllRepos     []PinnedRepo
 }
@@ -658,7 +660,7 @@ func (p *Pages) StarBtnFragment(w io.Writer, params StarBtnFragmentParams) error
 }
 
 type RepoIndexParams struct {
-	LoggedInUser  *oauth.User
+	LoggedInUser  *oauth.MultiAccountUser
 	RepoInfo      repoinfo.RepoInfo
 	Active        string
 	TagMap        map[string][]string
@@ -707,7 +709,7 @@ func (p *Pages) RepoIndexPage(w io.Writer, params RepoIndexParams) error {
 }
 
 type RepoLogParams struct {
-	LoggedInUser    *oauth.User
+	LoggedInUser    *oauth.MultiAccountUser
 	RepoInfo        repoinfo.RepoInfo
 	TagMap          map[string][]string
 	Active          string
@@ -724,7 +726,7 @@ func (p *Pages) RepoLog(w io.Writer, params RepoLogParams) error {
 }
 
 type RepoCommitParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	EmailToDid   map[string]string
@@ -743,7 +745,7 @@ func (p *Pages) RepoCommit(w io.Writer, params RepoCommitParams) error {
 }
 
 type RepoTreeParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	BreadCrumbs  [][]string
@@ -798,7 +800,7 @@ func (p *Pages) RepoTree(w io.Writer, params RepoTreeParams) error {
 }
 
 type RepoBranchesParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	types.RepoBranchesResponse
@@ -810,7 +812,7 @@ func (p *Pages) RepoBranches(w io.Writer, params RepoBranchesParams) error {
 }
 
 type RepoTagsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	types.RepoTagsResponse
@@ -824,7 +826,7 @@ func (p *Pages) RepoTags(w io.Writer, params RepoTagsParams) error {
 }
 
 type RepoArtifactParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Artifact     models.Artifact
 }
@@ -834,7 +836,7 @@ func (p *Pages) RepoArtifactFragment(w io.Writer, params RepoArtifactParams) err
 }
 
 type RepoBlobParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	BreadCrumbs  [][]string
@@ -858,7 +860,7 @@ type Collaborator struct {
 }
 
 type RepoSettingsParams struct {
-	LoggedInUser   *oauth.User
+	LoggedInUser   *oauth.MultiAccountUser
 	RepoInfo       repoinfo.RepoInfo
 	Collaborators  []Collaborator
 	Active         string
@@ -877,7 +879,7 @@ func (p *Pages) RepoSettings(w io.Writer, params RepoSettingsParams) error {
 }
 
 type RepoGeneralSettingsParams struct {
-	LoggedInUser       *oauth.User
+	LoggedInUser       *oauth.MultiAccountUser
 	RepoInfo           repoinfo.RepoInfo
 	Labels             []models.LabelDefinition
 	DefaultLabels      []models.LabelDefinition
@@ -895,7 +897,7 @@ func (p *Pages) RepoGeneralSettings(w io.Writer, params RepoGeneralSettingsParam
 }
 
 type RepoAccessSettingsParams struct {
-	LoggedInUser  *oauth.User
+	LoggedInUser  *oauth.MultiAccountUser
 	RepoInfo      repoinfo.RepoInfo
 	Active        string
 	Tabs          []map[string]any
@@ -909,7 +911,7 @@ func (p *Pages) RepoAccessSettings(w io.Writer, params RepoAccessSettingsParams)
 }
 
 type RepoPipelineSettingsParams struct {
-	LoggedInUser   *oauth.User
+	LoggedInUser   *oauth.MultiAccountUser
 	RepoInfo       repoinfo.RepoInfo
 	Active         string
 	Tabs           []map[string]any
@@ -925,7 +927,7 @@ func (p *Pages) RepoPipelineSettings(w io.Writer, params RepoPipelineSettingsPar
 }
 
 type RepoIssuesParams struct {
-	LoggedInUser    *oauth.User
+	LoggedInUser    *oauth.MultiAccountUser
 	RepoInfo        repoinfo.RepoInfo
 	Active          string
 	Issues          []models.Issue
@@ -942,7 +944,7 @@ func (p *Pages) RepoIssues(w io.Writer, params RepoIssuesParams) error {
 }
 
 type RepoSingleIssueParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Active       string
 	Issue        *models.Issue
@@ -961,7 +963,7 @@ func (p *Pages) RepoSingleIssue(w io.Writer, params RepoSingleIssueParams) error
 }
 
 type EditIssueParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue
 	Action       string
@@ -985,7 +987,7 @@ func (p *Pages) ThreadReactionFragment(w io.Writer, params ThreadReactionFragmen
 }
 
 type RepoNewIssueParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue // existing issue if any -- passed when editing
 	Active       string
@@ -999,7 +1001,7 @@ func (p *Pages) RepoNewIssue(w io.Writer, params RepoNewIssueParams) error {
 }
 
 type EditIssueCommentParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue
 	Comment      *models.IssueComment
@@ -1010,7 +1012,7 @@ func (p *Pages) EditIssueCommentFragment(w io.Writer, params EditIssueCommentPar
 }
 
 type ReplyIssueCommentPlaceholderParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue
 	Comment      *models.IssueComment
@@ -1021,7 +1023,7 @@ func (p *Pages) ReplyIssueCommentPlaceholderFragment(w io.Writer, params ReplyIs
 }
 
 type ReplyIssueCommentParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue
 	Comment      *models.IssueComment
@@ -1032,7 +1034,7 @@ func (p *Pages) ReplyIssueCommentFragment(w io.Writer, params ReplyIssueCommentP
 }
 
 type IssueCommentBodyParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Issue        *models.Issue
 	Comment      *models.IssueComment
@@ -1043,7 +1045,7 @@ func (p *Pages) IssueCommentBodyFragment(w io.Writer, params IssueCommentBodyPar
 }
 
 type RepoNewPullParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Branches     []types.Branch
 	Strategy     string
@@ -1060,7 +1062,7 @@ func (p *Pages) RepoNewPull(w io.Writer, params RepoNewPullParams) error {
 }
 
 type RepoPullsParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Pulls        []*models.Pull
 	Active       string
@@ -1097,7 +1099,7 @@ func (r ResubmitResult) Unknown() bool {
 }
 
 type RepoSinglePullParams struct {
-	LoggedInUser       *oauth.User
+	LoggedInUser       *oauth.MultiAccountUser
 	RepoInfo           repoinfo.RepoInfo
 	Active             string
 	Pull               *models.Pull
@@ -1122,7 +1124,7 @@ func (p *Pages) RepoSinglePull(w io.Writer, params RepoSinglePullParams) error {
 }
 
 type RepoPullPatchParams struct {
-	LoggedInUser         *oauth.User
+	LoggedInUser         *oauth.MultiAccountUser
 	RepoInfo             repoinfo.RepoInfo
 	Pull                 *models.Pull
 	Stack                models.Stack
@@ -1139,7 +1141,7 @@ func (p *Pages) RepoPullPatchPage(w io.Writer, params RepoPullPatchParams) error
 }
 
 type RepoPullInterdiffParams struct {
-	LoggedInUser         *oauth.User
+	LoggedInUser         *oauth.MultiAccountUser
 	RepoInfo             repoinfo.RepoInfo
 	Pull                 *models.Pull
 	Round                int
@@ -1192,7 +1194,7 @@ func (p *Pages) PullCompareForkBranchesFragment(w io.Writer, params PullCompareF
 }
 
 type PullResubmitParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Pull         *models.Pull
 	SubmissionId int
@@ -1203,7 +1205,7 @@ func (p *Pages) PullResubmitFragment(w io.Writer, params PullResubmitParams) err
 }
 
 type PullActionsParams struct {
-	LoggedInUser       *oauth.User
+	LoggedInUser       *oauth.MultiAccountUser
 	RepoInfo           repoinfo.RepoInfo
 	Pull               *models.Pull
 	RoundNumber        int
@@ -1218,7 +1220,7 @@ func (p *Pages) PullActionsFragment(w io.Writer, params PullActionsParams) error
 }
 
 type PullNewCommentParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Pull         *models.Pull
 	RoundNumber  int
@@ -1229,7 +1231,7 @@ func (p *Pages) PullNewCommentFragment(w io.Writer, params PullNewCommentParams)
 }
 
 type RepoCompareParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Forks        []models.Repo
 	Branches     []types.Branch
@@ -1248,7 +1250,7 @@ func (p *Pages) RepoCompare(w io.Writer, params RepoCompareParams) error {
 }
 
 type RepoCompareNewParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Forks        []models.Repo
 	Branches     []types.Branch
@@ -1265,7 +1267,7 @@ func (p *Pages) RepoCompareNew(w io.Writer, params RepoCompareNewParams) error {
 }
 
 type RepoCompareAllowPullParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Base         string
 	Head         string
@@ -1285,7 +1287,7 @@ func (p *Pages) RepoCompareDiffFragment(w io.Writer, params RepoCompareDiffFragm
 }
 
 type LabelPanelParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Defs         map[string]*models.LabelDefinition
 	Subject      string
@@ -1297,7 +1299,7 @@ func (p *Pages) LabelPanel(w io.Writer, params LabelPanelParams) error {
 }
 
 type EditLabelPanelParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Defs         map[string]*models.LabelDefinition
 	Subject      string
@@ -1309,7 +1311,7 @@ func (p *Pages) EditLabelPanel(w io.Writer, params EditLabelPanelParams) error {
 }
 
 type PipelinesParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Pipelines    []models.Pipeline
 	Active       string
@@ -1352,7 +1354,7 @@ func (p *Pages) LogLine(w io.Writer, params LogLineParams) error {
 }
 
 type WorkflowParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
 	Pipeline     models.Pipeline
 	Workflow     string
@@ -1366,7 +1368,7 @@ func (p *Pages) Workflow(w io.Writer, params WorkflowParams) error {
 }
 
 type PutStringParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Action       string
 
 	// this is supplied in the case of editing an existing string
@@ -1378,7 +1380,7 @@ func (p *Pages) PutString(w io.Writer, params PutStringParams) error {
 }
 
 type StringsDashboardParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Card         ProfileCard
 	Strings      []models.String
 }
@@ -1388,7 +1390,7 @@ func (p *Pages) StringsDashboard(w io.Writer, params StringsDashboardParams) err
 }
 
 type StringTimelineParams struct {
-	LoggedInUser *oauth.User
+	LoggedInUser *oauth.MultiAccountUser
 	Strings      []models.String
 }
 
@@ -1397,7 +1399,7 @@ func (p *Pages) StringsTimeline(w io.Writer, params StringTimelineParams) error 
 }
 
 type SingleStringParams struct {
-	LoggedInUser     *oauth.User
+	LoggedInUser     *oauth.MultiAccountUser
 	ShowRendered     bool
 	RenderToggle     bool
 	RenderedContents template.HTML
