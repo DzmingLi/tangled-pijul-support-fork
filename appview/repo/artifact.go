@@ -30,7 +30,7 @@ import (
 
 // TODO: proper statuses here on early exit
 func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	tagParam := chi.URLParam(r, "tag")
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -75,7 +75,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 
 	putRecordResp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoArtifactNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       rkey,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.RepoArtifact{
@@ -104,7 +104,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	artifact := models.Artifact{
-		Did:       user.Did,
+		Did:       user.Active.Did,
 		Rkey:      rkey,
 		RepoAt:    f.RepoAt(),
 		Tag:       tag.Tag.Hash,
@@ -220,7 +220,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 // TODO: proper statuses here on early exit
 func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	tagParam := chi.URLParam(r, "tag")
 	filename := chi.URLParam(r, "file")
 	f, err := rp.repoResolver.Resolve(r)
@@ -251,7 +251,7 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 
 	artifact := artifacts[0]
 
-	if user.Did != artifact.Did {
+	if user.Active.Did != artifact.Did {
 		log.Println("user not authorized to delete artifact", err)
 		rp.pages.Notice(w, "remove", "Unauthorized deletion of artifact.")
 		return
@@ -259,7 +259,7 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 
 	_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 		Collection: tangled.RepoArtifactNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       artifact.Rkey,
 	})
 	if err != nil {

@@ -213,28 +213,28 @@ Allow: /
 }
 
 func (s *State) TermsOfService(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	s.pages.TermsOfService(w, pages.TermsOfServiceParams{
 		LoggedInUser: user,
 	})
 }
 
 func (s *State) PrivacyPolicy(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	s.pages.PrivacyPolicy(w, pages.PrivacyPolicyParams{
 		LoggedInUser: user,
 	})
 }
 
 func (s *State) Brand(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	s.pages.Brand(w, pages.BrandParams{
 		LoggedInUser: user,
 	})
 }
 
 func (s *State) HomeOrTimeline(w http.ResponseWriter, r *http.Request) {
-	if s.oauth.GetUser(r) != nil {
+	if s.oauth.GetMultiAccountUser(r) != nil {
 		s.Timeline(w, r)
 		return
 	}
@@ -242,14 +242,14 @@ func (s *State) HomeOrTimeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) Timeline(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	// TODO: set this flag based on the UI
 	filtered := false
 
 	var userDid string
-	if user != nil {
-		userDid = user.Did
+	if user != nil && user.Active != nil {
+		userDid = user.Active.Did
 	}
 	timeline, err := db.MakeTimeline(s.db, 50, userDid, filtered)
 	if err != nil {
@@ -278,17 +278,17 @@ func (s *State) Timeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) UpgradeBanner(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	if user == nil {
 		return
 	}
 
 	l := s.logger.With("handler", "UpgradeBanner")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	regs, err := db.GetRegistrations(
 		s.db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("needs_upgrade", 1),
 	)
 	if err != nil {
@@ -297,7 +297,7 @@ func (s *State) UpgradeBanner(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("needs_upgrade", 1),
 	)
 	if err != nil {
@@ -411,8 +411,8 @@ func stripGitExt(name string) string {
 func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		user := s.oauth.GetUser(r)
-		knots, err := s.enforcer.GetKnotsForUser(user.Did)
+		user := s.oauth.GetMultiAccountUser(r)
+		knots, err := s.enforcer.GetKnotsForUser(user.Active.Did)
 		if err != nil {
 			s.pages.Notice(w, "repo", "Invalid user account.")
 			return
@@ -426,8 +426,8 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		l := s.logger.With("handler", "NewRepo")
 
-		user := s.oauth.GetUser(r)
-		l = l.With("did", user.Did)
+		user := s.oauth.GetMultiAccountUser(r)
+		l = l.With("did", user.Active.Did)
 
 		// form validation
 		domain := r.FormValue("domain")
@@ -459,7 +459,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		description := r.FormValue("description")
 
 		// ACL validation
-		ok, err := s.enforcer.E.Enforce(user.Did, domain, domain, "repo:create")
+		ok, err := s.enforcer.E.Enforce(user.Active.Did, domain, domain, "repo:create")
 		if err != nil || !ok {
 			l.Info("unauthorized")
 			s.pages.Notice(w, "repo", "You do not have permission to create a repo in this knot.")
@@ -469,7 +469,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		// Check for existing repos
 		existingRepo, err := db.GetRepo(
 			s.db,
-			orm.FilterEq("did", user.Did),
+			orm.FilterEq("did", user.Active.Did),
 			orm.FilterEq("name", repoName),
 		)
 		if err == nil && existingRepo != nil {
@@ -481,7 +481,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		// create atproto record for this repo
 		rkey := tid.TID()
 		repo := &models.Repo{
-			Did:         user.Did,
+			Did:         user.Active.Did,
 			Name:        repoName,
 			Knot:        domain,
 			Rkey:        rkey,
@@ -500,7 +500,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 
 		atresp, err := comatproto.RepoPutRecord(r.Context(), atpClient, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.RepoNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &record,
@@ -577,8 +577,8 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// acls
-		p, _ := securejoin.SecureJoin(user.Did, repoName)
-		err = s.enforcer.AddRepo(user.Did, domain, p)
+		p, _ := securejoin.SecureJoin(user.Active.Did, repoName)
+		err = s.enforcer.AddRepo(user.Active.Did, domain, p)
 		if err != nil {
 			l.Error("acl setup failed", "err", err)
 			s.pages.Notice(w, "repo", "Failed to set up repository permissions.")
@@ -603,7 +603,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		aturi = ""
 
 		s.notifier.NewRepo(r.Context(), repo)
-		s.pages.HxLocation(w, fmt.Sprintf("/%s/%s", user.Did, repoName))
+		s.pages.HxLocation(w, fmt.Sprintf("/%s/%s", user.Active.Did, repoName))
 	}
 }
 

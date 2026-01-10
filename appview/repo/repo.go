@@ -81,9 +81,9 @@ func New(
 
 // modify the spindle configured for this repo
 func (rp *Repo) EditSpindle(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "EditSpindle")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	errorId := "operation-error"
 	fail := func(msg string, err error) {
@@ -107,7 +107,7 @@ func (rp *Repo) EditSpindle(w http.ResponseWriter, r *http.Request) {
 
 	if !removingSpindle {
 		// ensure that this is a valid spindle for this user
-		validSpindles, err := rp.enforcer.GetSpindlesForUser(user.Did)
+		validSpindles, err := rp.enforcer.GetSpindlesForUser(user.Active.Did)
 		if err != nil {
 			fail("Failed to find spindles. Try again later.", err)
 			return
@@ -168,9 +168,9 @@ func (rp *Repo) EditSpindle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) AddLabelDef(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "AddLabel")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -216,7 +216,7 @@ func (rp *Repo) AddLabelDef(w http.ResponseWriter, r *http.Request) {
 	}
 
 	label := models.LabelDefinition{
-		Did:       user.Did,
+		Did:       user.Active.Did,
 		Rkey:      tid.TID(),
 		Name:      name,
 		ValueType: valueType,
@@ -327,9 +327,9 @@ func (rp *Repo) AddLabelDef(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) DeleteLabelDef(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "DeleteLabel")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -435,9 +435,9 @@ func (rp *Repo) DeleteLabelDef(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) SubscribeLabel(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "SubscribeLabel")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -521,9 +521,9 @@ func (rp *Repo) SubscribeLabel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) UnsubscribeLabel(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "UnsubscribeLabel")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -633,7 +633,7 @@ func (rp *Repo) LabelPanel(w http.ResponseWriter, r *http.Request) {
 	}
 	state := states[subject]
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	rp.pages.LabelPanel(w, pages.LabelPanelParams{
 		LoggedInUser: user,
 		RepoInfo:     rp.repoResolver.GetRepoInfo(r, user),
@@ -681,7 +681,7 @@ func (rp *Repo) EditLabelPanel(w http.ResponseWriter, r *http.Request) {
 	}
 	state := states[subject]
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	rp.pages.EditLabelPanel(w, pages.EditLabelPanelParams{
 		LoggedInUser: user,
 		RepoInfo:     rp.repoResolver.GetRepoInfo(r, user),
@@ -692,9 +692,9 @@ func (rp *Repo) EditLabelPanel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "AddCollaborator")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -723,7 +723,7 @@ func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if collaboratorIdent.DID.String() == user.Did {
+	if collaboratorIdent.DID.String() == user.Active.Did {
 		fail("You seem to be adding yourself as a collaborator.", nil)
 		return
 	}
@@ -738,12 +738,12 @@ func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// emit a record
-	currentUser := rp.oauth.GetUser(r)
+	currentUser := rp.oauth.GetMultiAccountUser(r)
 	rkey := tid.TID()
 	createdAt := time.Now()
 	resp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoCollaboratorNSID,
-		Repo:       currentUser.Did,
+		Repo:       currentUser.Active.Did,
 		Rkey:       rkey,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.RepoCollaborator{
@@ -792,7 +792,7 @@ func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.AddCollaborator(tx, models.Collaborator{
-		Did:        syntax.DID(currentUser.Did),
+		Did:        syntax.DID(currentUser.Active.Did),
 		Rkey:       rkey,
 		SubjectDid: collaboratorIdent.DID,
 		RepoAt:     f.RepoAt(),
@@ -822,7 +822,7 @@ func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) DeleteRepo(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "DeleteRepo")
 
 	noticeId := "operation-error"
@@ -840,7 +840,7 @@ func (rp *Repo) DeleteRepo(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = comatproto.RepoDeleteRecord(r.Context(), atpClient, &comatproto.RepoDeleteRecord_Input{
 		Collection: tangled.RepoNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       f.Rkey,
 	})
 	if err != nil {
@@ -940,7 +940,7 @@ func (rp *Repo) SyncRepoFork(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	ref, _ = url.PathUnescape(ref)
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to resolve source repo", "err", err)
@@ -969,7 +969,7 @@ func (rp *Repo) SyncRepoFork(w http.ResponseWriter, r *http.Request) {
 			r.Context(),
 			client,
 			&tangled.RepoForkSync_Input{
-				Did:    user.Did,
+				Did:    user.Active.Did,
 				Name:   f.Name,
 				Source: f.Source,
 				Branch: ref,
@@ -988,7 +988,7 @@ func (rp *Repo) SyncRepoFork(w http.ResponseWriter, r *http.Request) {
 func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "ForkRepo")
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to resolve source repo", "err", err)
@@ -997,8 +997,8 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		user := rp.oauth.GetUser(r)
-		knots, err := rp.enforcer.GetKnotsForUser(user.Did)
+		user := rp.oauth.GetMultiAccountUser(r)
+		knots, err := rp.enforcer.GetKnotsForUser(user.Active.Did)
 		if err != nil {
 			rp.pages.Notice(w, "repo", "Invalid user account.")
 			return
@@ -1020,7 +1020,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		}
 		l = l.With("targetKnot", targetKnot)
 
-		ok, err := rp.enforcer.E.Enforce(user.Did, targetKnot, targetKnot, "repo:create")
+		ok, err := rp.enforcer.E.Enforce(user.Active.Did, targetKnot, targetKnot, "repo:create")
 		if err != nil || !ok {
 			rp.pages.Notice(w, "repo", "You do not have permission to create a repo in this knot.")
 			return
@@ -1037,7 +1037,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		// in the user's account.
 		existingRepo, err := db.GetRepo(
 			rp.db,
-			orm.FilterEq("did", user.Did),
+			orm.FilterEq("did", user.Active.Did),
 			orm.FilterEq("name", forkName),
 		)
 		if err != nil {
@@ -1066,7 +1066,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		// create an atproto record for this fork
 		rkey := tid.TID()
 		repo := &models.Repo{
-			Did:         user.Did,
+			Did:         user.Active.Did,
 			Name:        forkName,
 			Knot:        targetKnot,
 			Rkey:        rkey,
@@ -1086,7 +1086,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 
 		atresp, err := comatproto.RepoPutRecord(r.Context(), atpClient, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.RepoNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &record,
@@ -1165,8 +1165,8 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// acls
-		p, _ := securejoin.SecureJoin(user.Did, forkName)
-		err = rp.enforcer.AddRepo(user.Did, targetKnot, p)
+		p, _ := securejoin.SecureJoin(user.Active.Did, forkName)
+		err = rp.enforcer.AddRepo(user.Active.Did, targetKnot, p)
 		if err != nil {
 			l.Error("failed to add ACLs", "err", err)
 			rp.pages.Notice(w, "repo", "Failed to set up repository permissions.")
@@ -1191,7 +1191,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 		aturi = ""
 
 		rp.notifier.NewRepo(r.Context(), repo)
-		rp.pages.HxLocation(w, fmt.Sprintf("/%s/%s", user.Did, forkName))
+		rp.pages.HxLocation(w, fmt.Sprintf("/%s/%s", user.Active.Did, forkName))
 	}
 }
 

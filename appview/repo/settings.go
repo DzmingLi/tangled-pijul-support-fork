@@ -79,9 +79,9 @@ func (rp *Repo) SetDefaultBranch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) Secrets(w http.ResponseWriter, r *http.Request) {
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	l := rp.logger.With("handler", "Secrets")
-	l = l.With("did", user.Did)
+	l = l.With("did", user.Active.Did)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -185,7 +185,7 @@ func (rp *Repo) generalSettings(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "generalSettings")
 
 	f, err := rp.repoResolver.Resolve(r)
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	scheme := "http"
 	if !rp.config.Core.Dev {
@@ -271,7 +271,7 @@ func (rp *Repo) accessSettings(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "accessSettings")
 
 	f, err := rp.repoResolver.Resolve(r)
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	collaborators, err := func(repo *models.Repo) ([]pages.Collaborator, error) {
 		repoCollaborators, err := rp.enforcer.E.GetImplicitUsersForResourceByDomain(repo.DidSlashRepo(), repo.Knot)
@@ -318,7 +318,7 @@ func (rp *Repo) pipelineSettings(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "pipelineSettings")
 
 	f, err := rp.repoResolver.Resolve(r)
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	// all spindles that the repo owner is a member of
 	spindles, err := rp.enforcer.GetSpindlesForUser(f.Did)

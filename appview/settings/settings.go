@@ -81,7 +81,7 @@ func (s *Settings) Router() http.Handler {
 }
 
 func (s *Settings) profileSettings(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 
 	s.Pages.UserProfileSettings(w, pages.UserProfileSettingsParams{
 		LoggedInUser: user,
@@ -91,7 +91,7 @@ func (s *Settings) profileSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Settings) notificationsSettings(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	did := s.OAuth.GetDid(r)
 
 	prefs, err := db.GetNotificationPreference(s.Db, did)
@@ -137,8 +137,8 @@ func (s *Settings) updateNotificationPreferences(w http.ResponseWriter, r *http.
 }
 
 func (s *Settings) keysSettings(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
-	pubKeys, err := db.GetPublicKeysForDid(s.Db, user.Did)
+	user := s.OAuth.GetMultiAccountUser(r)
+	pubKeys, err := db.GetPublicKeysForDid(s.Db, user.Active.Did)
 	if err != nil {
 		log.Println(err)
 	}
@@ -152,8 +152,8 @@ func (s *Settings) keysSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Settings) emailsSettings(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
-	emails, err := db.GetAllEmails(s.Db, user.Did)
+	user := s.OAuth.GetMultiAccountUser(r)
+	emails, err := db.GetAllEmails(s.Db, user.Active.Did)
 	if err != nil {
 		log.Println(err)
 	}

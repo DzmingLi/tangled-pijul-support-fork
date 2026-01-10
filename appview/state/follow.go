@@ -15,7 +15,7 @@ import (
 )
 
 func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
-	currentUser := s.oauth.GetUser(r)
+	currentUser := s.oauth.GetMultiAccountUser(r)
 
 	subject := r.URL.Query().Get("subject")
 	if subject == "" {
@@ -29,7 +29,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if currentUser.Did == subjectIdent.DID.String() {
+	if currentUser.Active.Did == subjectIdent.DID.String() {
 		log.Println("cant follow or unfollow yourself")
 		return
 	}
@@ -46,7 +46,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 		rkey := tid.TID()
 		resp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.GraphFollowNSID,
-			Repo:       currentUser.Did,
+			Repo:       currentUser.Active.Did,
 			Rkey:       rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &tangled.GraphFollow{
@@ -62,7 +62,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 		log.Println("created atproto record: ", resp.Uri)
 
 		follow := &models.Follow{
-			UserDid:    currentUser.Did,
+			UserDid:    currentUser.Active.Did,
 			SubjectDid: subjectIdent.DID.String(),
 			Rkey:       rkey,
 		}
@@ -89,7 +89,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodDelete:
 		// find the record in the db
-		follow, err := db.GetFollow(s.db, currentUser.Did, subjectIdent.DID.String())
+		follow, err := db.GetFollow(s.db, currentUser.Active.Did, subjectIdent.DID.String())
 		if err != nil {
 			log.Println("failed to get follow relationship")
 			return
@@ -97,7 +97,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 
 		_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 			Collection: tangled.GraphFollowNSID,
-			Repo:       currentUser.Did,
+			Repo:       currentUser.Active.Did,
 			Rkey:       follow.Rkey,
 		})
 
@@ -106,7 +106,7 @@ func (s *State) Follow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = db.DeleteFollowByRkey(s.db, currentUser.Did, follow.Rkey)
+		err = db.DeleteFollowByRkey(s.db, currentUser.Active.Did, follow.Rkey)
 		if err != nil {
 			log.Println("failed to delete follow from DB")
 			// this is not an issue, the firehose event might have already done this

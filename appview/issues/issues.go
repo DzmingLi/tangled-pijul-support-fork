@@ -81,7 +81,7 @@ func New(
 
 func (rp *Issues) RepoSingleIssue(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "RepoSingleIssue")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -102,7 +102,7 @@ func (rp *Issues) RepoSingleIssue(w http.ResponseWriter, r *http.Request) {
 
 	userReactions := map[models.ReactionKind]bool{}
 	if user != nil {
-		userReactions = db.GetReactionStatusMap(rp.db, user.Did, issue.AtUri())
+		userReactions = db.GetReactionStatusMap(rp.db, user.Active.Did, issue.AtUri())
 	}
 
 	backlinks, err := db.GetBacklinks(rp.db, issue.AtUri())
@@ -143,7 +143,7 @@ func (rp *Issues) RepoSingleIssue(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) EditIssue(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "EditIssue")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -182,7 +182,7 @@ func (rp *Issues) EditIssue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoIssueNSID, user.Did, newIssue.Rkey)
+		ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoIssueNSID, user.Active.Did, newIssue.Rkey)
 		if err != nil {
 			l.Error("failed to get record", "err", err)
 			rp.pages.Notice(w, noticeId, "Failed to edit issue, no record found on PDS.")
@@ -191,7 +191,7 @@ func (rp *Issues) EditIssue(w http.ResponseWriter, r *http.Request) {
 
 		_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.RepoIssueNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       newIssue.Rkey,
 			SwapRecord: ex.Cid,
 			Record: &lexutil.LexiconTypeDecoder{
@@ -292,7 +292,7 @@ func (rp *Issues) DeleteIssue(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) CloseIssue(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "CloseIssue")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -306,10 +306,10 @@ func (rp *Issues) CloseIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roles := repoinfo.RolesInRepo{Roles: rp.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+	roles := repoinfo.RolesInRepo{Roles: rp.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 	isRepoOwner := roles.IsOwner()
 	isCollaborator := roles.IsCollaborator()
-	isIssueOwner := user.Did == issue.Did
+	isIssueOwner := user.Active.Did == issue.Did
 
 	// TODO: make this more granular
 	if isIssueOwner || isRepoOwner || isCollaborator {
@@ -326,7 +326,7 @@ func (rp *Issues) CloseIssue(w http.ResponseWriter, r *http.Request) {
 		issue.Open = false
 
 		// notify about the issue closure
-		rp.notifier.NewIssueState(r.Context(), syntax.DID(user.Did), issue)
+		rp.notifier.NewIssueState(r.Context(), syntax.DID(user.Active.Did), issue)
 
 		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 		rp.pages.HxLocation(w, fmt.Sprintf("/%s/issues/%d", ownerSlashRepo, issue.IssueId))
@@ -340,7 +340,7 @@ func (rp *Issues) CloseIssue(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) ReopenIssue(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "ReopenIssue")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -354,10 +354,10 @@ func (rp *Issues) ReopenIssue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roles := repoinfo.RolesInRepo{Roles: rp.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+	roles := repoinfo.RolesInRepo{Roles: rp.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 	isRepoOwner := roles.IsOwner()
 	isCollaborator := roles.IsCollaborator()
-	isIssueOwner := user.Did == issue.Did
+	isIssueOwner := user.Active.Did == issue.Did
 
 	if isCollaborator || isRepoOwner || isIssueOwner {
 		err := db.ReopenIssues(
@@ -373,7 +373,7 @@ func (rp *Issues) ReopenIssue(w http.ResponseWriter, r *http.Request) {
 		issue.Open = true
 
 		// notify about the issue reopen
-		rp.notifier.NewIssueState(r.Context(), syntax.DID(user.Did), issue)
+		rp.notifier.NewIssueState(r.Context(), syntax.DID(user.Active.Did), issue)
 
 		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 		rp.pages.HxLocation(w, fmt.Sprintf("/%s/issues/%d", ownerSlashRepo, issue.IssueId))
@@ -387,7 +387,7 @@ func (rp *Issues) ReopenIssue(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "NewIssueComment")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -416,7 +416,7 @@ func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 	mentions, references := rp.mentionsResolver.Resolve(r.Context(), body)
 
 	comment := models.IssueComment{
-		Did:        user.Did,
+		Did:        user.Active.Did,
 		Rkey:       tid.TID(),
 		IssueAt:    issue.AtUri().String(),
 		ReplyTo:    replyTo,
@@ -495,7 +495,7 @@ func (rp *Issues) NewIssueComment(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) IssueComment(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "IssueComment")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -531,7 +531,7 @@ func (rp *Issues) IssueComment(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "EditIssueComment")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -557,8 +557,8 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 	}
 	comment := comments[0]
 
-	if comment.Did != user.Did {
-		l.Error("unauthorized comment edit", "expectedDid", comment.Did, "gotDid", user.Did)
+	if comment.Did != user.Active.Did {
+		l.Error("unauthorized comment edit", "expectedDid", comment.Did, "gotDid", user.Active.Did)
 		http.Error(w, "you are not the author of this comment", http.StatusUnauthorized)
 		return
 	}
@@ -608,7 +608,7 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 		// rkey is optional, it was introduced later
 		if newComment.Rkey != "" {
 			// update the record on pds
-			ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoIssueCommentNSID, user.Did, comment.Rkey)
+			ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoIssueCommentNSID, user.Active.Did, comment.Rkey)
 			if err != nil {
 				l.Error("failed to get record", "err", err, "did", newComment.Did, "rkey", newComment.Rkey)
 				rp.pages.Notice(w, fmt.Sprintf("comment-%s-status", commentId), "Failed to update description, no record found on PDS.")
@@ -617,7 +617,7 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 
 			_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 				Collection: tangled.RepoIssueCommentNSID,
-				Repo:       user.Did,
+				Repo:       user.Active.Did,
 				Rkey:       newComment.Rkey,
 				SwapRecord: ex.Cid,
 				Record: &lexutil.LexiconTypeDecoder{
@@ -641,7 +641,7 @@ func (rp *Issues) EditIssueComment(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) ReplyIssueCommentPlaceholder(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "ReplyIssueCommentPlaceholder")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -677,7 +677,7 @@ func (rp *Issues) ReplyIssueCommentPlaceholder(w http.ResponseWriter, r *http.Re
 
 func (rp *Issues) ReplyIssueComment(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "ReplyIssueComment")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -713,7 +713,7 @@ func (rp *Issues) ReplyIssueComment(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) DeleteIssueComment(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "DeleteIssueComment")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	issue, ok := r.Context().Value("issue").(*models.Issue)
 	if !ok {
@@ -739,8 +739,8 @@ func (rp *Issues) DeleteIssueComment(w http.ResponseWriter, r *http.Request) {
 	}
 	comment := comments[0]
 
-	if comment.Did != user.Did {
-		l.Error("unauthorized action", "expectedDid", comment.Did, "gotDid", user.Did)
+	if comment.Did != user.Active.Did {
+		l.Error("unauthorized action", "expectedDid", comment.Did, "gotDid", user.Active.Did)
 		http.Error(w, "you are not the author of this comment", http.StatusUnauthorized)
 		return
 	}
@@ -769,7 +769,7 @@ func (rp *Issues) DeleteIssueComment(w http.ResponseWriter, r *http.Request) {
 		}
 		_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 			Collection: tangled.RepoIssueCommentNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       comment.Rkey,
 		})
 		if err != nil {
@@ -807,7 +807,7 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 	page := pagination.FromContext(r.Context())
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -884,7 +884,7 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rp.pages.RepoIssues(w, pages.RepoIssuesParams{
-		LoggedInUser:    rp.oauth.GetUser(r),
+		LoggedInUser:    rp.oauth.GetMultiAccountUser(r),
 		RepoInfo:        rp.repoResolver.GetRepoInfo(r, user),
 		Issues:          issues,
 		IssueCount:      totalIssues,
@@ -897,7 +897,7 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "NewIssue")
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
@@ -921,7 +921,7 @@ func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 			Title:      r.FormValue("title"),
 			Body:       body,
 			Open:       true,
-			Did:        user.Did,
+			Did:        user.Active.Did,
 			Created:    time.Now(),
 			Mentions:   mentions,
 			References: references,
@@ -945,7 +945,7 @@ func (rp *Issues) NewIssue(w http.ResponseWriter, r *http.Request) {
 		}
 		resp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.RepoIssueNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       issue.Rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &record,

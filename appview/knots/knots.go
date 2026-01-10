@@ -70,10 +70,10 @@ func (k *Knots) Router() http.Handler {
 }
 
 func (k *Knots) knots(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 	)
 	if err != nil {
 		k.Logger.Error("failed to fetch knot registrations", "err", err)
@@ -92,8 +92,8 @@ func (k *Knots) knots(w http.ResponseWriter, r *http.Request) {
 func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 	l := k.Logger.With("handler", "dashboard")
 
-	user := k.OAuth.GetUser(r)
-	l = l.With("user", user.Did)
+	user := k.OAuth.GetMultiAccountUser(r)
+	l = l.With("user", user.Active.Did)
 
 	domain := chi.URLParam(r, "domain")
 	if domain == "" {
@@ -103,7 +103,7 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
@@ -154,7 +154,7 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	l := k.Logger.With("handler", "register")
 
 	noticeId := "register-error"
@@ -175,7 +175,7 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("domain", domain)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	tx, err := k.Db.Begin()
 	if err != nil {
@@ -188,7 +188,7 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 		k.Enforcer.E.LoadPolicy()
 	}()
 
-	err = db.AddKnot(tx, domain, user.Did)
+	err = db.AddKnot(tx, domain, user.Active.Did)
 	if err != nil {
 		l.Error("failed to insert", "err", err)
 		fail()
@@ -210,7 +210,7 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.KnotNSID, user.Did, domain)
+	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.KnotNSID, user.Active.Did, domain)
 	var exCid *string
 	if ex != nil {
 		exCid = ex.Cid
@@ -219,7 +219,7 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 	// re-announce by registering under same rkey
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.KnotNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       domain,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.Knot{
@@ -250,14 +250,14 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// begin verification
-	err = serververify.RunVerification(r.Context(), domain, user.Did, k.Config.Core.Dev)
+	err = serververify.RunVerification(r.Context(), domain, user.Active.Did, k.Config.Core.Dev)
 	if err != nil {
 		l.Error("verification failed", "err", err)
 		k.Pages.HxRefresh(w)
 		return
 	}
 
-	err = serververify.MarkKnotVerified(k.Db, k.Enforcer, domain, user.Did)
+	err = serververify.MarkKnotVerified(k.Db, k.Enforcer, domain, user.Active.Did)
 	if err != nil {
 		l.Error("failed to mark verified", "err", err)
 		k.Pages.HxRefresh(w)
@@ -275,7 +275,7 @@ func (k *Knots) register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	l := k.Logger.With("handler", "delete")
 
 	noticeId := "operation-error"
@@ -294,7 +294,7 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 	// get record from db first
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
@@ -322,7 +322,7 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 
 	err = db.DeleteKnot(
 		tx,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
@@ -350,7 +350,7 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 
 	_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 		Collection: tangled.KnotNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       domain,
 	})
 	if err != nil {
@@ -382,7 +382,7 @@ func (k *Knots) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	l := k.Logger.With("handler", "retry")
 
 	noticeId := "operation-error"
@@ -398,12 +398,12 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("domain", domain)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	// get record from db first
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
@@ -419,7 +419,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 	registration := registrations[0]
 
 	// begin verification
-	err = serververify.RunVerification(r.Context(), domain, user.Did, k.Config.Core.Dev)
+	err = serververify.RunVerification(r.Context(), domain, user.Active.Did, k.Config.Core.Dev)
 	if err != nil {
 		l.Error("verification failed", "err", err)
 
@@ -437,7 +437,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = serververify.MarkKnotVerified(k.Db, k.Enforcer, domain, user.Did)
+	err = serververify.MarkKnotVerified(k.Db, k.Enforcer, domain, user.Active.Did)
 	if err != nil {
 		l.Error("failed to mark verified", "err", err)
 		k.Pages.Notice(w, noticeId, err.Error())
@@ -456,7 +456,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.KnotNSID, user.Did, domain)
+		ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.KnotNSID, user.Active.Did, domain)
 		var exCid *string
 		if ex != nil {
 			exCid = ex.Cid
@@ -465,7 +465,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 		// ignore the error here
 		_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.KnotNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       domain,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &tangled.Knot{
@@ -494,7 +494,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 	// Get updated registration to show
 	registrations, err = db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 	)
 	if err != nil {
@@ -516,7 +516,7 @@ func (k *Knots) retry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Knots) addMember(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	l := k.Logger.With("handler", "addMember")
 
 	domain := chi.URLParam(r, "domain")
@@ -526,11 +526,11 @@ func (k *Knots) addMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("domain", domain)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 		orm.FilterIsNot("registered", "null"),
 	)
@@ -583,7 +583,7 @@ func (k *Knots) addMember(w http.ResponseWriter, r *http.Request) {
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.KnotMemberNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       rkey,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.KnotMember{
@@ -618,7 +618,7 @@ func (k *Knots) addMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Knots) removeMember(w http.ResponseWriter, r *http.Request) {
-	user := k.OAuth.GetUser(r)
+	user := k.OAuth.GetMultiAccountUser(r)
 	l := k.Logger.With("handler", "removeMember")
 
 	noticeId := "operation-error"
@@ -634,11 +634,11 @@ func (k *Knots) removeMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("domain", domain)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	registrations, err := db.GetRegistrations(
 		k.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("domain", domain),
 		orm.FilterIsNot("registered", "null"),
 	)

@@ -115,7 +115,7 @@ func (mw Middleware) knotRoleMiddleware(group string) middlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// requires auth also
-			actor := mw.oauth.GetUser(r)
+			actor := mw.oauth.GetMultiAccountUser(r)
 			if actor == nil {
 				// we need a logged in user
 				log.Printf("not logged in, redirecting")
@@ -128,10 +128,9 @@ func (mw Middleware) knotRoleMiddleware(group string) middlewareFunc {
 				return
 			}
 
-			ok, err := mw.enforcer.E.HasGroupingPolicy(actor.Did, group, domain)
+			ok, err := mw.enforcer.E.HasGroupingPolicy(actor.Active.Did, group, domain)
 			if err != nil || !ok {
-				// we need a logged in user
-				log.Printf("%s does not have perms of a %s in domain %s", actor.Did, group, domain)
+				log.Printf("%s does not have perms of a %s in domain %s", actor.Active.Did, group, domain)
 				http.Error(w, "Forbiden", http.StatusUnauthorized)
 				return
 			}
@@ -149,7 +148,7 @@ func (mw Middleware) RepoPermissionMiddleware(requiredPerm string) middlewareFun
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// requires auth also
-			actor := mw.oauth.GetUser(r)
+			actor := mw.oauth.GetMultiAccountUser(r)
 			if actor == nil {
 				// we need a logged in user
 				log.Printf("not logged in, redirecting")
@@ -162,10 +161,9 @@ func (mw Middleware) RepoPermissionMiddleware(requiredPerm string) middlewareFun
 				return
 			}
 
-			ok, err := mw.enforcer.E.Enforce(actor.Did, f.Knot, f.DidSlashRepo(), requiredPerm)
+			ok, err := mw.enforcer.E.Enforce(actor.Active.Did, f.Knot, f.DidSlashRepo(), requiredPerm)
 			if err != nil || !ok {
-				// we need a logged in user
-				log.Printf("%s does not have perms of a %s in repo %s", actor.Did, requiredPerm, f.DidSlashRepo())
+				log.Printf("%s does not have perms of a %s in repo %s", actor.Active.Did, requiredPerm, f.DidSlashRepo())
 				http.Error(w, "Forbiden", http.StatusUnauthorized)
 				return
 			}

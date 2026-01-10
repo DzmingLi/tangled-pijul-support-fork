@@ -16,7 +16,7 @@ import (
 )
 
 func (s *State) Star(w http.ResponseWriter, r *http.Request) {
-	currentUser := s.oauth.GetUser(r)
+	currentUser := s.oauth.GetMultiAccountUser(r)
 
 	subject := r.URL.Query().Get("subject")
 	if subject == "" {
@@ -42,7 +42,7 @@ func (s *State) Star(w http.ResponseWriter, r *http.Request) {
 		rkey := tid.TID()
 		resp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.FeedStarNSID,
-			Repo:       currentUser.Did,
+			Repo:       currentUser.Active.Did,
 			Rkey:       rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &tangled.FeedStar{
@@ -57,7 +57,7 @@ func (s *State) Star(w http.ResponseWriter, r *http.Request) {
 		log.Println("created atproto record: ", resp.Uri)
 
 		star := &models.Star{
-			Did:    currentUser.Did,
+			Did:    currentUser.Active.Did,
 			RepoAt: subjectUri,
 			Rkey:   rkey,
 		}
@@ -84,7 +84,7 @@ func (s *State) Star(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodDelete:
 		// find the record in the db
-		star, err := db.GetStar(s.db, currentUser.Did, subjectUri)
+		star, err := db.GetStar(s.db, currentUser.Active.Did, subjectUri)
 		if err != nil {
 			log.Println("failed to get star relationship")
 			return
@@ -92,7 +92,7 @@ func (s *State) Star(w http.ResponseWriter, r *http.Request) {
 
 		_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 			Collection: tangled.FeedStarNSID,
-			Repo:       currentUser.Did,
+			Repo:       currentUser.Active.Did,
 			Rkey:       star.Rkey,
 		})
 
@@ -101,7 +101,7 @@ func (s *State) Star(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = db.DeleteStarByRkey(s.db, currentUser.Did, star.Rkey)
+		err = db.DeleteStarByRkey(s.db, currentUser.Active.Did, star.Rkey)
 		if err != nil {
 			log.Println("failed to delete star from DB")
 			// this is not an issue, the firehose event might have already done this

@@ -68,7 +68,7 @@ func (l *Labels) Router() http.Handler {
 // - this handler should calculate the diff in order to create the labelop record
 // - we need the diff in order to maintain a "history" of operations performed by users
 func (l *Labels) PerformLabelOp(w http.ResponseWriter, r *http.Request) {
-	user := l.oauth.GetUser(r)
+	user := l.oauth.GetMultiAccountUser(r)
 
 	noticeId := "add-label-error"
 
@@ -82,7 +82,7 @@ func (l *Labels) PerformLabelOp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	did := user.Did
+	did := user.Active.Did
 	rkey := tid.TID()
 	performedAt := time.Now()
 	indexedAt := time.Now()

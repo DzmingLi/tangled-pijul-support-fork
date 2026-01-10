@@ -82,7 +82,7 @@ func (s *Strings) timeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.Pages.StringsTimeline(w, pages.StringTimelineParams{
-		LoggedInUser: s.OAuth.GetUser(r),
+		LoggedInUser: s.OAuth.GetMultiAccountUser(r),
 		Strings:      strings,
 	})
 }
@@ -153,10 +153,10 @@ func (s *Strings) contents(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		l.Error("failed to get star count", "err", err)
 	}
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	isStarred := false
 	if user != nil {
-		isStarred = db.GetStarStatus(s.Db, user.Did, string.AtUri())
+		isStarred = db.GetStarStatus(s.Db, user.Active.Did, string.AtUri())
 	}
 
 	s.Pages.SingleString(w, pages.SingleStringParams{
@@ -178,7 +178,7 @@ func (s *Strings) dashboard(w http.ResponseWriter, r *http.Request) {
 func (s *Strings) edit(w http.ResponseWriter, r *http.Request) {
 	l := s.Logger.With("handler", "edit")
 
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 
 	id, ok := r.Context().Value("resolvedId").(identity.Identity)
 	if !ok {
@@ -216,8 +216,8 @@ func (s *Strings) edit(w http.ResponseWriter, r *http.Request) {
 	first := all[0]
 
 	// verify that the logged in user owns this string
-	if user.Did != id.DID.String() {
-		l.Error("unauthorized request", "expected", id.DID, "got", user.Did)
+	if user.Active.Did != id.DID.String() {
+		l.Error("unauthorized request", "expected", id.DID, "got", user.Active.Did)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -226,7 +226,7 @@ func (s *Strings) edit(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		// return the form with prefilled fields
 		s.Pages.PutString(w, pages.PutStringParams{
-			LoggedInUser: s.OAuth.GetUser(r),
+			LoggedInUser: s.OAuth.GetMultiAccountUser(r),
 			Action:       "edit",
 			String:       first,
 		})
@@ -299,19 +299,19 @@ func (s *Strings) edit(w http.ResponseWriter, r *http.Request) {
 		s.Notifier.EditString(r.Context(), &entry)
 
 		// if that went okay, redir to the string
-		s.Pages.HxRedirect(w, "/strings/"+user.Did+"/"+entry.Rkey)
+		s.Pages.HxRedirect(w, "/strings/"+user.Active.Did+"/"+entry.Rkey)
 	}
 
 }
 
 func (s *Strings) create(w http.ResponseWriter, r *http.Request) {
 	l := s.Logger.With("handler", "create")
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 
 	switch r.Method {
 	case http.MethodGet:
 		s.Pages.PutString(w, pages.PutStringParams{
-			LoggedInUser: s.OAuth.GetUser(r),
+			LoggedInUser: s.OAuth.GetMultiAccountUser(r),
 			Action:       "new",
 		})
 	case http.MethodPost:
@@ -335,7 +335,7 @@ func (s *Strings) create(w http.ResponseWriter, r *http.Request) {
 		description := r.FormValue("description")
 
 		string := models.String{
-			Did:         syntax.DID(user.Did),
+			Did:         syntax.DID(user.Active.Did),
 			Rkey:        tid.TID(),
 			Filename:    filename,
 			Description: description,
@@ -353,7 +353,7 @@ func (s *Strings) create(w http.ResponseWriter, r *http.Request) {
 
 		resp, err := comatproto.RepoPutRecord(r.Context(), client, &atproto.RepoPutRecord_Input{
 			Collection: tangled.StringNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       string.Rkey,
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &record,
@@ -375,13 +375,13 @@ func (s *Strings) create(w http.ResponseWriter, r *http.Request) {
 		s.Notifier.NewString(r.Context(), &string)
 
 		// successful
-		s.Pages.HxRedirect(w, "/strings/"+user.Did+"/"+string.Rkey)
+		s.Pages.HxRedirect(w, "/strings/"+user.Active.Did+"/"+string.Rkey)
 	}
 }
 
 func (s *Strings) delete(w http.ResponseWriter, r *http.Request) {
 	l := s.Logger.With("handler", "create")
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	fail := func(msg string, err error) {
 		l.Error(msg, "err", err)
 		s.Pages.Notice(w, "error", msg)
@@ -402,23 +402,23 @@ func (s *Strings) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Did != id.DID.String() {
-		fail("You cannot delete this string", fmt.Errorf("unauthorized deletion, %s != %s", user.Did, id.DID.String()))
+	if user.Active.Did != id.DID.String() {
+		fail("You cannot delete this string", fmt.Errorf("unauthorized deletion, %s != %s", user.Active.Did, id.DID.String()))
 		return
 	}
 
 	if err := db.DeleteString(
 		s.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("rkey", rkey),
 	); err != nil {
 		fail("Failed to delete string.", err)
 		return
 	}
 
-	s.Notifier.DeleteString(r.Context(), user.Did, rkey)
+	s.Notifier.DeleteString(r.Context(), user.Active.Did, rkey)
 
-	s.Pages.HxRedirect(w, "/strings/"+user.Did)
+	s.Pages.HxRedirect(w, "/strings/"+user.Active.Did)
 }
 
 func (s *Strings) comment(w http.ResponseWriter, r *http.Request) {

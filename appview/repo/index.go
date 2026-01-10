@@ -51,7 +51,7 @@ func (rp *Repo) Index(w http.ResponseWriter, r *http.Request) {
 		Host: host,
 	}
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	// Build index response from multiple XRPC calls
 	result, err := rp.buildIndexResponse(r.Context(), xrpcc, f, ref)

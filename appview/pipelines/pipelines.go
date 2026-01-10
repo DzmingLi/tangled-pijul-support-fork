@@ -77,7 +77,7 @@ func New(
 }
 
 func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
-	user := p.oauth.GetUser(r)
+	user := p.oauth.GetMultiAccountUser(r)
 	l := p.logger.With("handler", "Index")
 
 	f, err := p.repoResolver.Resolve(r)
@@ -106,7 +106,7 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
-	user := p.oauth.GetUser(r)
+	user := p.oauth.GetMultiAccountUser(r)
 	l := p.logger.With("handler", "Workflow")
 
 	f, err := p.repoResolver.Resolve(r)

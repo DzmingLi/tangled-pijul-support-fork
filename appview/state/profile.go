@@ -77,10 +77,10 @@ func (s *State) profile(r *http.Request) (*pages.ProfileCard, error) {
 		return nil, fmt.Errorf("failed to get follower stats: %w", err)
 	}
 
-	loggedInUser := s.oauth.GetUser(r)
+	loggedInUser := s.oauth.GetMultiAccountUser(r)
 	followStatus := models.IsNotFollowing
 	if loggedInUser != nil {
-		followStatus = db.GetFollowStatus(s.db, loggedInUser.Did, did)
+		followStatus = db.GetFollowStatus(s.db, loggedInUser.Active.Did, did)
 	}
 
 	now := time.Now()
@@ -174,7 +174,7 @@ func (s *State) profileOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pages.ProfileOverview(w, pages.ProfileOverviewParams{
-		LoggedInUser:       s.oauth.GetUser(r),
+		LoggedInUser:       s.oauth.GetMultiAccountUser(r),
 		Card:               profile,
 		Repos:              pinnedRepos,
 		CollaboratingRepos: pinnedCollaboratingRepos,
@@ -205,7 +205,7 @@ func (s *State) reposPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = s.pages.ProfileRepos(w, pages.ProfileReposParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		Repos:        repos,
 		Card:         profile,
 	})
@@ -234,7 +234,7 @@ func (s *State) starredPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = s.pages.ProfileStarred(w, pages.ProfileStarredParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		Repos:        repos,
 		Card:         profile,
 	})
@@ -259,7 +259,7 @@ func (s *State) stringsPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = s.pages.ProfileStrings(w, pages.ProfileStringsParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		Strings:      strings,
 		Card:         profile,
 	})
@@ -283,7 +283,7 @@ func (s *State) followPage(
 	}
 	l = l.With("profileDid", profile.UserDid)
 
-	loggedInUser := s.oauth.GetUser(r)
+	loggedInUser := s.oauth.GetMultiAccountUser(r)
 	params := FollowsPageParams{
 		Card: profile,
 	}
@@ -316,9 +316,9 @@ func (s *State) followPage(
 
 	loggedInUserFollowing := make(map[string]struct{})
 	if loggedInUser != nil {
-		following, err := db.GetFollowing(s.db, loggedInUser.Did)
+		following, err := db.GetFollowing(s.db, loggedInUser.Active.Did)
 		if err != nil {
-			l.Error("failed to get follow list", "err", err, "loggedInUser", loggedInUser.Did)
+			l.Error("failed to get follow list", "err", err, "loggedInUser", loggedInUser.Active.Did)
 			return &params, err
 		}
 		loggedInUserFollowing = make(map[string]struct{}, len(following))
@@ -333,7 +333,7 @@ func (s *State) followPage(
 		followStatus := models.IsNotFollowing
 		if _, exists := loggedInUserFollowing[did]; exists {
 			followStatus = models.IsFollowing
-		} else if loggedInUser != nil && loggedInUser.Did == did {
+		} else if loggedInUser != nil && loggedInUser.Active.Did == did {
 			followStatus = models.IsSelf
 		}
 
@@ -367,7 +367,7 @@ func (s *State) followersPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pages.ProfileFollowers(w, pages.ProfileFollowersParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		Followers:    followPage.Follows,
 		Card:         followPage.Card,
 	})
@@ -381,7 +381,7 @@ func (s *State) followingPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pages.ProfileFollowing(w, pages.ProfileFollowingParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		Following:    followPage.Follows,
 		Card:         followPage.Card,
 	})
@@ -530,7 +530,7 @@ func (s *State) createRepoItem(ctx context.Context, repo models.RepoEvent, autho
 }
 
 func (s *State) UpdateProfileBio(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -539,9 +539,9 @@ func (s *State) UpdateProfileBio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := db.GetProfile(s.db, user.Did)
+	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
-		log.Printf("getting profile data for %s: %s", user.Did, err)
+		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
 
 	profile.Description = r.FormValue("description")
@@ -578,7 +578,7 @@ func (s *State) UpdateProfileBio(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) UpdateProfilePins(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -587,9 +587,9 @@ func (s *State) UpdateProfilePins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := db.GetProfile(s.db, user.Did)
+	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
-		log.Printf("getting profile data for %s: %s", user.Did, err)
+		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
 
 	i := 0
@@ -617,7 +617,7 @@ func (s *State) UpdateProfilePins(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) updateProfile(profile *models.Profile, w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	tx, err := s.db.BeginTx(r.Context(), nil)
 	if err != nil {
 		log.Println("failed to start transaction", err)
@@ -644,7 +644,7 @@ func (s *State) updateProfile(profile *models.Profile, w http.ResponseWriter, r 
 		vanityStats = append(vanityStats, string(v.Kind))
 	}
 
-	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.ActorProfileNSID, user.Did, "self")
+	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.ActorProfileNSID, user.Active.Did, "self")
 	var cid *string
 	if ex != nil {
 		cid = ex.Cid
@@ -652,7 +652,7 @@ func (s *State) updateProfile(profile *models.Profile, w http.ResponseWriter, r 
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.ActorProfileNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       "self",
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.ActorProfile{
@@ -681,15 +681,15 @@ func (s *State) updateProfile(profile *models.Profile, w http.ResponseWriter, r 
 
 	s.notifier.UpdateProfile(r.Context(), profile)
 
-	s.pages.HxRedirect(w, "/"+user.Did)
+	s.pages.HxRedirect(w, "/"+user.Active.Did)
 }
 
 func (s *State) EditBioFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
-	profile, err := db.GetProfile(s.db, user.Did)
+	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
-		log.Printf("getting profile data for %s: %s", user.Did, err)
+		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
 
 	s.pages.EditBioFragment(w, pages.EditBioParams{
@@ -699,21 +699,21 @@ func (s *State) EditBioFragment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) EditPinsFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
-	profile, err := db.GetProfile(s.db, user.Did)
+	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
-		log.Printf("getting profile data for %s: %s", user.Did, err)
+		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
 
-	repos, err := db.GetRepos(s.db, 0, orm.FilterEq("did", user.Did))
+	repos, err := db.GetRepos(s.db, 0, orm.FilterEq("did", user.Active.Did))
 	if err != nil {
-		log.Printf("getting repos for %s: %s", user.Did, err)
+		log.Printf("getting repos for %s: %s", user.Active.Did, err)
 	}
 
-	collaboratingRepos, err := db.CollaboratingIn(s.db, user.Did)
+	collaboratingRepos, err := db.CollaboratingIn(s.db, user.Active.Did)
 	if err != nil {
-		log.Printf("getting collaborating repos for %s: %s", user.Did, err)
+		log.Printf("getting collaborating repos for %s: %s", user.Active.Did, err)
 	}
 
 	allRepos := []pages.PinnedRepo{}

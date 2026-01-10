@@ -109,7 +109,7 @@ func (rp *Repo) Log(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	emailToDidMap, err := db.GetEmailToDid(rp.db, uniqueEmails(xrpcResp.Commits), true)
 	if err != nil {
@@ -197,7 +197,7 @@ func (rp *Repo) Commit(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to GetVerifiedCommits", "err", err)
 	}
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	pipelines, err := getPipelineStatuses(rp.db, f, []string{result.Diff.Commit.This})
 	if err != nil {
 		l.Error("failed to getPipelineStatuses", "err", err)

@@ -76,7 +76,7 @@ func (rp *Repo) Blob(w http.ResponseWriter, r *http.Request) {
 	// Create the blob view
 	blobView := NewBlobView(resp, rp.config, f, ref, filePath, r.URL.Query())
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 
 	rp.pages.RepoBlob(w, pages.RepoBlobParams{
 		LoggedInUser:    user,

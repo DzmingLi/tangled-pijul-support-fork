@@ -69,7 +69,7 @@ func (rp *Repo) Tags(w http.ResponseWriter, r *http.Request) {
 			danglingArtifacts = append(danglingArtifacts, a)
 		}
 	}
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	rp.pages.RepoTags(w, pages.RepoTagsParams{
 		LoggedInUser:      user,
 		RepoInfo:          rp.repoResolver.GetRepoInfo(r, user),

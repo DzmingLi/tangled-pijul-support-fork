@@ -69,10 +69,10 @@ func (s *Spindles) Router() http.Handler {
 }
 
 func (s *Spindles) spindles(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	all, err := db.GetSpindles(
 		s.Db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 	)
 	if err != nil {
 		s.Logger.Error("failed to fetch spindles", "err", err)
@@ -91,8 +91,8 @@ func (s *Spindles) spindles(w http.ResponseWriter, r *http.Request) {
 func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 	l := s.Logger.With("handler", "dashboard")
 
-	user := s.OAuth.GetUser(r)
-	l = l.With("user", user.Did)
+	user := s.OAuth.GetMultiAccountUser(r)
+	l = l.With("user", user.Active.Did)
 
 	instance := chi.URLParam(r, "instance")
 	if instance == "" {
@@ -103,7 +103,7 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 	spindles, err := db.GetSpindles(
 		s.Db,
 		orm.FilterEq("instance", instance),
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterIsNot("verified", "null"),
 	)
 	if err != nil || len(spindles) != 1 {
@@ -155,7 +155,7 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 //
 // if the spindle is not up yet, the user is free to retry verification at a later point
 func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	l := s.Logger.With("handler", "register")
 
 	noticeId := "register-error"
@@ -176,7 +176,7 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("instance", instance)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	tx, err := s.Db.Begin()
 	if err != nil {
@@ -190,7 +190,7 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	err = db.AddSpindle(tx, models.Spindle{
-		Owner:    syntax.DID(user.Did),
+		Owner:    syntax.DID(user.Active.Did),
 		Instance: instance,
 	})
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.SpindleNSID, user.Did, instance)
+	ex, _ := comatproto.RepoGetRecord(r.Context(), client, "", tangled.SpindleNSID, user.Active.Did, instance)
 	var exCid *string
 	if ex != nil {
 		exCid = ex.Cid
@@ -223,7 +223,7 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 	// re-announce by registering under same rkey
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.SpindleNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       instance,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.Spindle{
@@ -254,14 +254,14 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// begin verification
-	err = serververify.RunVerification(r.Context(), instance, user.Did, s.Config.Core.Dev)
+	err = serververify.RunVerification(r.Context(), instance, user.Active.Did, s.Config.Core.Dev)
 	if err != nil {
 		l.Error("verification failed", "err", err)
 		s.Pages.HxRefresh(w)
 		return
 	}
 
-	_, err = serververify.MarkSpindleVerified(s.Db, s.Enforcer, instance, user.Did)
+	_, err = serververify.MarkSpindleVerified(s.Db, s.Enforcer, instance, user.Active.Did)
 	if err != nil {
 		l.Error("failed to mark verified", "err", err)
 		s.Pages.HxRefresh(w)
@@ -273,7 +273,7 @@ func (s *Spindles) register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	l := s.Logger.With("handler", "delete")
 
 	noticeId := "operation-error"
@@ -291,7 +291,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
@@ -300,8 +300,8 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if string(spindles[0].Owner) != user.Did {
-		l.Error("unauthorized", "user", user.Did, "owner", spindles[0].Owner)
+	if string(spindles[0].Owner) != user.Active.Did {
+		l.Error("unauthorized", "user", user.Active.Did, "owner", spindles[0].Owner)
 		s.Pages.Notice(w, noticeId, "Failed to delete spindle, unauthorized deletion attempt.")
 		return
 	}
@@ -320,7 +320,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 	// remove spindle members first
 	err = db.RemoveSpindleMember(
 		tx,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil {
@@ -331,7 +331,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	err = db.DeleteSpindle(
 		tx,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil {
@@ -359,7 +359,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 
 	_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 		Collection: tangled.SpindleNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       instance,
 	})
 	if err != nil {
@@ -391,7 +391,7 @@ func (s *Spindles) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	l := s.Logger.With("handler", "retry")
 
 	noticeId := "operation-error"
@@ -407,11 +407,11 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("instance", instance)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
@@ -420,14 +420,14 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if string(spindles[0].Owner) != user.Did {
-		l.Error("unauthorized", "user", user.Did, "owner", spindles[0].Owner)
+	if string(spindles[0].Owner) != user.Active.Did {
+		l.Error("unauthorized", "user", user.Active.Did, "owner", spindles[0].Owner)
 		s.Pages.Notice(w, noticeId, "Failed to verify spindle, unauthorized verification attempt.")
 		return
 	}
 
 	// begin verification
-	err = serververify.RunVerification(r.Context(), instance, user.Did, s.Config.Core.Dev)
+	err = serververify.RunVerification(r.Context(), instance, user.Active.Did, s.Config.Core.Dev)
 	if err != nil {
 		l.Error("verification failed", "err", err)
 
@@ -445,7 +445,7 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rowId, err := serververify.MarkSpindleVerified(s.Db, s.Enforcer, instance, user.Did)
+	rowId, err := serververify.MarkSpindleVerified(s.Db, s.Enforcer, instance, user.Active.Did)
 	if err != nil {
 		l.Error("failed to mark verified", "err", err)
 		s.Pages.Notice(w, noticeId, err.Error())
@@ -473,7 +473,7 @@ func (s *Spindles) retry(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	l := s.Logger.With("handler", "addMember")
 
 	instance := chi.URLParam(r, "instance")
@@ -483,11 +483,11 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("instance", instance)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
@@ -502,8 +502,8 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 		s.Pages.Notice(w, noticeId, defaultErr)
 	}
 
-	if string(spindles[0].Owner) != user.Did {
-		l.Error("unauthorized", "user", user.Did, "owner", spindles[0].Owner)
+	if string(spindles[0].Owner) != user.Active.Did {
+		l.Error("unauthorized", "user", user.Active.Did, "owner", spindles[0].Owner)
 		s.Pages.Notice(w, noticeId, "Failed to add member, unauthorized attempt.")
 		return
 	}
@@ -552,7 +552,7 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 
 	// add member to db
 	if err = db.AddSpindleMember(tx, models.SpindleMember{
-		Did:      syntax.DID(user.Did),
+		Did:      syntax.DID(user.Active.Did),
 		Rkey:     rkey,
 		Instance: instance,
 		Subject:  memberId.DID,
@@ -570,7 +570,7 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.SpindleMemberNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       rkey,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.SpindleMember{
@@ -603,7 +603,7 @@ func (s *Spindles) addMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
-	user := s.OAuth.GetUser(r)
+	user := s.OAuth.GetMultiAccountUser(r)
 	l := s.Logger.With("handler", "removeMember")
 
 	noticeId := "operation-error"
@@ -619,11 +619,11 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	l = l.With("instance", instance)
-	l = l.With("user", user.Did)
+	l = l.With("user", user.Active.Did)
 
 	spindles, err := db.GetSpindles(
 		s.Db,
-		orm.FilterEq("owner", user.Did),
+		orm.FilterEq("owner", user.Active.Did),
 		orm.FilterEq("instance", instance),
 	)
 	if err != nil || len(spindles) != 1 {
@@ -632,8 +632,8 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if string(spindles[0].Owner) != user.Did {
-		l.Error("unauthorized", "user", user.Did, "owner", spindles[0].Owner)
+	if string(spindles[0].Owner) != user.Active.Did {
+		l.Error("unauthorized", "user", user.Active.Did, "owner", spindles[0].Owner)
 		s.Pages.Notice(w, noticeId, "Failed to remove member, unauthorized attempt.")
 		return
 	}
@@ -668,7 +668,7 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 	// get the record from the DB first:
 	members, err := db.GetSpindleMembers(
 		s.Db,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("instance", instance),
 		orm.FilterEq("subject", memberId.DID),
 	)
@@ -681,7 +681,7 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 	// remove from db
 	if err = db.RemoveSpindleMember(
 		tx,
-		orm.FilterEq("did", user.Did),
+		orm.FilterEq("did", user.Active.Did),
 		orm.FilterEq("instance", instance),
 		orm.FilterEq("subject", memberId.DID),
 	); err != nil {
@@ -707,7 +707,7 @@ func (s *Spindles) removeMember(w http.ResponseWriter, r *http.Request) {
 	// remove from pds
 	_, err = comatproto.RepoDeleteRecord(r.Context(), client, &comatproto.RepoDeleteRecord_Input{
 		Collection: tangled.SpindleMemberNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       members[0].Rkey,
 	})
 	if err != nil {

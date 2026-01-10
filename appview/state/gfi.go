@@ -15,7 +15,7 @@ import (
 )
 
 func (s *State) GoodFirstIssues(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	page := pagination.FromContext(r.Context())
 

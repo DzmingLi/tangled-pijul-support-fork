@@ -55,7 +55,7 @@ func (rr *RepoResolver) Resolve(r *http.Request) (*models.Repo, error) {
 // 2. [x] remove `rr`, `CurrentDir`, `Ref` fields from `ResolvedRepo`
 // 3. [x] remove `ResolvedRepo`
 // 4. [ ] replace reporesolver to reposervice
-func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.User) repoinfo.RepoInfo {
+func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.MultiAccountUser) repoinfo.RepoInfo {
 	ownerId, ook := r.Context().Value("resolvedId").(identity.Identity)
 	repo, rok := r.Context().Value("repo").(*models.Repo)
 	if !ook || !rok {
@@ -69,9 +69,9 @@ func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.User) repoinfo.
 	repoAt := repo.RepoAt()
 	isStarred := false
 	roles := repoinfo.RolesInRepo{}
-	if user != nil {
-		isStarred = db.GetStarStatus(rr.execer, user.Did, repoAt)
-		roles.Roles = rr.enforcer.GetPermissionsInRepo(user.Did, repo.Knot, repo.DidSlashRepo())
+	if user != nil && user.Active != nil {
+		isStarred = db.GetStarStatus(rr.execer, user.Active.Did, repoAt)
+		roles.Roles = rr.enforcer.GetPermissionsInRepo(user.Active.Did, repo.Knot, repo.DidSlashRepo())
 	}
 
 	stats := repo.RepoStats

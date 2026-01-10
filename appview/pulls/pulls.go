@@ -97,7 +97,7 @@ func New(
 func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		user := s.oauth.GetUser(r)
+		user := s.oauth.GetMultiAccountUser(r)
 		f, err := s.repoResolver.Resolve(r)
 		if err != nil {
 			log.Println("failed to get repo and knot", err)
@@ -128,7 +128,7 @@ func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 		mergeCheckResponse := s.mergeCheck(r, f, pull, stack)
 		branchDeleteStatus := s.branchDeleteStatus(r, f, pull)
 		resubmitResult := pages.Unknown
-		if user.Did == pull.OwnerDid {
+		if user.Active.Did == pull.OwnerDid {
 			resubmitResult = s.resubmitCheck(r, f, pull, stack)
 		}
 
@@ -147,7 +147,7 @@ func (s *Pulls) PullActions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to get repo and knot", err)
@@ -175,7 +175,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 	mergeCheckResponse := s.mergeCheck(r, f, pull, stack)
 	branchDeleteStatus := s.branchDeleteStatus(r, f, pull)
 	resubmitResult := pages.Unknown
-	if user != nil && user.Did == pull.OwnerDid {
+	if user != nil && user.Active != nil && user.Active.Did == pull.OwnerDid {
 		resubmitResult = s.resubmitCheck(r, f, pull, stack)
 	}
 
@@ -217,7 +217,7 @@ func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
 
 	userReactions := map[models.ReactionKind]bool{}
 	if user != nil {
-		userReactions = db.GetReactionStatusMap(s.db, user.Did, pull.AtUri())
+		userReactions = db.GetReactionStatusMap(s.db, user.Active.Did, pull.AtUri())
 	}
 
 	labelDefs, err := db.GetLabelDefinitions(
@@ -328,7 +328,7 @@ func (s *Pulls) branchDeleteStatus(r *http.Request, repo *models.Repo, pull *mod
 		return nil
 	}
 
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	if user == nil {
 		return nil
 	}
@@ -351,7 +351,7 @@ func (s *Pulls) branchDeleteStatus(r *http.Request, repo *models.Repo, pull *mod
 	}
 
 	// user can only delete branch if they are a collaborator in the repo that the branch belongs to
-	perms := s.enforcer.GetPermissionsInRepo(user.Did, repo.Knot, repo.DidSlashRepo())
+	perms := s.enforcer.GetPermissionsInRepo(user.Active.Did, repo.Knot, repo.DidSlashRepo())
 	if !slices.Contains(perms, "repo:push") {
 		return nil
 	}
@@ -438,7 +438,7 @@ func (s *Pulls) resubmitCheck(r *http.Request, repo *models.Repo, pull *models.P
 }
 
 func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	var diffOpts types.DiffOpts
 	if d := r.URL.Query().Get("diff"); d == "split" {
@@ -479,7 +479,7 @@ func (s *Pulls) RepoPullPatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) RepoPullInterdiff(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	var diffOpts types.DiffOpts
 	if d := r.URL.Query().Get("diff"); d == "split" {
@@ -524,7 +524,7 @@ func (s *Pulls) RepoPullInterdiff(w http.ResponseWriter, r *http.Request) {
 	interdiff := patchutil.Interdiff(previousPatch, currentPatch)
 
 	s.pages.RepoPullInterdiffPage(w, pages.RepoPullInterdiffParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 		Pull:         pull,
 		Round:        roundIdInt,
@@ -556,7 +556,7 @@ func (s *Pulls) RepoPullPatchRaw(w http.ResponseWriter, r *http.Request) {
 func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 	l := s.logger.With("handler", "RepoPulls")
 
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	params := r.URL.Query()
 
 	state := models.PullOpen
@@ -701,7 +701,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.pages.RepoPulls(w, pages.RepoPullsParams{
-		LoggedInUser: s.oauth.GetUser(r),
+		LoggedInUser: s.oauth.GetMultiAccountUser(r),
 		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
 		Pulls:        pulls,
 		LabelDefs:    defs,
@@ -715,7 +715,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to get repo and knot", err)
@@ -774,7 +774,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 		}
 		atResp, err := comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 			Collection: tangled.RepoPullCommentNSID,
-			Repo:       user.Did,
+			Repo:       user.Active.Did,
 			Rkey:       tid.TID(),
 			Record: &lexutil.LexiconTypeDecoder{
 				Val: &tangled.RepoPullComment{
@@ -791,7 +791,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 		}
 
 		comment := &models.PullComment{
-			OwnerDid:     user.Did,
+			OwnerDid:     user.Active.Did,
 			RepoAt:       f.RepoAt().String(),
 			PullId:       pull.PullId,
 			Body:         body,
@@ -825,7 +825,7 @@ func (s *Pulls) PullComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) NewPull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to get repo and knot", err)
@@ -893,7 +893,7 @@ func (s *Pulls) NewPull(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Determine PR type based on input parameters
-		roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+		roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 		isPushAllowed := roles.IsPushAllowed()
 		isBranchBased := isPushAllowed && sourceBranch != "" && fromFork == ""
 		isForkBased := fromFork != "" && sourceBranch != ""
@@ -993,7 +993,7 @@ func (s *Pulls) handleBranchBasedPull(
 	w http.ResponseWriter,
 	r *http.Request,
 	repo *models.Repo,
-	user *oauth.User,
+	user *oauth.MultiAccountUser,
 	title,
 	body,
 	targetBranch,
@@ -1050,7 +1050,7 @@ func (s *Pulls) handleBranchBasedPull(
 	s.createPullRequest(w, r, repo, user, title, body, targetBranch, patch, combined, sourceRev, pullSource, recordPullSource, isStacked)
 }
 
-func (s *Pulls) handlePatchBasedPull(w http.ResponseWriter, r *http.Request, repo *models.Repo, user *oauth.User, title, body, targetBranch, patch string, isStacked bool) {
+func (s *Pulls) handlePatchBasedPull(w http.ResponseWriter, r *http.Request, repo *models.Repo, user *oauth.MultiAccountUser, title, body, targetBranch, patch string, isStacked bool) {
 	if err := s.validator.ValidatePatch(&patch); err != nil {
 		s.logger.Error("patch validation failed", "err", err)
 		s.pages.Notice(w, "pull", "Invalid patch format. Please provide a valid diff.")
@@ -1060,7 +1060,7 @@ func (s *Pulls) handlePatchBasedPull(w http.ResponseWriter, r *http.Request, rep
 	s.createPullRequest(w, r, repo, user, title, body, targetBranch, patch, "", "", nil, nil, isStacked)
 }
 
-func (s *Pulls) handleForkBasedPull(w http.ResponseWriter, r *http.Request, repo *models.Repo, user *oauth.User, forkRepo string, title, body, targetBranch, sourceBranch string, isStacked bool) {
+func (s *Pulls) handleForkBasedPull(w http.ResponseWriter, r *http.Request, repo *models.Repo, user *oauth.MultiAccountUser, forkRepo string, title, body, targetBranch, sourceBranch string, isStacked bool) {
 	repoString := strings.SplitN(forkRepo, "/", 2)
 	forkOwnerDid := repoString[0]
 	repoName := repoString[1]
@@ -1169,7 +1169,7 @@ func (s *Pulls) createPullRequest(
 	w http.ResponseWriter,
 	r *http.Request,
 	repo *models.Repo,
-	user *oauth.User,
+	user *oauth.MultiAccountUser,
 	title, body, targetBranch string,
 	patch string,
 	combined string,
@@ -1241,7 +1241,7 @@ func (s *Pulls) createPullRequest(
 		Title:        title,
 		Body:         body,
 		TargetBranch: targetBranch,
-		OwnerDid:     user.Did,
+		OwnerDid:     user.Active.Did,
 		RepoAt:       repo.RepoAt(),
 		Rkey:         rkey,
 		Mentions:     mentions,
@@ -1273,7 +1273,7 @@ func (s *Pulls) createPullRequest(
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoPullNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       rkey,
 		Record: &lexutil.LexiconTypeDecoder{
 			Val: &tangled.RepoPull{
@@ -1310,7 +1310,7 @@ func (s *Pulls) createStackedPullRequest(
 	w http.ResponseWriter,
 	r *http.Request,
 	repo *models.Repo,
-	user *oauth.User,
+	user *oauth.MultiAccountUser,
 	targetBranch string,
 	patch string,
 	sourceRev string,
@@ -1378,7 +1378,7 @@ func (s *Pulls) createStackedPullRequest(
 		})
 	}
 	_, err = comatproto.RepoApplyWrites(r.Context(), client, &comatproto.RepoApplyWrites_Input{
-		Repo:   user.Did,
+		Repo:   user.Active.Did,
 		Writes: writes,
 	})
 	if err != nil {
@@ -1450,7 +1450,7 @@ func (s *Pulls) ValidatePatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) PatchUploadFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	s.pages.PullPatchUploadFragment(w, pages.PullPatchUploadParams{
 		RepoInfo: s.repoResolver.GetRepoInfo(r, user),
@@ -1458,7 +1458,7 @@ func (s *Pulls) PatchUploadFragment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) CompareBranchesFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to get repo and knot", err)
@@ -1513,9 +1513,9 @@ func (s *Pulls) CompareBranchesFragment(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Pulls) CompareForksFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
-	forks, err := db.GetForksByDid(s.db, user.Did)
+	forks, err := db.GetForksByDid(s.db, user.Active.Did)
 	if err != nil {
 		log.Println("failed to get forks", err)
 		return
@@ -1529,7 +1529,7 @@ func (s *Pulls) CompareForksFragment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) CompareForksBranchesFragment(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
@@ -1622,7 +1622,7 @@ func (s *Pulls) CompareForksBranchesFragment(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Pulls) ResubmitPull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	pull, ok := r.Context().Value("pull").(*models.Pull)
 	if !ok {
@@ -1653,7 +1653,7 @@ func (s *Pulls) ResubmitPull(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) resubmitPatch(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	pull, ok := r.Context().Value("pull").(*models.Pull)
 	if !ok {
@@ -1668,7 +1668,7 @@ func (s *Pulls) resubmitPatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Did != pull.OwnerDid {
+	if user.Active.Did != pull.OwnerDid {
 		log.Println("unauthorized user")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -1680,7 +1680,7 @@ func (s *Pulls) resubmitPatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	pull, ok := r.Context().Value("pull").(*models.Pull)
 	if !ok {
@@ -1695,13 +1695,13 @@ func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Did != pull.OwnerDid {
+	if user.Active.Did != pull.OwnerDid {
 		log.Println("unauthorized user")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 	if !roles.IsPushAllowed() {
 		log.Println("unauthorized user")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -1745,7 +1745,7 @@ func (s *Pulls) resubmitBranch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) resubmitFork(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	pull, ok := r.Context().Value("pull").(*models.Pull)
 	if !ok {
@@ -1760,7 +1760,7 @@ func (s *Pulls) resubmitFork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Did != pull.OwnerDid {
+	if user.Active.Did != pull.OwnerDid {
 		log.Println("unauthorized user")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -1845,7 +1845,7 @@ func (s *Pulls) resubmitPullHelper(
 	w http.ResponseWriter,
 	r *http.Request,
 	repo *models.Repo,
-	user *oauth.User,
+	user *oauth.MultiAccountUser,
 	pull *models.Pull,
 	patch string,
 	combined string,
@@ -1901,7 +1901,7 @@ func (s *Pulls) resubmitPullHelper(
 		return
 	}
 
-	ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoPullNSID, user.Did, pull.Rkey)
+	ex, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.RepoPullNSID, user.Active.Did, pull.Rkey)
 	if err != nil {
 		// failed to get record
 		s.pages.Notice(w, "resubmit-error", "Failed to update pull, no record found on PDS.")
@@ -1920,7 +1920,7 @@ func (s *Pulls) resubmitPullHelper(
 
 	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
 		Collection: tangled.RepoPullNSID,
-		Repo:       user.Did,
+		Repo:       user.Active.Did,
 		Rkey:       pull.Rkey,
 		SwapRecord: ex.Cid,
 		Record: &lexutil.LexiconTypeDecoder{
@@ -1947,7 +1947,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 	w http.ResponseWriter,
 	r *http.Request,
 	repo *models.Repo,
-	user *oauth.User,
+	user *oauth.MultiAccountUser,
 	pull *models.Pull,
 	patch string,
 	stackId string,
@@ -2137,7 +2137,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 	}
 
 	_, err = comatproto.RepoApplyWrites(r.Context(), client, &comatproto.RepoApplyWrites_Input{
-		Repo:   user.Did,
+		Repo:   user.Active.Did,
 		Writes: writes,
 	})
 	if err != nil {
@@ -2151,7 +2151,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 }
 
 func (s *Pulls) MergePull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to resolve repo:", err)
@@ -2262,7 +2262,7 @@ func (s *Pulls) MergePull(w http.ResponseWriter, r *http.Request) {
 
 	// notify about the pull merge
 	for _, p := range pullsToMerge {
-		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
+		s.notifier.NewPullState(r.Context(), syntax.DID(user.Active.Did), p)
 	}
 
 	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
@@ -2270,7 +2270,7 @@ func (s *Pulls) MergePull(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) ClosePull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
@@ -2286,10 +2286,10 @@ func (s *Pulls) ClosePull(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// auth filter: only owner or collaborators can close
-	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 	isOwner := roles.IsOwner()
 	isCollaborator := roles.IsCollaborator()
-	isPullAuthor := user.Did == pull.OwnerDid
+	isPullAuthor := user.Active.Did == pull.OwnerDid
 	isCloseAllowed := isOwner || isCollaborator || isPullAuthor
 	if !isCloseAllowed {
 		log.Println("failed to close pull")
@@ -2335,7 +2335,7 @@ func (s *Pulls) ClosePull(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, p := range pullsToClose {
-		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
+		s.notifier.NewPullState(r.Context(), syntax.DID(user.Active.Did), p)
 	}
 
 	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
@@ -2343,7 +2343,7 @@ func (s *Pulls) ClosePull(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Pulls) ReopenPull(w http.ResponseWriter, r *http.Request) {
-	user := s.oauth.GetUser(r)
+	user := s.oauth.GetMultiAccountUser(r)
 
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
@@ -2360,10 +2360,10 @@ func (s *Pulls) ReopenPull(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// auth filter: only owner or collaborators can close
-	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Did, f.Knot, f.DidSlashRepo())}
+	roles := repoinfo.RolesInRepo{Roles: s.enforcer.GetPermissionsInRepo(user.Active.Did, f.Knot, f.DidSlashRepo())}
 	isOwner := roles.IsOwner()
 	isCollaborator := roles.IsCollaborator()
-	isPullAuthor := user.Did == pull.OwnerDid
+	isPullAuthor := user.Active.Did == pull.OwnerDid
 	isCloseAllowed := isOwner || isCollaborator || isPullAuthor
 	if !isCloseAllowed {
 		log.Println("failed to close pull")
@@ -2409,14 +2409,14 @@ func (s *Pulls) ReopenPull(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, p := range pullsToReopen {
-		s.notifier.NewPullState(r.Context(), syntax.DID(user.Did), p)
+		s.notifier.NewPullState(r.Context(), syntax.DID(user.Active.Did), p)
 	}
 
 	ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
 	s.pages.HxLocation(w, fmt.Sprintf("/%s/pulls/%d", ownerSlashRepo, pull.PullId))
 }
 
-func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.User, targetBranch, patch string, pullSource *models.PullSource, stackId string) (models.Stack, error) {
+func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.MultiAccountUser, targetBranch, patch string, pullSource *models.PullSource, stackId string) (models.Stack, error) {
 	formatPatches, err := patchutil.ExtractPatches(patch)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to extract patches: %v", err)
@@ -2452,7 +2452,7 @@ func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.Use
 			Title:        title,
 			Body:         body,
 			TargetBranch: targetBranch,
-			OwnerDid:     user.Did,
+			OwnerDid:     user.Active.Did,
 			RepoAt:       repo.RepoAt(),
 			Rkey:         rkey,
 			Mentions:     mentions,

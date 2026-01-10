@@ -20,7 +20,7 @@ import (
 func (rp *Repo) CompareNew(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "RepoCompareNew")
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
@@ -101,7 +101,7 @@ func (rp *Repo) CompareNew(w http.ResponseWriter, r *http.Request) {
 func (rp *Repo) Compare(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "RepoCompare")
 
-	user := rp.oauth.GetUser(r)
+	user := rp.oauth.GetMultiAccountUser(r)
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to get repo and knot", "err", err)
