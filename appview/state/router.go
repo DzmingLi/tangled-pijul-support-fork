@@ -130,6 +130,9 @@ func (s *State) StandardRouter(mw *middleware.Middleware) http.Handler {
 	r.Post("/login", s.Login)
 	r.Post("/logout", s.Logout)
 
+	r.Post("/account/switch", s.SwitchAccount)
+	r.With(middleware.AuthMiddleware(s.oauth)).Delete("/account/{did}", s.RemoveAccount)
+
 	r.Route("/repo", func(r chi.Router) {
 		r.Route("/new", func(r chi.Router) {
 			r.Use(middleware.AuthMiddleware(s.oauth))
