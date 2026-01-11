@@ -35,8 +35,11 @@
   {{ if .Issue.Body }}
     <article id="body" class="mt-4 prose dark:prose-invert">{{ .Issue.Body | markdown }}</article>
   {{ end }}
-  <div class="flex flex-wrap gap-2 items-stretch mt-4">
-    {{ template "issueReactions" . }}
+  <div class="mt-4">
+    {{ template "repo/fragments/reactions"
+      (dict "Reactions"   .Reactions
+            "UserReacted" .UserReacted
+            "ThreadAt"    .Issue.AtUri) }}
   </div>
 </section>
 {{ end }}
@@ -106,25 +109,6 @@
     {{ i "loader-circle" "size-3 animate-spin hidden group-[.htmx-request]:inline" }}
   </a>
 {{ end }}
-
-{{ define "issueReactions" }}
-  <div class="flex items-center gap-2">
-      {{ template "repo/fragments/reactionsPopUp" const.OrderedReactionKinds }}
-      {{ range $kind := const.OrderedReactionKinds }}
-          {{ $reactionData := index $.Reactions $kind }}
-          {{
-              template "repo/fragments/reaction"
-              (dict
-                  "Kind"      $kind
-                  "Count"     $reactionData.Count
-                  "IsReacted" (index $.UserReacted $kind)
-                  "ThreadAt"  $.Issue.AtUri
-                  "Users"     $reactionData.Users)
-          }}
-      {{ end }}
-  </div>
-{{ end }}
-
 
 {{ define "repoAfter" }}
   <div class="flex flex-col gap-4 mt-4">
