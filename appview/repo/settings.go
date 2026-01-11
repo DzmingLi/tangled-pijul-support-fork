@@ -22,17 +22,6 @@ import (
 	indigoxrpc "github.com/bluesky-social/indigo/xrpc"
 )
 
-type tab = map[string]any
-
-var (
-	// would be great to have ordered maps right about now
-	settingsTabs []tab = []tab{
-		{"Name": "general", "Icon": "sliders-horizontal"},
-		{"Name": "access", "Icon": "users"},
-		{"Name": "pipelines", "Icon": "layers-2"},
-	}
-)
-
 func (rp *Repo) SetDefaultBranch(w http.ResponseWriter, r *http.Request) {
 	l := rp.logger.With("handler", "SetDefaultBranch")
 
@@ -262,7 +251,6 @@ func (rp *Repo) generalSettings(w http.ResponseWriter, r *http.Request) {
 		DefaultLabels:      defaultLabels,
 		SubscribedLabels:   subscribedLabels,
 		ShouldSubscribeAll: shouldSubscribeAll,
-		Tabs:               settingsTabs,
 		Tab:                "general",
 	})
 }
@@ -308,7 +296,6 @@ func (rp *Repo) accessSettings(w http.ResponseWriter, r *http.Request) {
 	rp.pages.RepoAccessSettings(w, pages.RepoAccessSettingsParams{
 		LoggedInUser:  user,
 		RepoInfo:      rp.repoResolver.GetRepoInfo(r, user),
-		Tabs:          settingsTabs,
 		Tab:           "access",
 		Collaborators: collaborators,
 	})
@@ -369,7 +356,6 @@ func (rp *Repo) pipelineSettings(w http.ResponseWriter, r *http.Request) {
 	rp.pages.RepoPipelineSettings(w, pages.RepoPipelineSettingsParams{
 		LoggedInUser:   user,
 		RepoInfo:       rp.repoResolver.GetRepoInfo(r, user),
-		Tabs:           settingsTabs,
 		Tab:            "pipelines",
 		Spindles:       spindles,
 		CurrentSpindle: f.Spindle,

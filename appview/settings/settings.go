@@ -35,19 +35,6 @@ type Settings struct {
 	Config *config.Config
 }
 
-type tab = map[string]any
-
-var (
-	settingsTabs []tab = []tab{
-		{"Name": "profile", "Icon": "user"},
-		{"Name": "keys", "Icon": "key"},
-		{"Name": "emails", "Icon": "mail"},
-		{"Name": "notifications", "Icon": "bell"},
-		{"Name": "knots", "Icon": "volleyball"},
-		{"Name": "spindles", "Icon": "spool"},
-	}
-)
-
 func (s *Settings) Router() http.Handler {
 	r := chi.NewRouter()
 
@@ -85,7 +72,6 @@ func (s *Settings) profileSettings(w http.ResponseWriter, r *http.Request) {
 
 	s.Pages.UserProfileSettings(w, pages.UserProfileSettingsParams{
 		LoggedInUser: user,
-		Tabs:         settingsTabs,
 		Tab:          "profile",
 	})
 }
@@ -104,7 +90,6 @@ func (s *Settings) notificationsSettings(w http.ResponseWriter, r *http.Request)
 	s.Pages.UserNotificationSettings(w, pages.UserNotificationSettingsParams{
 		LoggedInUser: user,
 		Preferences:  prefs,
-		Tabs:         settingsTabs,
 		Tab:          "notifications",
 	})
 }
@@ -146,7 +131,6 @@ func (s *Settings) keysSettings(w http.ResponseWriter, r *http.Request) {
 	s.Pages.UserKeysSettings(w, pages.UserKeysSettingsParams{
 		LoggedInUser: user,
 		PubKeys:      pubKeys,
-		Tabs:         settingsTabs,
 		Tab:          "keys",
 	})
 }
@@ -161,7 +145,6 @@ func (s *Settings) emailsSettings(w http.ResponseWriter, r *http.Request) {
 	s.Pages.UserEmailsSettings(w, pages.UserEmailsSettingsParams{
 		LoggedInUser: user,
 		Emails:       emails,
-		Tabs:         settingsTabs,
 		Tab:          "emails",
 	})
 }

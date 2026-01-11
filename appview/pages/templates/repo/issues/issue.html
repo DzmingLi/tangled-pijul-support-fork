@@ -109,8 +109,8 @@
 
 {{ define "issueReactions" }}
   <div class="flex items-center gap-2">
-      {{ template "repo/fragments/reactionsPopUp" .OrderedReactionKinds }}
-      {{ range $kind := .OrderedReactionKinds }}
+      {{ template "repo/fragments/reactionsPopUp" const.OrderedReactionKinds }}
+      {{ range $kind := const.OrderedReactionKinds }}
           {{ $reactionData := index $.Reactions $kind }}
           {{
               template "repo/fragments/reaction"

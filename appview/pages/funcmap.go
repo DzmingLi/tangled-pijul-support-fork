@@ -32,6 +32,8 @@ import (
 	"tangled.org/core/crypto"
 )
 
+type tab map[string]string
+
 func (p *Pages) funcMap() template.FuncMap {
 	return template.FuncMap{
 		"split": func(s string) []string {
@@ -423,6 +425,26 @@ func (p *Pages) funcMap() template.FuncMap {
 				}
 			}
 			return result
+		},
+		// constant values used to define a template
+		"const": func() map[string]any {
+			return map[string]any{
+				"OrderedReactionKinds": models.OrderedReactionKinds,
+				// would be great to have ordered maps right about now
+				"UserSettingsTabs": []tab{
+					{"Name": "profile", "Icon": "user"},
+					{"Name": "keys", "Icon": "key"},
+					{"Name": "emails", "Icon": "mail"},
+					{"Name": "notifications", "Icon": "bell"},
+					{"Name": "knots", "Icon": "volleyball"},
+					{"Name": "spindles", "Icon": "spool"},
+				},
+				"RepoSettingsTabs": []tab{
+					{"Name": "general", "Icon": "sliders-horizontal"},
+					{"Name": "access", "Icon": "users"},
+					{"Name": "pipelines", "Icon": "layers-2"},
+				},
+			}
 		},
 	}
 }

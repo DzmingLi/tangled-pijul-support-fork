@@ -40,19 +40,6 @@ type Knots struct {
 	Knotstream *eventconsumer.Consumer
 }
 
-type tab = map[string]any
-
-var (
-	knotsTabs []tab = []tab{
-		{"Name": "profile", "Icon": "user"},
-		{"Name": "keys", "Icon": "key"},
-		{"Name": "emails", "Icon": "mail"},
-		{"Name": "notifications", "Icon": "bell"},
-		{"Name": "knots", "Icon": "volleyball"},
-		{"Name": "spindles", "Icon": "spool"},
-	}
-)
-
 func (k *Knots) Router() http.Handler {
 	r := chi.NewRouter()
 
@@ -84,7 +71,6 @@ func (k *Knots) knots(w http.ResponseWriter, r *http.Request) {
 	k.Pages.Knots(w, pages.KnotsParams{
 		LoggedInUser:  user,
 		Registrations: registrations,
-		Tabs:          knotsTabs,
 		Tab:           "knots",
 	})
 }
@@ -148,7 +134,6 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 		Members:      members,
 		Repos:        repoMap,
 		IsOwner:      true,
-		Tabs:         knotsTabs,
 		Tab:          "knots",
 	})
 }

@@ -39,19 +39,6 @@ type Spindles struct {
 	Logger     *slog.Logger
 }
 
-type tab = map[string]any
-
-var (
-	spindlesTabs []tab = []tab{
-		{"Name": "profile", "Icon": "user"},
-		{"Name": "keys", "Icon": "key"},
-		{"Name": "emails", "Icon": "mail"},
-		{"Name": "notifications", "Icon": "bell"},
-		{"Name": "knots", "Icon": "volleyball"},
-		{"Name": "spindles", "Icon": "spool"},
-	}
-)
-
 func (s *Spindles) Router() http.Handler {
 	r := chi.NewRouter()
 
@@ -83,7 +70,6 @@ func (s *Spindles) spindles(w http.ResponseWriter, r *http.Request) {
 	s.Pages.Spindles(w, pages.SpindlesParams{
 		LoggedInUser: user,
 		Spindles:     all,
-		Tabs:         spindlesTabs,
 		Tab:          "spindles",
 	})
 }
@@ -143,7 +129,6 @@ func (s *Spindles) dashboard(w http.ResponseWriter, r *http.Request) {
 		Spindle:      spindle,
 		Members:      members,
 		Repos:        repoMap,
-		Tabs:         spindlesTabs,
 		Tab:          "spindles",
 	})
 }

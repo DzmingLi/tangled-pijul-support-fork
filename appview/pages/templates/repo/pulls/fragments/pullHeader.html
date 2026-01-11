@@ -63,7 +63,7 @@
         </article>
     {{ end }}
 
-    {{ with .OrderedReactionKinds }}
+    {{ with const.OrderedReactionKinds }}
     <div class="flex items-center gap-2 mt-2">
         {{ template "repo/fragments/reactionsPopUp" . }}
         {{ range $kind := . }}

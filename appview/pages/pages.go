@@ -338,7 +338,6 @@ func (p *Pages) GoodFirstIssues(w io.Writer, params GoodFirstIssuesParams) error
 
 type UserProfileSettingsParams struct {
 	LoggedInUser *oauth.MultiAccountUser
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -377,7 +376,6 @@ func (p *Pages) NotificationCount(w io.Writer, params NotificationCountParams) e
 type UserKeysSettingsParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	PubKeys      []models.PublicKey
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -388,7 +386,6 @@ func (p *Pages) UserKeysSettings(w io.Writer, params UserKeysSettingsParams) err
 type UserEmailsSettingsParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	Emails       []models.Email
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -399,7 +396,6 @@ func (p *Pages) UserEmailsSettings(w io.Writer, params UserEmailsSettingsParams)
 type UserNotificationSettingsParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	Preferences  *models.NotificationPreferences
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -419,7 +415,6 @@ func (p *Pages) UpgradeBanner(w io.Writer, params UpgradeBannerParams) error {
 type KnotsParams struct {
 	LoggedInUser  *oauth.MultiAccountUser
 	Registrations []models.Registration
-	Tabs          []map[string]any
 	Tab           string
 }
 
@@ -433,7 +428,6 @@ type KnotParams struct {
 	Members      []string
 	Repos        map[string][]models.Repo
 	IsOwner      bool
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -452,7 +446,6 @@ func (p *Pages) KnotListing(w io.Writer, params KnotListingParams) error {
 type SpindlesParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	Spindles     []models.Spindle
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -462,8 +455,7 @@ func (p *Pages) Spindles(w io.Writer, params SpindlesParams) error {
 
 type SpindleListingParams struct {
 	models.Spindle
-	Tabs []map[string]any
-	Tab  string
+	Tab string
 }
 
 func (p *Pages) SpindleListing(w io.Writer, params SpindleListingParams) error {
@@ -475,7 +467,6 @@ type SpindleDashboardParams struct {
 	Spindle      models.Spindle
 	Members      []string
 	Repos        map[string][]models.Repo
-	Tabs         []map[string]any
 	Tab          string
 }
 
@@ -886,7 +877,6 @@ type RepoGeneralSettingsParams struct {
 	SubscribedLabels   map[string]struct{}
 	ShouldSubscribeAll bool
 	Active             string
-	Tabs               []map[string]any
 	Tab                string
 	Branches           []types.Branch
 }
@@ -900,7 +890,6 @@ type RepoAccessSettingsParams struct {
 	LoggedInUser  *oauth.MultiAccountUser
 	RepoInfo      repoinfo.RepoInfo
 	Active        string
-	Tabs          []map[string]any
 	Tab           string
 	Collaborators []Collaborator
 }
@@ -914,7 +903,6 @@ type RepoPipelineSettingsParams struct {
 	LoggedInUser   *oauth.MultiAccountUser
 	RepoInfo       repoinfo.RepoInfo
 	Active         string
-	Tabs           []map[string]any
 	Tab            string
 	Spindles       []string
 	CurrentSpindle string
@@ -952,9 +940,8 @@ type RepoSingleIssueParams struct {
 	Backlinks    []models.RichReferenceLink
 	LabelDefs    map[string]*models.LabelDefinition
 
-	OrderedReactionKinds []models.ReactionKind
-	Reactions            map[models.ReactionKind]models.ReactionDisplayData
-	UserReacted          map[models.ReactionKind]bool
+	Reactions   map[models.ReactionKind]models.ReactionDisplayData
+	UserReacted map[models.ReactionKind]bool
 }
 
 func (p *Pages) RepoSingleIssue(w io.Writer, params RepoSingleIssueParams) error {
@@ -1115,9 +1102,8 @@ type RepoSinglePullParams struct {
 	ActiveRound        int
 	IsInterdiff        bool
 
-	OrderedReactionKinds []models.ReactionKind
-	Reactions            map[models.ReactionKind]models.ReactionDisplayData
-	UserReacted          map[models.ReactionKind]bool
+	Reactions   map[models.ReactionKind]models.ReactionDisplayData
+	UserReacted map[models.ReactionKind]bool
 
 	LabelDefs map[string]*models.LabelDefinition
 }
@@ -1128,15 +1114,14 @@ func (p *Pages) RepoSinglePull(w io.Writer, params RepoSinglePullParams) error {
 }
 
 type RepoPullPatchParams struct {
-	LoggedInUser         *oauth.MultiAccountUser
-	RepoInfo             repoinfo.RepoInfo
-	Pull                 *models.Pull
-	Stack                models.Stack
-	Diff                 *types.NiceDiff
-	Round                int
-	Submission           *models.PullSubmission
-	OrderedReactionKinds []models.ReactionKind
-	DiffOpts             types.DiffOpts
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Pull         *models.Pull
+	Stack        models.Stack
+	Diff         *types.NiceDiff
+	Round        int
+	Submission   *models.PullSubmission
+	DiffOpts     types.DiffOpts
 }
 
 // this name is a mouthful
@@ -1145,13 +1130,12 @@ func (p *Pages) RepoPullPatchPage(w io.Writer, params RepoPullPatchParams) error
 }
 
 type RepoPullInterdiffParams struct {
-	LoggedInUser         *oauth.MultiAccountUser
-	RepoInfo             repoinfo.RepoInfo
-	Pull                 *models.Pull
-	Round                int
-	Interdiff            *patchutil.InterdiffResult
-	OrderedReactionKinds []models.ReactionKind
-	DiffOpts             types.DiffOpts
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Pull         *models.Pull
+	Round        int
+	Interdiff    *patchutil.InterdiffResult
+	DiffOpts     types.DiffOpts
 }
 
 // this name is a mouthful

@@ -289,9 +289,8 @@ func (s *Pulls) repoPullHelper(w http.ResponseWriter, r *http.Request, interdiff
 		ActiveRound:        roundIdInt,
 		IsInterdiff:        interdiff,
 
-		OrderedReactionKinds: models.OrderedReactionKinds,
-		Reactions:            reactionMap,
-		UserReacted:          userReactions,
+		Reactions:   reactionMap,
+		UserReacted: userReactions,
 
 		LabelDefs: defs,
 	})

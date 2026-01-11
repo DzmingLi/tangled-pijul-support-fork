@@ -129,15 +129,14 @@ func (rp *Issues) RepoSingleIssue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rp.pages.RepoSingleIssue(w, pages.RepoSingleIssueParams{
-		LoggedInUser:         user,
-		RepoInfo:             rp.repoResolver.GetRepoInfo(r, user),
-		Issue:                issue,
-		CommentList:          issue.CommentList(),
-		Backlinks:            backlinks,
-		OrderedReactionKinds: models.OrderedReactionKinds,
-		Reactions:            reactionMap,
-		UserReacted:          userReactions,
-		LabelDefs:            defs,
+		LoggedInUser: user,
+		RepoInfo:     rp.repoResolver.GetRepoInfo(r, user),
+		Issue:        issue,
+		CommentList:  issue.CommentList(),
+		Backlinks:    backlinks,
+		Reactions:    reactionMap,
+		UserReacted:  userReactions,
+		LabelDefs:    defs,
 	})
 }
 
