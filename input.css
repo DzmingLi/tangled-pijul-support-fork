@@ -133,6 +133,10 @@
           disabled:before:bg-green-400 dark:disabled:before:bg-green-600;
         }
 
+        .prose {
+            overflow-wrap: anywhere;
+        }
+
         .prose hr {
             @apply my-2;
         }
