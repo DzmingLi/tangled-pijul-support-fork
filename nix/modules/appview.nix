@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   lib,
   ...
@@ -259,6 +260,8 @@ in
         after = ["redis-appview.service" "network-online.target"];
         requires = ["redis-appview.service"];
         wants = ["network-online.target"];
+
+        path = [pkgs.diffutils];
 
         serviceConfig = {
           Type = "simple";
