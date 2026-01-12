@@ -92,6 +92,7 @@ func (n *Notifications) notificationsPage(w http.ResponseWriter, r *http.Request
 func (n *Notifications) getUnreadCount(w http.ResponseWriter, r *http.Request) {
 	user := n.oauth.GetUser(r)
 	if user == nil {
+		http.Error(w, "Forbidden", http.StatusUnauthorized)
 		return
 	}
 
