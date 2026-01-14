@@ -649,10 +649,12 @@ type StarBtnFragmentParams struct {
 	IsStarred bool
 	SubjectAt syntax.ATURI
 	StarCount int
+	HxSwapOob bool
 }
 
 func (p *Pages) StarBtnFragment(w io.Writer, params StarBtnFragmentParams) error {
-	return p.executePlain("fragments/starBtn-oob", w, params)
+	params.HxSwapOob = true
+	return p.executePlain("fragments/starBtn", w, params)
 }
 
 type RepoIndexParams struct {

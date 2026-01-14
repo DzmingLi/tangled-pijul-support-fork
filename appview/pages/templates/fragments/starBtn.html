@@ -9,6 +9,7 @@
         {{ else }}
             hx-post="/star?subject={{ .SubjectAt }}&countHint={{ .StarCount }}"
         {{ end }}
+        {{ if .HxSwapOob }}hx-swap-oob='outerHTML:#starBtn[data-star-subject-at="{{ .SubjectAt }}"]'{{ end }}
 
         hx-trigger="click"
         hx-disabled-elt="#starBtn"
