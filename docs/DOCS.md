@@ -663,6 +663,9 @@ dependencies:
   nixpkgs:
     - nodejs
     - go
+  # unstable
+  nixpkgs/nixpkgs-unstable:
+    - bun
   # custom registry
   git+https://tangled.org/@example.com/my_pkg:
     - my_pkg
