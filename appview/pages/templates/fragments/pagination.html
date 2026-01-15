@@ -1,0 +1,95 @@
+{{ define "fragments/pagination" }}
+  {{/* Params: Page (pagination.Page), TotalCount (int), BasePath (string), QueryParams (string) */}}
+  {{ $page := .Page }}
+  {{ $totalCount := .TotalCount }}
+  {{ $basePath := .BasePath }}
+  {{ $queryParams := .QueryParams }}
+
+  {{ $prev := $page.Previous.Offset }}
+  {{ $next := $page.Next.Offset }}
+  {{ $lastPage := sub $totalCount (mod $totalCount $page.Limit) }}
+
+  <div class="flex justify-center items-center mt-4 gap-2">
+    <a
+      class="
+        btn flex items-center gap-2 no-underline hover:no-underline 
+        dark:text-white dark:hover:bg-gray-700
+        {{ if le $page.Offset 0 }}
+          cursor-not-allowed opacity-50
+        {{ end }}
+      "
+      {{ if gt $page.Offset 0 }}
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset={{ $prev }}&limit={{ $page.Limit }}"
+      {{ end }}
+    >
+      {{ i "chevron-left" "w-4 h-4" }}
+      previous
+    </a>
+
+    {{ if gt $page.Offset 0 }}
+      <a
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset=0&limit={{ $page.Limit }}"
+      >
+        1
+      </a>
+    {{ end }}
+
+    {{ if gt $prev $page.Limit }}
+      <span>...</span>
+    {{ end }}
+
+    {{ if gt $prev 0 }}
+      <a
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset={{ $prev }}&limit={{ $page.Limit }}"
+      >
+        {{ add (div $prev $page.Limit) 1 }}
+      </a>
+    {{ end }}
+
+    <span class="font-bold">
+      {{ add (div $page.Offset $page.Limit) 1 }}
+    </span>
+
+    {{ if lt $next $lastPage }}
+      <a
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset={{ $next }}&limit={{ $page.Limit }}"
+      >
+        {{ add (div $next $page.Limit) 1 }}
+      </a>
+    {{ end }}
+
+    {{ if lt $next (sub $totalCount (mul 2 $page.Limit)) }}
+      <span>...</span>
+    {{ end }}
+
+    {{ if lt $page.Offset $lastPage }} 
+      <a
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset={{ $lastPage }}&limit={{ $page.Limit }}"
+      >
+        {{ add (div $lastPage $page.Limit) 1 }}
+      </a>
+    {{ end }}
+
+    <a
+      class="
+        btn flex items-center gap-2 no-underline hover:no-underline 
+        dark:text-white dark:hover:bg-gray-700
+        {{ if lt $next $totalCount | not }}
+            cursor-not-allowed opacity-50
+        {{ end }}
+      "
+      {{ if lt $next $totalCount }}
+        hx-boost="true"
+        href="{{ $basePath }}?{{ $queryParams }}&offset={{ $next }}&limit={{ $page.Limit }}"
+      {{ end }}
+    >
+      next
+      {{ i "chevron-right" "w-4 h-4" }}
+    </a>
+  </div>
+{{ end }}
