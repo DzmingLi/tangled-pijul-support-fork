@@ -170,6 +170,14 @@
             </div>
         {{ end }}
     </div>
+    {{if gt .PullCount .Page.Limit }}
+      {{ template "fragments/pagination" (dict 
+          "Page" .Page 
+          "TotalCount" .PullCount 
+          "BasePath" (printf "/%s/pulls" .RepoInfo.FullName)
+          "QueryParams" (printf "state=%s&q=%s" .FilteringBy.String .FilterQuery)
+      ) }}
+    {{ end }}
 {{ end }}
 
 {{ define "stackedPullList" }}

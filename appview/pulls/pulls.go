@@ -567,17 +567,25 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 		state = models.PullMerged
 	}
 
+	page := pagination.FromContext(r.Context())
+
 	f, err := s.repoResolver.Resolve(r)
 	if err != nil {
 		log.Println("failed to get repo and knot", err)
 		return
 	}
 
-	keyword := params.Get("q")
-
-	page := pagination.Page{
-		Limit: 99999,
+	var totalPulls int
+	switch state {
+	case models.PullOpen:
+		totalPulls = f.RepoStats.PullCount.Open
+	case models.PullMerged:
+		totalPulls = f.RepoStats.PullCount.Merged
+	case models.PullClosed:
+		totalPulls = f.RepoStats.PullCount.Closed
 	}
+
+	keyword := params.Get("q")
 
 	var pulls []*models.Pull
 	searchOpts := models.PullSearchOptions{
@@ -593,6 +601,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 			l.Error("failed to search for pulls", "err", err)
 			return
 		}
+		totalPulls = int(res.Total)
 		l.Debug("searched pulls with indexer", "count", len(res.Hits))
 
 		pulls, err = db.GetPulls(
@@ -700,6 +709,8 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 		FilterQuery:  keyword,
 		Stacks:       stacks,
 		Pipelines:    m,
+		Page:         page,
+		PullCount:    totalPulls,
 	})
 }
 

@@ -1069,6 +1069,8 @@ type RepoPullsParams struct {
 	Stacks       map[string]models.Stack
 	Pipelines    map[string]models.Pipeline
 	LabelDefs    map[string]*models.LabelDefinition
+	Page         pagination.Page
+	PullCount    int
 }
 
 func (p *Pages) RepoPulls(w io.Writer, params RepoPullsParams) error {

@@ -9,7 +9,7 @@ import (
 
 func (s *Pulls) Router(mw *middleware.Middleware) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/", s.RepoPulls)
+	r.With(middleware.Paginate).Get("/", s.RepoPulls)
 	r.With(middleware.AuthMiddleware(s.oauth)).Route("/new", func(r chi.Router) {
 		r.Get("/", s.NewPull)
 		r.Get("/patch-upload", s.PatchUploadFragment)
