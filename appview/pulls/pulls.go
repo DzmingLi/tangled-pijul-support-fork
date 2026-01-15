@@ -1,11 +1,14 @@
 package pulls
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -1241,7 +1244,7 @@ func (s *Pulls) createPullRequest(
 		return
 	}
 
-	blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+	blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
 	if err != nil {
 		log.Println("failed to upload patch", err)
 		s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
@@ -1335,7 +1338,7 @@ func (s *Pulls) createStackedPullRequest(
 	// apply all record creations at once
 	var writes []*comatproto.RepoApplyWrites_Input_Writes_Elem
 	for _, p := range stack {
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(p.LatestPatch()))
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(p.LatestPatch()))
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
@@ -1885,7 +1888,7 @@ func (s *Pulls) resubmitPullHelper(
 		return
 	}
 
-	blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+	blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
 	if err != nil {
 		log.Println("failed to upload patch blob", err)
 		s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
@@ -2027,7 +2030,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
@@ -2069,7 +2072,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, strings.NewReader(patch))
+		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
@@ -2451,4 +2454,12 @@ func (s *Pulls) newStack(ctx context.Context, repo *models.Repo, user *oauth.Use
 	}
 
 	return stack, nil
+}
+
+func gz(s string) io.Reader {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	w.Write([]byte(s))
+	w.Close()
+	return &b
 }
