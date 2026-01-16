@@ -29,6 +29,7 @@ import (
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/appview/pages/repoinfo"
+	"tangled.org/core/appview/pagination"
 	"tangled.org/core/appview/reporesolver"
 	"tangled.org/core/appview/validator"
 	"tangled.org/core/appview/xrpcclient"
@@ -574,12 +575,16 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	keyword := params.Get("q")
 
-	var ids []int64
+	page := pagination.Page{
+		Limit: 99999,
+	}
+
+	var pulls []*models.Pull
 	searchOpts := models.PullSearchOptions{
 		Keyword: keyword,
 		RepoAt:  f.RepoAt().String(),
 		State:   state,
-		// Page: page,
+		Page:    page,
 	}
 	l.Debug("searching with", "searchOpts", searchOpts)
 	if keyword != "" {
@@ -588,25 +593,29 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 			l.Error("failed to search for pulls", "err", err)
 			return
 		}
-		ids = res.Hits
-		l.Debug("searched pulls with indexer", "count", len(ids))
-	} else {
-		ids, err = db.GetPullIDs(s.db, searchOpts)
+		l.Debug("searched pulls with indexer", "count", len(res.Hits))
+
+		pulls, err = db.GetPulls(
+			s.db,
+			orm.FilterIn("id", res.Hits),
+		)
 		if err != nil {
-			l.Error("failed to get all pull ids", "err", err)
+			log.Println("failed to get pulls", err)
+			s.pages.Notice(w, "pulls", "Failed to load pulls. Try again later.")
 			return
 		}
-		l.Debug("indexed all pulls from the db", "count", len(ids))
-	}
-
-	pulls, err := db.GetPulls(
-		s.db,
-		orm.FilterIn("id", ids),
-	)
-	if err != nil {
-		log.Println("failed to get pulls", err)
-		s.pages.Notice(w, "pulls", "Failed to load pulls. Try again later.")
-		return
+	} else {
+		pulls, err = db.GetPullsPaginated(
+			s.db,
+			page,
+			orm.FilterEq("repo_at", f.RepoAt()),
+			orm.FilterEq("state", searchOpts.State),
+		)
+		if err != nil {
+			log.Println("failed to get pulls", err)
+			s.pages.Notice(w, "pulls", "Failed to load pulls. Try again later.")
+			return
+		}
 	}
 
 	for _, p := range pulls {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"tangled.org/core/appview/models"
+	"tangled.org/core/appview/pagination"
 	"tangled.org/core/orm"
 )
 
@@ -119,7 +120,7 @@ func NextPullId(e Execer, repoAt syntax.ATURI) (int, error) {
 	return pullId - 1, err
 }
 
-func GetPullsWithLimit(e Execer, limit int, filters ...orm.Filter) ([]*models.Pull, error) {
+func GetPullsPaginated(e Execer, page pagination.Page, filters ...orm.Filter) ([]*models.Pull, error) {
 	pulls := make(map[syntax.ATURI]*models.Pull)
 
 	var conditions []string
@@ -133,9 +134,13 @@ func GetPullsWithLimit(e Execer, limit int, filters ...orm.Filter) ([]*models.Pu
 	if conditions != nil {
 		whereClause = " where " + strings.Join(conditions, " and ")
 	}
-	limitClause := ""
-	if limit != 0 {
-		limitClause = fmt.Sprintf(" limit %d ", limit)
+	pageClause := ""
+	if page.Limit != 0 {
+		pageClause = fmt.Sprintf(
+			" limit %d offset %d ",
+			page.Limit,
+			page.Offset,
+		)
 	}
 
 	query := fmt.Sprintf(`
@@ -161,7 +166,7 @@ func GetPullsWithLimit(e Execer, limit int, filters ...orm.Filter) ([]*models.Pu
 		order by
 			created desc
 		%s
-	`, whereClause, limitClause)
+	`, whereClause, pageClause)
 
 	rows, err := e.Query(query, args...)
 	if err != nil {
@@ -297,72 +302,11 @@ func GetPullsWithLimit(e Execer, limit int, filters ...orm.Filter) ([]*models.Pu
 }
 
 func GetPulls(e Execer, filters ...orm.Filter) ([]*models.Pull, error) {
-	return GetPullsWithLimit(e, 0, filters...)
-}
-
-func GetPullIDs(e Execer, opts models.PullSearchOptions) ([]int64, error) {
-	var ids []int64
-
-	var filters []orm.Filter
-	filters = append(filters, orm.FilterEq("state", opts.State))
-	if opts.RepoAt != "" {
-		filters = append(filters, orm.FilterEq("repo_at", opts.RepoAt))
-	}
-
-	var conditions []string
-	var args []any
-
-	for _, filter := range filters {
-		conditions = append(conditions, filter.Condition())
-		args = append(args, filter.Arg()...)
-	}
-
-	whereClause := ""
-	if conditions != nil {
-		whereClause = " where " + strings.Join(conditions, " and ")
-	}
-	pageClause := ""
-	if opts.Page.Limit != 0 {
-		pageClause = fmt.Sprintf(
-			" limit %d offset %d ",
-			opts.Page.Limit,
-			opts.Page.Offset,
-		)
-	}
-
-	query := fmt.Sprintf(
-		`
-		select
-			id
-		from
-			pulls
-		%s
-		%s`,
-		whereClause,
-		pageClause,
-	)
-	args = append(args, opts.Page.Limit, opts.Page.Offset)
-	rows, err := e.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var id int64
-		err := rows.Scan(&id)
-		if err != nil {
-			return nil, err
-		}
-
-		ids = append(ids, id)
-	}
-
-	return ids, nil
+	return GetPullsPaginated(e, pagination.Page{}, filters...)
 }
 
 func GetPull(e Execer, repoAt syntax.ATURI, pullId int) (*models.Pull, error) {
-	pulls, err := GetPullsWithLimit(e, 1, orm.FilterEq("repo_at", repoAt), orm.FilterEq("pull_id", pullId))
+	pulls, err := GetPullsPaginated(e, pagination.Page{Limit: 1}, orm.FilterEq("repo_at", repoAt), orm.FilterEq("pull_id", pullId))
 	if err != nil {
 		return nil, err
 	}
