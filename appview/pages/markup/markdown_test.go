@@ -50,7 +50,7 @@ func TestAtExtension_Rendering(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md := NewMarkdown()
+			md := NewMarkdown("tangled.org")
 
 			var buf bytes.Buffer
 			if err := md.Convert([]byte(tt.markdown), &buf); err != nil {
@@ -105,7 +105,7 @@ func TestAtExtension_WithOtherMarkdown(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md := NewMarkdown()
+			md := NewMarkdown("tangled.org")
 
 			var buf bytes.Buffer
 			if err := md.Convert([]byte(tt.markdown), &buf); err != nil {

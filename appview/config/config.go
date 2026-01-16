@@ -25,6 +25,17 @@ type CoreConfig struct {
 	TmpAltAppPassword string `env:"ALT_APP_PASSWORD"`
 }
 
+func (c *CoreConfig) UseTLS() bool {
+	return !c.Dev
+}
+
+func (c *CoreConfig) BaseUrl() string {
+	if c.UseTLS() {
+		return "https://" + c.AppviewHost
+	}
+	return "http://" + c.AppviewHost
+}
+
 type OAuthConfig struct {
 	ClientSecret string `env:"CLIENT_SECRET"`
 	ClientKid    string `env:"CLIENT_KID"`

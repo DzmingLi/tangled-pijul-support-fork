@@ -36,7 +36,7 @@ func TestTangledLinkExtension_Rendering(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md := markup.NewMarkdown()
+			md := markup.NewMarkdown("tangled.org")
 
 			var buf bytes.Buffer
 			if err := md.Convert([]byte(tt.markdown), &buf); err != nil {

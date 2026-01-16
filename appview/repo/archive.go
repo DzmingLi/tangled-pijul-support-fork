@@ -66,7 +66,7 @@ func (rp *Repo) DownloadArchive(w http.ResponseWriter, r *http.Request) {
 	if link := resp.Header.Get("Link"); link != "" {
 		if resolvedRef, err := extractImmutableLink(link); err == nil {
 			newLink := fmt.Sprintf("<%s/%s/archive/%s.tar.gz>; rel=\"immutable\"",
-				rp.config.Core.AppviewHost, f.DidSlashRepo(), resolvedRef)
+				rp.config.Core.BaseUrl(), f.DidSlashRepo(), resolvedRef)
 			w.Header().Set("Link", newLink)
 		}
 	}

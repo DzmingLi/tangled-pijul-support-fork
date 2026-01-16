@@ -415,7 +415,7 @@ func (s *State) getProfileFeed(ctx context.Context, id *identity.Identity) (*fee
 
 	feed := feeds.Feed{
 		Title:   fmt.Sprintf("%s's timeline", author.Name),
-		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s", s.config.Core.AppviewHost, id.Handle), Type: "text/html", Rel: "alternate"},
+		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s", s.config.Core.BaseUrl(), id.Handle), Type: "text/html", Rel: "alternate"},
 		Items:   make([]*feeds.Item, 0),
 		Updated: time.UnixMilli(0),
 		Author:  author,
@@ -483,7 +483,7 @@ func (s *State) addRepoItems(ctx context.Context, feed *feeds.Feed, repos []mode
 func (s *State) createPullRequestItem(pull *models.Pull, owner *identity.Identity, author *feeds.Author) *feeds.Item {
 	return &feeds.Item{
 		Title:   fmt.Sprintf("%s created pull request '%s' in @%s/%s", author.Name, pull.Title, owner.Handle, pull.Repo.Name),
-		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s/pulls/%d", s.config.Core.AppviewHost, owner.Handle, pull.Repo.Name, pull.PullId), Type: "text/html", Rel: "alternate"},
+		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s/pulls/%d", s.config.Core.BaseUrl(), owner.Handle, pull.Repo.Name, pull.PullId), Type: "text/html", Rel: "alternate"},
 		Created: pull.Created,
 		Author:  author,
 	}
@@ -492,7 +492,7 @@ func (s *State) createPullRequestItem(pull *models.Pull, owner *identity.Identit
 func (s *State) createIssueItem(issue *models.Issue, owner *identity.Identity, author *feeds.Author) *feeds.Item {
 	return &feeds.Item{
 		Title:   fmt.Sprintf("%s created issue '%s' in @%s/%s", author.Name, issue.Title, owner.Handle, issue.Repo.Name),
-		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s/issues/%d", s.config.Core.AppviewHost, owner.Handle, issue.Repo.Name, issue.IssueId), Type: "text/html", Rel: "alternate"},
+		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s/issues/%d", s.config.Core.BaseUrl(), owner.Handle, issue.Repo.Name, issue.IssueId), Type: "text/html", Rel: "alternate"},
 		Created: issue.Created,
 		Author:  author,
 	}
@@ -512,7 +512,7 @@ func (s *State) createRepoItem(ctx context.Context, repo models.RepoEvent, autho
 
 	return &feeds.Item{
 		Title:   title,
-		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s", s.config.Core.AppviewHost, author.Name[1:], repo.Repo.Name), Type: "text/html", Rel: "alternate"}, // Remove @ prefix
+		Link:    &feeds.Link{Href: fmt.Sprintf("%s/@%s/%s", s.config.Core.BaseUrl(), author.Name[1:], repo.Repo.Name), Type: "text/html", Rel: "alternate"}, // Remove @ prefix
 		Created: repo.Repo.Created,
 		Author:  author,
 	}, nil

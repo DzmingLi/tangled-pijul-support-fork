@@ -55,6 +55,7 @@ func NewPages(config *config.Config, res *idresolver.Resolver, database *db.DB, 
 	// initialized with safe defaults, can be overriden per use
 	rctx := &markup.RenderContext{
 		IsDev:      config.Core.Dev,
+		Hostname:   config.Core.AppviewHost,
 		CamoUrl:    config.Camo.Host,
 		CamoSecret: config.Camo.SharedSecret,
 		Sanitizer:  markup.NewSanitizer(),

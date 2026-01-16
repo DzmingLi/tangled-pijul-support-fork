@@ -78,7 +78,7 @@ func (t *tangledLinkTransformer) Transform(node *ast.Document, reader text.Reade
 
 func (t *tangledLinkTransformer) parseLinkCommitSha(raw string) string {
 	u, err := url.Parse(raw)
-	if err != nil || u.Host != "tangled.org" {
+	if err != nil || u.Host != t.host {
 		return ""
 	}
 

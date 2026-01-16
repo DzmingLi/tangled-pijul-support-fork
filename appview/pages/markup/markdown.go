@@ -46,12 +46,13 @@ type RenderContext struct {
 	CamoSecret string
 	repoinfo.RepoInfo
 	IsDev        bool
+	Hostname     string
 	RendererType RendererType
 	Sanitizer    Sanitizer
 	Files        fs.FS
 }
 
-func NewMarkdown() goldmark.Markdown {
+func NewMarkdown(hostname string) goldmark.Markdown {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -67,7 +68,7 @@ func NewMarkdown() goldmark.Markdown {
 			),
 			callout.CalloutExtention,
 			textension.AtExt,
-			textension.NewTangledLinkExt("tangled.org"),
+			textension.NewTangledLinkExt(hostname),
 			emoji.Emoji,
 		),
 		goldmark.WithParserOptions(
@@ -79,7 +80,7 @@ func NewMarkdown() goldmark.Markdown {
 }
 
 func (rctx *RenderContext) RenderMarkdown(source string) string {
-	return rctx.RenderMarkdownWith(source, NewMarkdown())
+	return rctx.RenderMarkdownWith(source, NewMarkdown(rctx.Hostname))
 }
 
 func (rctx *RenderContext) RenderMarkdownWith(source string, md goldmark.Markdown) string {

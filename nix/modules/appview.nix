@@ -41,8 +41,8 @@ in
 
         appviewHost = mkOption {
           type = types.str;
-          default = "https://tangled.org";
-          example = "https://example.com";
+          default = "tangled.org";
+          example = "example.com";
           description = "Public host URL for the appview instance";
         };
 

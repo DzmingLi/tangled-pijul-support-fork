@@ -18,17 +18,14 @@ import (
 // like issues, PRs, comments or even @-mentions
 // This funciton doesn't actually check for the existence of records in the DB
 // or the PDS; it merely returns a list of what are presumed to be references.
-func FindReferences(baseUrl string, source string) ([]string, []models.ReferenceLink) {
+func FindReferences(host string, source string) ([]string, []models.ReferenceLink) {
 	var (
 		refLinkSet  = make(map[models.ReferenceLink]struct{})
 		mentionsSet = make(map[string]struct{})
-		md          = NewMarkdown()
+		md          = NewMarkdown(host)
 		sourceBytes = []byte(source)
 		root        = md.Parser().Parse(text.NewReader(sourceBytes))
 	)
-	// trim url scheme. the SSL shouldn't matter
-	baseUrl = strings.TrimPrefix(baseUrl, "https://")
-	baseUrl = strings.TrimPrefix(baseUrl, "http://")
 
 	ast.Walk(root, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
@@ -41,7 +38,7 @@ func FindReferences(baseUrl string, source string) ([]string, []models.Reference
 			return ast.WalkSkipChildren, nil
 		case ast.KindLink:
 			dest := string(n.(*ast.Link).Destination)
-			ref := parseTangledLink(baseUrl, dest)
+			ref := parseTangledLink(host, dest)
 			if ref != nil {
 				refLinkSet[*ref] = struct{}{}
 			}
@@ -50,7 +47,7 @@ func FindReferences(baseUrl string, source string) ([]string, []models.Reference
 			an := n.(*ast.AutoLink)
 			if an.AutoLinkType == ast.AutoLinkURL {
 				dest := string(an.URL(sourceBytes))
-				ref := parseTangledLink(baseUrl, dest)
+				ref := parseTangledLink(host, dest)
 				if ref != nil {
 					refLinkSet[*ref] = struct{}{}
 				}

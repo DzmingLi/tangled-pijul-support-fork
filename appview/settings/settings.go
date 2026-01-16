@@ -277,14 +277,13 @@ func (s *Settings) emails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Settings) verifyUrl(did string, email string, code string) string {
-	var appUrl string
-	if s.Config.Core.Dev {
-		appUrl = "http://" + s.Config.Core.ListenAddr
-	} else {
-		appUrl = s.Config.Core.AppviewHost
-	}
-
-	return fmt.Sprintf("%s/settings/emails/verify?did=%s&email=%s&code=%s", appUrl, url.QueryEscape(did), url.QueryEscape(email), url.QueryEscape(code))
+	return fmt.Sprintf(
+		"%s/settings/emails/verify?did=%s&email=%s&code=%s",
+		s.Config.Core.BaseUrl(),
+		url.QueryEscape(did),
+		url.QueryEscape(email),
+		url.QueryEscape(code),
+	)
 }
 
 func (s *Settings) emailsVerify(w http.ResponseWriter, r *http.Request) {

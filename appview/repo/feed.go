@@ -37,7 +37,7 @@ func (rp *Repo) getRepoFeed(ctx context.Context, repo *models.Repo, ownerSlashRe
 
 	feed := &feeds.Feed{
 		Title:   fmt.Sprintf("activity feed for @%s", ownerSlashRepo),
-		Link:    &feeds.Link{Href: fmt.Sprintf("%s/%s", rp.config.Core.AppviewHost, ownerSlashRepo), Type: "text/html", Rel: "alternate"},
+		Link:    &feeds.Link{Href: fmt.Sprintf("%s/%s", rp.config.Core.BaseUrl(), ownerSlashRepo), Type: "text/html", Rel: "alternate"},
 		Items:   make([]*feeds.Item, 0),
 		Updated: time.UnixMilli(0),
 	}
@@ -86,7 +86,7 @@ func (rp *Repo) createPullItems(ctx context.Context, pull *models.Pull, repo *mo
 	mainItem := &feeds.Item{
 		Title:       fmt.Sprintf("[PR #%d] %s", pull.PullId, pull.Title),
 		Description: description,
-		Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/pulls/%d", rp.config.Core.AppviewHost, ownerSlashRepo, pull.PullId)},
+		Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/pulls/%d", rp.config.Core.BaseUrl(), ownerSlashRepo, pull.PullId)},
 		Created:     pull.Created,
 		Author:      &feeds.Author{Name: fmt.Sprintf("@%s", owner.Handle)},
 	}
@@ -100,7 +100,7 @@ func (rp *Repo) createPullItems(ctx context.Context, pull *models.Pull, repo *mo
 		roundItem := &feeds.Item{
 			Title:       fmt.Sprintf("[PR #%d] %s (round #%d)", pull.PullId, pull.Title, round.RoundNumber),
 			Description: fmt.Sprintf("@%s submitted changes (at round #%d) on PR #%d in @%s", owner.Handle, round.RoundNumber, pull.PullId, ownerSlashRepo),
-			Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/pulls/%d/round/%d/", rp.config.Core.AppviewHost, ownerSlashRepo, pull.PullId, round.RoundNumber)},
+			Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/pulls/%d/round/%d/", rp.config.Core.BaseUrl(), ownerSlashRepo, pull.PullId, round.RoundNumber)},
 			Created:     round.Created,
 			Author:      &feeds.Author{Name: fmt.Sprintf("@%s", owner.Handle)},
 		}
@@ -124,7 +124,7 @@ func (rp *Repo) createIssueItem(ctx context.Context, issue models.Issue, repo *m
 	return &feeds.Item{
 		Title:       fmt.Sprintf("[Issue #%d] %s", issue.IssueId, issue.Title),
 		Description: fmt.Sprintf("@%s %s issue #%d in @%s", owner.Handle, state, issue.IssueId, ownerSlashRepo),
-		Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/issues/%d", rp.config.Core.AppviewHost, ownerSlashRepo, issue.IssueId)},
+		Link:        &feeds.Link{Href: fmt.Sprintf("%s/%s/issues/%d", rp.config.Core.BaseUrl(), ownerSlashRepo, issue.IssueId)},
 		Created:     issue.Created,
 		Author:      &feeds.Author{Name: fmt.Sprintf("@%s", owner.Handle)},
 	}, nil

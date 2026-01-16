@@ -34,7 +34,7 @@ func TestMarkupParsing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handles, refLinks := markup.FindReferences("http://127.0.0.1:3000", tt.source)
+			handles, refLinks := markup.FindReferences("127.0.0.1:3000", tt.source)
 			assert.ElementsMatch(t, tt.wantHandles, handles)
 			assert.ElementsMatch(t, tt.wantRefLinks, refLinks)
 		})
