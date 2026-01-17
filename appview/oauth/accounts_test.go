@@ -6,14 +6,14 @@ import (
 
 func TestAccountRegistry_AddAccount(t *testing.T) {
 	tests := []struct {
-		name           string
-		initial        []AccountInfo
-		addDid         string
-		addHandle      string
-		addSessionId   string
-		wantErr        error
-		wantLen        int
-		wantSessionId  string
+		name          string
+		initial       []AccountInfo
+		addDid        string
+		addHandle     string
+		addSessionId  string
+		wantErr       error
+		wantLen       int
+		wantSessionId string
 	}{
 		{
 			name:          "add first account",
