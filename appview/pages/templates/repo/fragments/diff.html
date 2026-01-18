@@ -31,7 +31,7 @@
     {{ $stat := $diff.Stats }}
     {{ $count := len $diff.ChangedFiles }}
     {{ template "repo/fragments/diffStatPill" $stat }}
-    {{ $count }} changed file{{ if ne $count 1 }}s{{ end }}
+    <span class="text-xs text-gray-600 dark:text-gray-400">{{ $count }} changed file{{ if ne $count 1 }}s{{ end }}</span>
 
     {{ if $root }}
       {{ if $root.IsInterdiff }}
@@ -70,7 +70,9 @@
     {{ template "collapseToggle" }}
 
     <!-- diff options -->
-    {{ template "repo/fragments/diffOpts" $opts }}
+    <div class="hidden md:block">
+      {{ template "repo/fragments/diffOpts" $opts }}
+    </div>
 
     <!-- right panel toggle -->
     {{ block "subsToggle" $ }} {{ end }}
