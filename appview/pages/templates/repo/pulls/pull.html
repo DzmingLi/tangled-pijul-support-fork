@@ -142,7 +142,7 @@
   {{ $pull := $root.Pull }}
   {{ $latest := $pull.LastRoundNumber }}
   <div class="flex items-center gap-2 text-sm">
-    {{ if $root.IsInterdiff }}
+    <!--{{ if $root.IsInterdiff }}
       <span>
         viewing interdiff of
         <span class="font-mono">#{{ $root.ActiveRound }}</span>
@@ -150,10 +150,6 @@
         <span class="font-mono">#{{ sub $root.ActiveRound 1 }}</span>
       </span>
     {{ else }}
-      <span>
-        viewing round
-        <span class="font-mono">#{{ $root.ActiveRound }}</span>
-      </span>
       {{ if ne $root.ActiveRound $latest }}
         <span>(outdated)</span>
         <span class="before:content-['·']"></span>
@@ -161,7 +157,7 @@
           view latest
         </a>
       {{ end }}
-    {{ end }}
+    {{ end }}-->
     <span class="md:hidden inline">
       <span class="inline group-open:hidden">{{ i "chevron-up" "size-4" }}</span>
       <span class="hidden group-open:inline">{{ i "chevron-down" "size-4" }}</span>
