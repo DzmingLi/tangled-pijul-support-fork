@@ -203,6 +203,9 @@
 
 {{ define "submissions" }}
   {{ $lastIdx := sub (len .Pull.Submissions) 1 }}
+  {{ if not .LoggedInUser }}
+    {{ template "loginPrompt" $ }}
+  {{ end }}
   {{ range $ridx, $item := reverse .Pull.Submissions }}
     {{ $idx := sub $lastIdx $ridx }}
     {{ template "submission" (list $item $idx $lastIdx $) }}
@@ -234,8 +237,6 @@
           "ResubmitCheck" $root.ResubmitCheck
           "BranchDeleteStatus" $root.BranchDeleteStatus
           "Stack" $root.Stack) }}
-    {{ else }}
-      {{ template "loginPrompt" $ }}
     {{ end }}
   </div>
 {{ end }}
@@ -279,7 +280,7 @@
       </span>
       <span class="select-none before:content-['\00B7']"></span>
       <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500" href="#round-#{{ $round }}">
-        {{ template "repo/fragments/shortTimeAgo" $item.Created }}
+        {{ template "repo/fragments/shortTime" $item.Created }}
       </a>
     </span>
     <div class="flex gap-2 items-center">
