@@ -91,7 +91,7 @@
   <div class="flex col-span-full">
     <!-- left panel -->
     <div id="files" class="w-0 hidden md:block overflow-hidden sticky top-12 max-h-screen overflow-y-auto pb-12">
-      <section class="overflow-x-auto text-sm px-6 py-2 border border-gray-200 dark:border-gray-700 w-full mx-auto min-h-full rounded bg-white dark:bg-gray-800 drop-shadow-sm">
+      <section class="overflow-x-auto text-sm px-6 py-2 border-b border-x border-gray-200 dark:border-gray-700 w-full mx-auto min-h-full rounded-b rounded-t-none bg-white dark:bg-gray-800 drop-shadow-sm">
         {{ template "repo/fragments/fileTree" $diff.FileTree }}
       </section>
     </div>
@@ -118,16 +118,16 @@
   </div>
   <!-- right panel - bottom sheet on mobile, side panel on desktop -->
   <div id="subs" class="fixed bottom-0 left-0 right-0 z-50 w-full md:static md:z-auto md:max-h-screen md:sticky md:top-12 overflow-hidden">
-    <details open id="bottomSheet" class="group rounded-t-2xl md:rounded-t-sm drop-shadow-lg md:drop-shadow-none">
+    <details open id="bottomSheet" class="group rounded-t-2xl md:rounded-t drop-shadow-lg md:drop-shadow-none">
       <summary class="
         flex gap-4 items-center justify-between
-        rounded-t-2xl md:rounded-t-sm cursor-pointer list-none p-4 md:h-12
+        rounded-t-2xl md:rounded-t cursor-pointer list-none p-4 md:h-12
         text-white md:text-black md:dark:text-white
         bg-green-600 dark:bg-green-600
         md:bg-white md:dark:bg-gray-800
         drop-shadow-sm
-        md:border-b md:border-x border-gray-200 dark:border-gray-700">
-        <h2 class="">Review Panel </h2>
+         border-t md:border-x md:border-t-0 border-gray-200 dark:border-gray-700">
+        <h2 class="">Submissions</h2>
         {{ template "subsPanelSummary" $ }}
       </summary>
       <div class="max-h-[85vh] md:max-h-[calc(100vh-3rem-3rem)] w-full flex flex-col-reverse gap-4 overflow-y-auto bg-slate-100 dark:bg-gray-900 md:bg-transparent">
@@ -151,7 +151,7 @@
       </span>
     {{ else }}
       <span>
-        viewing round 
+        viewing round
         <span class="font-mono">#{{ $root.ActiveRound }}</span>
       </span>
       {{ if ne $root.ActiveRound $latest }}
@@ -176,7 +176,7 @@
 {{ define "subsToggle" }}
   <style>
     /* Mobile: full width */
-    #subsToggle:checked ~ div div#subs { 
+    #subsToggle:checked ~ div div#subs {
       width: 100%;
       margin-left: 0;
     }
@@ -186,7 +186,7 @@
 
     /* Desktop: 25vw with left margin */
     @media (min-width: 768px) {
-      #subsToggle:checked ~ div div#subs { 
+      #subsToggle:checked ~ div div#subs {
         width: 25vw;
         margin-left: 1rem;
       }
@@ -229,7 +229,7 @@
 
     {{ if $root.LoggedInUser }}
       {{ template "repo/pulls/fragments/pullActions"
-        (dict 
+        (dict
           "LoggedInUser" $root.LoggedInUser
           "Pull" $root.Pull
           "RepoInfo" $root.RepoInfo

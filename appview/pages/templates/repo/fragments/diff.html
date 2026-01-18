@@ -4,7 +4,7 @@
     #filesToggle:checked ~ div label[for="filesToggle"] .hide-text { display: inline; }
     #filesToggle:not(:checked) ~ div label[for="filesToggle"] .hide-text { display: none; }
     #filesToggle:checked ~ div div#files { width: fit-content; max-width: 15vw; margin-right: 1rem; }
-    #filesToggle:not(:checked) ~ div div#files { width: 0; display: hidden; margin-right: 0; }
+    #filesToggle:not(:checked) ~ div div#files { width: 0; display: none; margin-right: 0; }
   </style>
 
   {{ template "diffTopbar" . }}
@@ -14,12 +14,16 @@
 {{ define "diffTopbar" }}
   {{ $diff := index . 0 }}
   {{ $opts := index . 1 }}
+  {{ $root := "" }}
+  {{ if gt (len .) 2 }}
+    {{ $root = index . 2 }}
+  {{ end }}
 
   {{ block "filesCheckbox" $ }} {{ end }}
   {{ block "subsCheckbox" $ }} {{ end }}
 
   <!-- top bar -->
-  <div class="sticky top-0 z-30 bg-slate-100 dark:bg-gray-900 flex items-center gap-2 col-span-full h-12 p-2">
+  <div class="sticky top-0 z-30 flex items-center gap-2 col-span-full h-12 p-2 {{ if $root }}mt-4{{ end }}">
     <!-- left panel toggle -->
     {{ template "filesToggle" . }}
 
@@ -28,6 +32,36 @@
     {{ $count := len $diff.ChangedFiles }}
     {{ template "repo/fragments/diffStatPill" $stat }}
     {{ $count }} changed file{{ if ne $count 1 }}s{{ end }}
+
+    {{ if $root }}
+      {{ if $root.IsInterdiff }}
+        <!-- interdiff indicator -->
+        <div class="flex items-center gap-2 before:content-['|'] before:text-gray-300 dark:before:text-gray-600 before:mr-2">
+          <span class="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">Interdiff</span>
+          <a
+            href="/{{ $root.RepoInfo.FullName }}/pulls/{{ $root.Pull.PullId }}/round/{{ sub $root.ActiveRound 1 }}"
+            class="px-2 py-0.5 bg-white dark:bg-gray-700 rounded font-mono text-xs hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+          >
+            #{{ sub $root.ActiveRound 1 }}
+          </a>
+          <span class="text-gray-400 text-xs">→</span>
+          <a
+            href="/{{ $root.RepoInfo.FullName }}/pulls/{{ $root.Pull.PullId }}/round/{{ $root.ActiveRound }}"
+            class="px-2 py-0.5 bg-white dark:bg-gray-700 rounded font-mono text-xs hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+          >
+            #{{ $root.ActiveRound }}
+          </a>
+        </div>
+      {{ else if ne $root.ActiveRound nil }}
+        <!-- diff round indicator -->
+        <div class="flex items-center gap-2 before:content-['|'] before:text-gray-300 dark:before:text-gray-600 before:mr-2">
+          <span class="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-wide">Diff</span>
+          <span class="px-2 py-0.5 bg-white dark:bg-gray-700 rounded font-mono text-xs border border-gray-300 dark:border-gray-600">
+            <span class="hidden md:inline">round </span>#{{ $root.ActiveRound }}
+          </span>
+        </div>
+      {{ end }}
+    {{ end }}
 
     <!-- spacer -->
     <div class="flex-grow"></div>
@@ -137,7 +171,7 @@
 {{ end }}
 
 {{ define "collapseToggle" }}
-  <label 
+  <label
     title="Expand/Collapse diffs"
     for="collapseToggle"
     class="btn font-normal normal-case p-2"
