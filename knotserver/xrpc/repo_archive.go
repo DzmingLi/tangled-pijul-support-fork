@@ -4,10 +4,12 @@ import (
 	"compress/gzip"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
 
+	"tangled.org/core/api/tangled"
 	"tangled.org/core/knotserver/git"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
@@ -47,6 +49,18 @@ func (x *Xrpc) RepoArchive(w http.ResponseWriter, r *http.Request) {
 	repoParts := strings.Split(repo, "/")
 	repoName := repoParts[len(repoParts)-1]
 
+	immutableLink, err := x.buildImmutableLink(repo, format, gr.Hash().String(), prefix)
+	if err != nil {
+		x.Logger.Error(
+			"failed to build immutable link",
+			"err", err.Error(),
+			"repo", repo,
+			"format", format,
+			"ref", gr.Hash().String(),
+			"prefix", prefix,
+		)
+	}
+
 	safeRefFilename := strings.ReplaceAll(plumbing.ReferenceName(ref).Short(), "/", "-")
 
 	var archivePrefix string
@@ -59,6 +73,7 @@ func (x *Xrpc) RepoArchive(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("%s-%s.tar.gz", repoName, safeRefFilename)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Content-Type", "application/gzip")
+	w.Header().Set("Link", fmt.Sprintf("<%s>; rel=\"immutable\"", immutableLink))
 
 	gw := gzip.NewWriter(w)
 	defer gw.Close()
@@ -78,4 +93,24 @@ func (x *Xrpc) RepoArchive(w http.ResponseWriter, r *http.Request) {
 		x.Logger.Error("flushing", "error", err.Error())
 		return
 	}
+}
+
+func (x *Xrpc) buildImmutableLink(repo string, format string, ref string, prefix string) (string, error) {
+	scheme := "https"
+	if x.Config.Server.Dev {
+		scheme = "http"
+	}
+
+	u, err := url.Parse(scheme + "://" + x.Config.Server.Hostname + "/xrpc/" + tangled.RepoArchiveNSID)
+	if err != nil {
+		return "", err
+	}
+
+	params := url.Values{}
+	params.Set("repo", repo)
+	params.Set("format", format)
+	params.Set("ref", ref)
+	params.Set("prefix", prefix)
+
+	return fmt.Sprintf("%s?%s", u.String(), params.Encode()), nil
 }
