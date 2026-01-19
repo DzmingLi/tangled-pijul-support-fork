@@ -1,21 +1,28 @@
 {
+  lib,
   buildGoApplication,
   modules,
-  src,
-}:
-buildGoApplication {
-  pname = "dolly";
-  version = "0.1.0";
-  inherit src modules;
-
-  # patch the static dir
-  postUnpack = ''
-    pushd source
-    mkdir -p appview/pages/static
-    touch appview/pages/static/x
-    popd
-  '';
-
-  doCheck = false;
-  subPackages = ["cmd/dolly"];
-}
+  writeShellScriptBin,
+}: let
+  src = lib.fileset.toSource {
+    root = ../..;
+    fileset = lib.fileset.unions [
+      ../../go.mod
+      ../../ico
+      ../../cmd/dolly/main.go
+      ../../appview/pages/templates/fragments/dolly/logo.html
+    ];
+  };
+  dolly-unwrapped = buildGoApplication {
+    pname = "dolly-unwrapped";
+    version = "0.1.0";
+    inherit src modules;
+    doCheck = false;
+    subPackages = ["cmd/dolly"];
+  };
+in
+  writeShellScriptBin "dolly" ''
+    exec ${dolly-unwrapped}/bin/dolly \
+    -template ${src}/appview/pages/templates/fragments/dolly/logo.html \
+    "$@"
+  ''

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"flag"
 	"fmt"
 	"image"
@@ -16,21 +17,27 @@ import (
 	"github.com/srwiley/oksvg"
 	"github.com/srwiley/rasterx"
 	"golang.org/x/image/draw"
-	"tangled.org/core/appview/pages"
 	"tangled.org/core/ico"
 )
 
 func main() {
 	var (
-		size      string
-		fillColor string
-		output    string
+		size         string
+		fillColor    string
+		output       string
+		templatePath string
 	)
 
+	flag.StringVar(&templatePath, "template", "", "Path to dolly go-html template")
 	flag.StringVar(&size, "size", "512x512", "Output size in format WIDTHxHEIGHT (e.g., 512x512)")
 	flag.StringVar(&fillColor, "color", "#000000", "Fill color in hex format (e.g., #FF5733)")
 	flag.StringVar(&output, "output", "dolly.svg", "Output file path (format detected from extension: .svg, .png, or .ico)")
 	flag.Parse()
+
+	if templatePath == "" {
+		fmt.Fprintf(os.Stderr, "Empty template path")
+		os.Exit(1)
+	}
 
 	width, height, err := parseSize(size)
 	if err != nil {
@@ -52,7 +59,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	svgData, err := dolly(fillColor)
+	tpl, err := os.ReadFile(templatePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read template from path %s: %v\n", templatePath, err)
+		os.Exit(1)
+	}
+
+	svgData, err := dolly(string(tpl), fillColor)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error generating SVG: %v\n", err)
 		os.Exit(1)
@@ -84,16 +97,16 @@ func main() {
 	fmt.Printf("Successfully generated %s (%dx%d)\n", output, width, height)
 }
 
-func dolly(hexColor string) ([]byte, error) {
-	tpl, err := template.New("dolly").
-		ParseFS(pages.Files, "templates/fragments/dolly/logo.html")
+func dolly(tplString, hexColor string) ([]byte, error) {
+	tpl, err := template.New("dolly").Parse(tplString)
 	if err != nil {
 		return nil, err
 	}
 
 	var svgData bytes.Buffer
-	if err := tpl.ExecuteTemplate(&svgData, "fragments/dolly/logo", pages.DollyParams{
-		FillColor: hexColor,
+	if err := tpl.ExecuteTemplate(&svgData, "fragments/dolly/logo", map[string]any{
+		"FillColor": hexColor,
+		"Classes":   "",
 	}); err != nil {
 		return nil, err
 	}
