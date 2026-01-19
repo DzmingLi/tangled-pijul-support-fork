@@ -24,7 +24,7 @@
     {{ $rhs = printf "%s" $v }}
   {{ end }}
 
-  {{ $chipClasses := "w-fit flex items-center gap-2 font-normal normal-case rounded py-1 px-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm" }}
+  {{ $chipClasses := "w-fit flex items-center gap-2 font-normal normal-case rounded py-1 px-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-inherit" }}
 
   {{ if $isDid }}
     <a href="/{{ $resolvedVal }}" class="{{ $chipClasses }} no-underline hover:underline">
