@@ -199,7 +199,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	currentX += commentTextWidth + 40
 
 	// Draw files changed
-	err = statusStatsArea.DrawLucideIcon("static/icons/file-diff", currentX, statsY+iconBaselineOffset-iconSize/2+5, iconSize, iconColor)
+	err = statusStatsArea.DrawLucideIcon("file-diff", currentX, statsY+iconBaselineOffset-iconSize/2+5, iconSize, iconColor)
 	if err != nil {
 		log.Printf("failed to draw file diff icon: %v", err)
 	}
