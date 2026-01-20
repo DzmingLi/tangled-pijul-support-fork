@@ -23,7 +23,7 @@
   {{ block "subsCheckbox" $ }} {{ end }}
 
   <!-- top bar -->
-  <div class="sticky top-0 z-30 flex items-center gap-2 col-span-full h-12 p-2 {{ if $root }}mt-4{{ end }}">
+  <div class="sticky top-0 z-30 bg-slate-100 dark:bg-gray-900 flex items-center gap-2 col-span-full h-12 p-2 {{ if $root }}mt-4{{ end }}">
     <!-- left panel toggle -->
     {{ template "filesToggle" . }}
 
@@ -31,7 +31,7 @@
     {{ $stat := $diff.Stats }}
     {{ $count := len $diff.ChangedFiles }}
     {{ template "repo/fragments/diffStatPill" $stat }}
-    <span class="text-xs text-gray-600 dark:text-gray-400">{{ $count }} changed file{{ if ne $count 1 }}s{{ end }}</span>
+    <span class="text-xs text-gray-600 dark:text-gray-400 hidden md:inline-flex">{{ $count }} changed file{{ if ne $count 1 }}s{{ end }}</span>
 
     {{ if $root }}
       {{ if $root.IsInterdiff }}
@@ -70,9 +70,7 @@
     {{ template "collapseToggle" }}
 
     <!-- diff options -->
-    <div class="hidden md:block">
-      {{ template "repo/fragments/diffOpts" $opts }}
-    </div>
+    {{ template "repo/fragments/diffOpts" $opts }}
 
     <!-- right panel toggle -->
     {{ block "subsToggle" $ }} {{ end }}
