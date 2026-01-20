@@ -53,52 +53,59 @@
         />
         <span class="hidden md:inline">{{ $user | resolve | truncateAt30 }}</span>
     </summary>
-    <div class="absolute right-0 mt-4 p-4 rounded bg-white dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-lg z-50" style="width: 14rem;">
+    <div class="absolute right-0 mt-4 rounded bg-white dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-lg z-50 text-sm" style="width: 14rem;">
         {{ $active := .Active.Did }}
-
-        <div class="pb-2 mb-2 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center gap-2">
-                <img src="{{ tinyAvatar $active }}" alt="" class="rounded-full h-8 w-8 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
-                <div class="flex-1 overflow-hidden">
-                    <p class="font-medium text-sm truncate">{{ $active | resolve }}</p>
-                    <p class="text-xs text-green-600 dark:text-green-400">active</p>
-                </div>
-            </div>
-        </div>
+        {{ $linkStyle := "flex items-center gap-3 px-4 py-2 hover:no-underline hover:bg-gray-50 hover:dark:bg-gray-700/50" }}
 
         {{ $others := .Accounts | otherAccounts $active }}
         {{ if $others }}
-        <div class="pb-2 mb-2 border-b border-gray-200 dark:border-gray-700">
-            <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Switch Account</p>
-            {{ range $others }}
+          <div class="text-sm text-gray-500 dark:text-gray-400 px-3 py-1 pt-2">switch account</div>
+          {{ range $others }}
             <button
                 type="button"
                 hx-post="/account/switch"
                 hx-vals='{"did": "{{ .Did }}"}'
                 hx-swap="none"
-                class="flex items-center gap-2 w-full py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
+                class="{{$linkStyle}} w-full text-left pl-3"
             >
-                <img src="{{ tinyAvatar .Did }}" alt="" class="rounded-full h-6 w-6 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
-                <span class="text-sm truncate flex-1">{{ .Did | resolve }}</span>
+                <img src="{{ tinyAvatar .Did }}" alt="" class="rounded-full size-6 flex-shrink-0 border border-gray-300 dark:border-gray-700" />
+                <span class="truncate flex-1">{{ .Did | resolve }}</span>
             </button>
-            {{ end }}
-        </div>
+          {{ end }}
         {{ end }}
 
-        <a href="/login?mode=add_account" class="flex items-center gap-2 py-1 text-sm">
-            {{ i "plus" "w-4 h-4 flex-shrink-0" }}
-            <span>Add another account</span>
+        <a href="/login?mode=add_account" class="{{$linkStyle}} pl-3">
+          <div class="size-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+            {{ i "plus" "size-3" }}
+          </div>
+
+          <div class="text-left flex-1 min-w-0 block truncate">
+            add account
+          </div>
         </a>
 
-        <div class="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
-            <a href="/{{ $active }}" class="block py-1 text-sm">profile</a>
-            <a href="/{{ $active }}?tab=repos" class="block py-1 text-sm">repositories</a>
-            <a href="/{{ $active }}?tab=strings" class="block py-1 text-sm">strings</a>
-            <a href="/settings" class="block py-1 text-sm">settings</a>
+        <div class="border-t border-gray-200 dark:border-gray-700">
+            <a href="/{{ $active }}" class="{{$linkStyle}}">
+              {{ i "user" "size-4" }}
+              profile
+            </a>
+            <a href="/{{ $active }}?tab=repos" class="{{$linkStyle}}">
+              {{ i "book-marked" "size-4" }}
+              repositories
+            </a>
+            <a href="/{{ $active }}?tab=strings" class="{{$linkStyle}}">
+              {{ i "line-squiggle" "size-4" }}
+              strings
+            </a>
+            <a href="/settings" class="{{$linkStyle}}">
+              {{ i "cog" "size-4" }}
+              settings
+            </a>
             <a href="#"
                hx-post="/logout"
                hx-swap="none"
-               class="block py-1 text-sm text-red-400 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+               class="{{$linkStyle}} text-red-400 hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-700/20 pb-2">
+              {{ i "log-out" "size-4" }}
               logout
             </a>
         </div>
