@@ -98,6 +98,29 @@ func MakeProfileTimeline(e Execer, forDid string) (*models.ProfileTimeline, erro
 		})
 	}
 
+	punchcard, err := MakePunchcard(
+		e,
+		orm.FilterEq("did", forDid),
+		orm.FilterGte("date", time.Now().AddDate(0, -TimeframeMonths, 0)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting commits by did: %w", err)
+	}
+	for _, punch := range punchcard.Punches {
+		if punch.Date.After(now) {
+			continue
+		}
+
+		monthsAgo := monthsBetween(punch.Date, now)
+		if monthsAgo >= TimeframeMonths {
+			// shouldn't happen; but times are weird
+			continue
+		}
+
+		idx := monthsAgo
+		timeline.ByMonth[idx].Commits += punch.Count
+	}
+
 	return &timeline, nil
 }
 
