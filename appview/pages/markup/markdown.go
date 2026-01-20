@@ -67,6 +67,7 @@ func NewMarkdown() goldmark.Markdown {
 			),
 			callout.CalloutExtention,
 			textension.AtExt,
+			textension.NewTangledLinkExt("tangled.org"),
 			emoji.Emoji,
 		),
 		goldmark.WithParserOptions(
