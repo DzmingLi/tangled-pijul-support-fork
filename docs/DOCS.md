@@ -693,6 +693,39 @@ environment:
   MY_ENV_VAR: "MY_ENV_VALUE"
 ```
 
+By default, the following environment variables set:
+
+- `CI` - Always set to `true` to indicate a CI environment
+- `TANGLED_PIPELINE_ID` - The AT URI of the current pipeline
+- `TANGLED_REPO_KNOT` - The repository's knot hostname
+- `TANGLED_REPO_DID` - The DID of the repository owner
+- `TANGLED_REPO_NAME` - The name of the repository
+- `TANGLED_REPO_DEFAULT_BRANCH` - The default branch of the
+  repository
+- `TANGLED_REPO_URL` - The full URL to the repository
+
+These variables are only available when the pipeline is
+triggered by a push:
+
+- `TANGLED_REF` - The full git reference (e.g.,
+  `refs/heads/main` or `refs/tags/v1.0.0`)
+- `TANGLED_REF_NAME` - The short name of the reference
+  (e.g., `main` or `v1.0.0`)
+- `TANGLED_REF_TYPE` - The type of reference, either
+  `branch` or `tag`
+- `TANGLED_SHA` - The commit SHA that triggered the pipeline
+- `TANGLED_COMMIT_SHA` - Alias for `TANGLED_SHA`
+
+These variables are only available when the pipeline is
+triggered by a pull request:
+
+- `TANGLED_PR_SOURCE_BRANCH` - The source branch of the pull
+  request
+- `TANGLED_PR_TARGET_BRANCH` - The target branch of the pull
+  request
+- `TANGLED_PR_SOURCE_SHA` - The commit SHA of the source
+  branch
+
 ### Steps
 
 The `steps` field allows you to define what steps should run
