@@ -8,7 +8,7 @@
 
 {{ define "mainLayout" }}
   <div class="px-1 flex-grow flex flex-col gap-4">
-    <div class="max-w-screen-lg mx-auto">
+    <div class="max-w-full md:max-w-screen-lg mx-auto">
       {{ block "contentLayout" . }}
         {{ block "content" . }}{{ end }}
       {{ end }}
@@ -51,7 +51,7 @@
 {{ end }}
 
 {{ define "repoContentLayout" }}
-  <div class="grid grid-cols-1 md:grid-cols-10 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-10 gap-4 w-full">
     <section class="bg-white col-span-1 md:col-span-8 dark:bg-gray-800 p-6 rounded relative w-full mx-auto dark:text-white h-full flex-shrink">
       {{ block "repoContent" . }}{{ end }}
     </section>
