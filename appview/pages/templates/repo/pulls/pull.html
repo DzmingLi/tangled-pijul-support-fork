@@ -139,7 +139,7 @@
   <div id="bottomSheetBackdrop" class="fixed inset-0 bg-black/50 md:hidden opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
   <!-- right panel - bottom sheet on mobile, side panel on desktop -->
   <div id="subs" class="fixed bottom-0 left-0 right-0 z-50 w-full md:static md:z-auto md:max-h-screen md:sticky md:top-12 overflow-hidden">
-    <details open id="bottomSheet" class="rounded-t-2xl md:rounded-t drop-shadow-lg md:drop-shadow-none">
+    <details open id="bottomSheet" class="rounded-t-2xl md:rounded-t drop-shadow-lg md:drop-shadow-none group/panel">
       <summary class="
         flex gap-4 items-center justify-between
         rounded-t-2xl md:rounded-t cursor-pointer list-none p-4 md:h-12
@@ -148,7 +148,7 @@
         md:bg-white md:dark:bg-gray-800
         drop-shadow-sm
          border-t md:border-x md:border-t-0 border-gray-200 dark:border-gray-700">
-        <h2 class="">Submissions</h2>
+        <h2 class="">Comments</h2>
         {{ template "subsPanelSummary" $ }}
       </summary>
       <div class="max-h-[85vh] md:max-h-[calc(100vh-3rem-3rem)] w-full flex flex-col-reverse gap-4 overflow-y-auto bg-slate-100 dark:bg-gray-900 md:bg-transparent">
@@ -164,8 +164,8 @@
   {{ $latest := $pull.LastRoundNumber }}
   <div class="flex items-center gap-2 text-sm">
     <span class="md:hidden inline">
-      <span class="inline group-open:hidden">{{ i "chevron-up" "size-4" }}</span>
-      <span class="hidden group-open:inline">{{ i "chevron-down" "size-4" }}</span>
+      <span class="inline group-open/panel:hidden">{{ i "chevron-up" "size-4" }}</span>
+      <span class="hidden group-open/panel:inline">{{ i "chevron-down" "size-4" }}</span>
     </span>
   </div>
 {{ end }}
@@ -222,27 +222,9 @@
   {{ $idx := index . 1 }}
   {{ $lastIdx := index . 2 }}
   {{ $root := index . 3 }}
-  <div class="{{ if eq $item.RoundNumber 0 }}rounded-b border-t-0{{ else }}rounded{{ end }} border border-gray-200 dark:border-gray-700 w-full shadow-sm bg-gray-50 dark:bg-gray-800/50">
+  <div class="{{ if eq $item.RoundNumber 0 }}rounded-b border-t-0{{ else }}rounded{{ end }} border border-gray-200 dark:border-gray-700 w-full shadow-sm bg-gray-50 dark:bg-gray-900">
     {{ template "submissionHeader" $ }}
     {{ template "submissionComments" $ }}
-
-    {{ if eq $lastIdx $item.RoundNumber }}
-      {{ block "mergeStatus" $root }} {{ end }}
-      {{ block "resubmitStatus" $root }} {{ end }}
-    {{ end }}
-
-    {{ if $root.LoggedInUser }}
-      {{ template "repo/pulls/fragments/pullActions"
-        (dict
-          "LoggedInUser" $root.LoggedInUser
-          "Pull" $root.Pull
-          "RepoInfo" $root.RepoInfo
-          "RoundNumber" $item.RoundNumber
-          "MergeCheck" $root.MergeCheck
-          "ResubmitCheck" $root.ResubmitCheck
-          "BranchDeleteStatus" $root.BranchDeleteStatus
-          "Stack" $root.Stack) }}
-    {{ end }}
   </div>
 {{ end }}
 
@@ -510,21 +492,62 @@
 
 {{ define "submissionComments" }}
   {{ $item := index . 0 }}
-  <div class="relative ml-10 border-l-2 border-gray-200 dark:border-gray-700">
-    {{ range $item.Comments }}
-      {{ template "submissionComment" . }}
-    {{ end }}
-  </div>
+  {{ $idx := index . 1 }}
+  {{ $lastIdx := index . 2 }}
+  {{ $root := index . 3 }}
+  {{ $c := len $item.Comments }}
+  <details class="relative ml-10 group/comments" open>
+    <summary class="cursor-pointer list-none">
+      <div class="hidden group-open/comments:block absolute -left-8 top-0 bottom-0 w-16 transition-colors flex items-center justify-center group/border z-4">
+        <div class="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 group-open/comments:bg-gray-200 dark:group-open/comments:bg-gray-700 group-hover/border:bg-gray-400 dark:group-hover/border:bg-gray-500 transition-colors"> </div>
+      </div>
+      <div class="group-open/comments:hidden block relative group/summary py-4">
+        <div class="absolute -left-8 top-0 bottom-0 w-16 transition-colors flex items-center justify-center z-4">
+          <div class="absolute left-1/2 -translate-x-1/2 h-1/3 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700 group-hover/summary:bg-gray-400 dark:group-hover/summary:bg-gray-500 transition-colors"></div>
+        </div>
+        <span class="text-gray-500 dark:text-gray-400 text-sm group-hover/summary:text-gray-600 dark:group-hover/summary:text-gray-300 transition-colors flex items-center gap-2 -ml-2 relative">
+          {{ i "circle-plus" "size-4 z-5" }}
+          expand {{ $c }} comment{{ if ne $c 1 }}s{{ end }}
+        </span>
+      </div>
+    </summary>
+    <div>
+      {{ range $item.Comments }}
+        {{ template "submissionComment" . }}
+      {{ end }}
+    </div>
+
+    <div class="relative -ml-10">
+      {{ if eq $lastIdx $item.RoundNumber }}
+        {{ block "mergeStatus" $root }} {{ end }}
+        {{ block "resubmitStatus" $root }} {{ end }}
+      {{ end }}
+    </div>
+    <div class="relative -ml-10 bg-gray-50 dark:bg-gray-900">
+      {{ if $root.LoggedInUser }}
+        {{ template "repo/pulls/fragments/pullActions"
+          (dict
+            "LoggedInUser" $root.LoggedInUser
+            "Pull" $root.Pull
+            "RepoInfo" $root.RepoInfo
+            "RoundNumber" $item.RoundNumber
+            "MergeCheck" $root.MergeCheck
+            "ResubmitCheck" $root.ResubmitCheck
+            "BranchDeleteStatus" $root.BranchDeleteStatus
+            "Stack" $root.Stack) }}
+      {{ end }}
+    </div>
+  </details>
 {{ end }}
 
 {{ define "submissionComment" }}
   <div id="comment-{{.ID}}" class="flex gap-2 -ml-4 py-4 w-full mx-auto">
     <!-- left column: profile picture -->
-    <div class="flex-shrink-0">
+    <div class="flex-shrink-0 h-fit relative">
       <img
           src="{{ tinyAvatar .OwnerDid }}"
           alt=""
-          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
+          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900 z-5"
       />
     </div>
     <!-- right column: name and body in two rows -->
