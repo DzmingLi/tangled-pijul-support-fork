@@ -122,7 +122,7 @@ func populatePunchcard(d *db.DB, record tangled.GitRefUpdate) error {
 			if ce == nil {
 				continue
 			}
-			if ce.Email == ke.Address {
+			if ce.Email == ke.Address || ce.Email == record.CommitterDid {
 				count += int(ce.Count)
 			}
 		}
