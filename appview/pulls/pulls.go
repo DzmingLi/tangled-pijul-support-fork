@@ -228,7 +228,6 @@ func (s *Pulls) repoPullHelper(w http.ResponseWriter, r *http.Request, interdiff
 	reactionMap, err := db.GetReactionMap(s.db, 20, pull.AtUri())
 	if err != nil {
 		log.Println("failed to get pull reactions")
-		s.pages.Notice(w, "pulls", "Failed to load pull. Try again later.")
 	}
 
 	userReactions := map[models.ReactionKind]bool{}
