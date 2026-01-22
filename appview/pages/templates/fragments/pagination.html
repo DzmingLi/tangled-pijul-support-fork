@@ -1,9 +1,9 @@
 {{ define "fragments/pagination" }}
-  {{/* Params: Page (pagination.Page), TotalCount (int), BasePath (string), QueryParams (string) */}}
+  {{/* Params: Page (pagination.Page), TotalCount (int), BasePath (string), QueryParams (url.Values) */}}
   {{ $page := .Page }}
   {{ $totalCount := .TotalCount }}
   {{ $basePath := .BasePath }}
-  {{ $queryParams := .QueryParams }}
+  {{ $queryParams := safeUrl .QueryParams.Encode }}
 
   {{ $prev := $page.Previous.Offset }}
   {{ $next := $page.Next.Offset }}

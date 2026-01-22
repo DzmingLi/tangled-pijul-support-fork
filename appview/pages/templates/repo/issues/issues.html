@@ -80,7 +80,7 @@
         "Page" .Page 
         "TotalCount" .IssueCount 
         "BasePath" (printf "/%s/issues" .RepoInfo.FullName)
-        "QueryParams" (printf "state=%s&q=%s" $state .FilterQuery)
+        "QueryParams" (queryParams "state" $state "q" .FilterQuery)
     ) }}
   {{ end }}
 {{ end }}

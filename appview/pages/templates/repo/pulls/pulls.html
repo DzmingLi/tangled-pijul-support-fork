@@ -166,7 +166,7 @@
           "Page" .Page 
           "TotalCount" .PullCount 
           "BasePath" (printf "/%s/pulls" .RepoInfo.FullName)
-          "QueryParams" (printf "state=%s&q=%s" .FilteringBy.String .FilterQuery)
+          "QueryParams" (queryParams "state" .FilteringBy.String "q" .FilterQuery)
       ) }}
     {{ end }}
 {{ end }}
