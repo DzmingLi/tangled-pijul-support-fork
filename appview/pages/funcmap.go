@@ -332,6 +332,24 @@ func (p *Pages) funcMap() template.FuncMap {
 			}
 			return dict, nil
 		},
+		"queryParams": func(params ...any) (url.Values, error) {
+			if len(params)%2 != 0 {
+				return nil, errors.New("invalid queryParams call")
+			}
+			vals := make(url.Values, len(params)/2)
+			for i := 0; i < len(params); i += 2 {
+				key, ok := params[i].(string)
+				if !ok {
+					return nil, errors.New("queryParams keys must be strings")
+				}
+				v, ok := params[i+1].(string)
+				if !ok {
+					return nil, errors.New("queryParams values must be strings")
+				}
+				vals.Add(key, v)
+			}
+			return vals, nil
+		},
 		"deref": func(v any) any {
 			val := reflect.ValueOf(v)
 			if val.Kind() == reflect.Pointer && !val.IsNil() {
