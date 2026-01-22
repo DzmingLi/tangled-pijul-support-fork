@@ -41,12 +41,12 @@ func New(config *config.Config, ph posthog.Client, db *db.DB, enforcer *rbac.Enf
 	if config.Core.Dev {
 		clientUri = "http://127.0.0.1:3000"
 		callbackUri := clientUri + "/oauth/callback"
-		oauthConfig = oauth.NewLocalhostConfig(callbackUri, []string{"atproto", "transition:generic"})
+		oauthConfig = oauth.NewLocalhostConfig(callbackUri, TangledScopes)
 	} else {
 		clientUri = config.Core.AppviewHost
 		clientId := fmt.Sprintf("%s/oauth/client-metadata.json", clientUri)
 		callbackUri := clientUri + "/oauth/callback"
-		oauthConfig = oauth.NewPublicConfig(clientId, callbackUri, []string{"atproto", "transition:generic"})
+		oauthConfig = oauth.NewPublicConfig(clientId, callbackUri, TangledScopes)
 	}
 
 	// configure client secret
