@@ -375,9 +375,9 @@ KNOT_SERVER_INTERNAL_LISTEN_ADDR=127.0.0.1:5444
 KNOT_SERVER_LISTEN_ADDR=127.0.0.1:5555
 ```
 
-If you run a Linux distribution that uses systemd, you can use the provided
-service file to run the server. Copy
-[`knotserver.service`](/systemd/knotserver.service)
+If you run a Linux distribution that uses systemd, you can
+use the provided service file to run the server. Copy
+[`knotserver.service`](https://tangled.org/tangled.org/core/blob/master/systemd/knotserver.service)
 to `/etc/systemd/system/`. Then, run:
 
 ```
