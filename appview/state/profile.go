@@ -840,6 +840,81 @@ func (s *State) UploadProfileAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("HX-Redirect", r.Header.Get("Referer"))
-	w.WriteHeader(http.StatusOK)
+	s.pages.HxRedirect(w, r.Header.Get("Referer"))
+}
+
+func (s *State) RemoveProfileAvatar(w http.ResponseWriter, r *http.Request) {
+	l := s.logger.With("handler", "RemoveProfileAvatar")
+	user := s.oauth.GetUser(r)
+	l = l.With("did", user.Did)
+
+	client, err := s.oauth.AuthorizedClient(r)
+	if err != nil {
+		l.Error("failed to get PDS client", "err", err)
+		s.pages.Notice(w, "avatar-error", "Failed to connect to your PDS")
+		return
+	}
+
+	getRecordResp, err := comatproto.RepoGetRecord(r.Context(), client, "", tangled.ActorProfileNSID, user.Did, "self")
+	if err != nil {
+		l.Error("failed to get current profile record", "err", err)
+		s.pages.Notice(w, "avatar-error", "Failed to get current profile from your PDS")
+		return
+	}
+
+	var profileRecord *tangled.ActorProfile
+	if getRecordResp.Value != nil {
+		if val, ok := getRecordResp.Value.Val.(*tangled.ActorProfile); ok {
+			profileRecord = val
+		} else {
+			l.Warn("profile record type assertion failed")
+			profileRecord = &tangled.ActorProfile{}
+		}
+	} else {
+		l.Warn("no existing profile record")
+		profileRecord = &tangled.ActorProfile{}
+	}
+
+	profileRecord.Avatar = nil
+
+	_, err = comatproto.RepoPutRecord(r.Context(), client, &comatproto.RepoPutRecord_Input{
+		Collection: tangled.ActorProfileNSID,
+		Repo:       user.Did,
+		Rkey:       "self",
+		Record:     &lexutil.LexiconTypeDecoder{Val: profileRecord},
+		SwapRecord: getRecordResp.Cid,
+	})
+
+	if err != nil {
+		l.Error("failed to update profile record", "err", err)
+		s.pages.Notice(w, "avatar-error", "Failed to remove avatar from your PDS")
+		return
+	}
+
+	l.Info("successfully removed avatar from PDS")
+
+	profile, err := db.GetProfile(s.db, user.Did)
+	if err != nil {
+		l.Warn("getting profile data from DB", "err", err)
+		profile = &models.Profile{Did: user.Did}
+	}
+	profile.Avatar = ""
+
+	tx, err := s.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		l.Error("failed to start transaction", "err", err)
+		s.pages.HxRefresh(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	err = db.UpsertProfile(tx, profile)
+	if err != nil {
+		l.Error("failed to update profile in DB", "err", err)
+		s.pages.HxRefresh(w)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	s.pages.HxRedirect(w, r.Header.Get("Referer"))
 }

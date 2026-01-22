@@ -166,6 +166,7 @@ func (s *State) StandardRouter(mw *middleware.Middleware) http.Handler {
 		r.Post("/bio", s.UpdateProfileBio)
 		r.Post("/pins", s.UpdateProfilePins)
 		r.Post("/avatar", s.UploadProfileAvatar)
+		r.Delete("/avatar", s.RemoveProfileAvatar)
 	})
 
 	r.Mount("/settings", s.SettingsRouter())
