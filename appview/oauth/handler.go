@@ -10,11 +10,14 @@ import (
 	"slices"
 	"time"
 
+	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/atproto/auth/oauth"
+	lexutil "github.com/bluesky-social/indigo/lex/util"
 	"github.com/go-chi/chi/v5"
 	"github.com/posthog/posthog-go"
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/db"
+	"tangled.org/core/appview/models"
 	"tangled.org/core/consts"
 	"tangled.org/core/orm"
 	"tangled.org/core/tid"
@@ -82,8 +85,10 @@ func (o *OAuth) callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	o.Logger.Debug("session saved successfully")
+
 	go o.addToDefaultKnot(sessData.AccountDID.String())
 	go o.addToDefaultSpindle(sessData.AccountDID.String())
+	go o.ensureTangledProfile(sessData)
 
 	if !o.Config.Core.Dev {
 		err = o.Posthog.Enqueue(posthog.Capture{
@@ -187,6 +192,53 @@ func (o *OAuth) addToDefaultKnot(did string) {
 	}
 
 	l.Debug("successfully addeds to default Knot")
+}
+
+func (o *OAuth) ensureTangledProfile(sessData *oauth.ClientSessionData) {
+	ctx := context.Background()
+	did := sessData.AccountDID.String()
+	l := o.Logger.With("did", did)
+
+	_, err := db.GetProfile(o.Db, did)
+	if err == nil {
+		l.Debug("profile already exists in DB")
+		return
+	}
+
+	l.Debug("creating empty Tangled profile")
+
+	sess, err := o.ClientApp.ResumeSession(ctx, sessData.AccountDID, sessData.SessionID)
+	if err != nil {
+		l.Error("failed to resume session for profile creation", "err", err)
+		return
+	}
+	client := sess.APIClient()
+
+	_, err = comatproto.RepoPutRecord(ctx, client, &comatproto.RepoPutRecord_Input{
+		Collection: tangled.ActorProfileNSID,
+		Repo:       did,
+		Rkey:       "self",
+		Record:     &lexutil.LexiconTypeDecoder{Val: &tangled.ActorProfile{}},
+	})
+
+	if err != nil {
+		l.Error("failed to create empty profile on PDS", "err", err)
+		return
+	}
+
+	tx, err := o.Db.BeginTx(ctx, nil)
+	if err != nil {
+		l.Error("failed to start transaction", "err", err)
+		return
+	}
+
+	emptyProfile := &models.Profile{Did: did}
+	if err := db.UpsertProfile(tx, emptyProfile); err != nil {
+		l.Error("failed to create empty profile in DB", "err", err)
+		return
+	}
+
+	l.Debug("successfully created empty Tangled profile on PDS and DB")
 }
 
 // create a session using apppasswords
