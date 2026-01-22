@@ -3,11 +3,11 @@
 <div class="overflow-x-auto font-mono leading-normal"><div class="overflow-x-auto"><div class="inline-flex flex-col min-w-full">{{- range .TextFragments -}}<span class="block bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 select-none text-center">&middot;&middot;&middot;</span>
  {{- $oldStart := .OldPosition -}}
  {{- $newStart := .NewPosition -}}
- {{- $lineNrStyle := "min-w-[3.5rem] flex-shrink-0 select-none text-right bg-white dark:bg-gray-800 target:bg-yellow-200 target:dark:bg-yellow-600" -}}
- {{- $linkStyle := "text-gray-400 dark:text-gray-500 hover:underline" -}}
+ {{- $lineNrStyle := "min-w-[3.5rem] flex-shrink-0 select-none text-right bg-white dark:bg-gray-800 group-target/line:bg-yellow-200/30 group-target/line:dark:bg-yellow-600/30" -}}
+ {{- $linkStyle := "text-gray-400 dark:text-gray-500 hover:underline group-target/line:text-black group-target/line:dark:text-white" -}}
  {{- $lineNrSepStyle1 := "" -}}
  {{- $lineNrSepStyle2 := "pr-2 border-r border-gray-200 dark:border-gray-700" -}}
- {{- $containerStyle := "inline-flex w-full items-center target:bg-yellow-200 target:dark:bg-yellow-700 scroll-mt-48" -}}
+ {{- $containerStyle := "inline-flex w-full items-center target:bg-yellow-200/30 target:dark:bg-yellow-700/30 scroll-mt-48 group/line" -}}
  {{- $addStyle := "bg-green-100 dark:bg-green-800/30 text-green-700 dark:text-green-400 " -}}
  {{- $delStyle := "bg-red-100 dark:bg-red-800/30 text-red-700 dark:text-red-400 " -}}
  {{- $ctxStyle := "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400" -}}
