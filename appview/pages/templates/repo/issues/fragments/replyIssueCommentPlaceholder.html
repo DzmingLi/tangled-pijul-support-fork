@@ -8,7 +8,7 @@
       />
     {{ end }}
     <input
-      class="w-full p-0 border-none focus:outline-none"
+      class="w-full p-0 border-none focus:outline-none bg-transparent"
       placeholder="Leave a reply..."
       hx-get="/{{ .RepoInfo.FullName }}/issues/{{ .Issue.IssueId }}/comment/{{ .Comment.Id }}/reply"
       hx-trigger="focus"

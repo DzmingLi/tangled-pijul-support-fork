@@ -1,6 +1,7 @@
 {{ define "repo/issues/fragments/issueCommentHeader" }}
   <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ">
-    {{ resolve .Comment.Did }}
+    {{ $handle := resolve .Comment.Did }}
+    <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="/{{ $handle }}">{{ $handle }}</a>
     {{ template "hats" $ }}
     <span class="before:content-['·']"></span>
     {{ template "timestamp" . }}

@@ -148,7 +148,7 @@
         md:bg-white md:dark:bg-gray-800
         drop-shadow-sm
          border-t md:border-x md:border-t-0 border-gray-200 dark:border-gray-700">
-        <h2 class="">Comments</h2>
+        <h2 class="">History</h2>
         {{ template "subsPanelSummary" $ }}
       </summary>
       <div class="max-h-[85vh] md:max-h-[calc(100vh-3rem-3rem)] w-full flex flex-col-reverse gap-4 overflow-y-auto bg-slate-100 dark:bg-gray-900 md:bg-transparent">
@@ -161,11 +161,20 @@
 {{ define "subsPanelSummary" }}
   {{ $root := index . 2 }}
   {{ $pull := $root.Pull }}
-  {{ $latest := $pull.LastRoundNumber }}
+  {{ $rounds := len $pull.Submissions }}
+  {{ $comments := $pull.TotalComments }}
   <div class="flex items-center gap-2 text-sm">
+    <span>
+      {{ $rounds }} round{{ if ne $rounds 1 }}s{{ end }}
+    </span>
+    <span class="select-none before:content-['\00B7']"></span>
+    <span>
+      {{ $comments }} comment{{ if ne $comments 1 }}s{{ end }}
+    </span>
+
     <span class="md:hidden inline">
-      <span class="inline group-open/panel:hidden">{{ i "chevron-up" "size-4" }}</span>
-      <span class="hidden group-open/panel:inline">{{ i "chevron-down" "size-4" }}</span>
+      <span class="inline group-open:hidden">{{ i "chevron-up" "size-4" }}</span>
+      <span class="hidden group-open:inline">{{ i "chevron-down" "size-4" }}</span>
     </span>
   </div>
 {{ end }}
@@ -222,7 +231,16 @@
   {{ $idx := index . 1 }}
   {{ $lastIdx := index . 2 }}
   {{ $root := index . 3 }}
-  <div class="{{ if eq $item.RoundNumber 0 }}rounded-b border-t-0{{ else }}rounded{{ end }} border border-gray-200 dark:border-gray-700 w-full shadow-sm bg-gray-50 dark:bg-gray-900">
+  {{ $round := $item.RoundNumber }}
+  <div class="
+    w-full shadow-sm bg-gray-50 dark:bg-gray-900 border-2 border-t-0
+    {{ if eq $round 0 }}rounded-b{{ else }}rounded{{ end }}
+    {{ if eq $round $root.ActiveRound }}
+      border-blue-200 dark:border-blue-700
+    {{ else }}
+      border-gray-200 dark:border-gray-700
+    {{ end }}
+    ">
     {{ template "submissionHeader" $ }}
     {{ template "submissionComments" $ }}
   </div>
@@ -236,10 +254,11 @@
   <div class="
     {{ if eq $round 0 }}rounded-b{{ else }}rounded{{ end }}
     px-6 py-4 pr-2 pt-2
-    {{ if eq $root.ActiveRound $round }}
-      bg-blue-100 dark:bg-blue-900 border-b border-blue-200 dark:border-blue-700
+    bg-white dark:bg-gray-800
+    {{ if eq $round $root.ActiveRound }}
+       border-t-2 border-blue-200 dark:border-blue-700
     {{ else }}
-      bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700
+      border-b-2 border-gray-200 dark:border-gray-700
     {{ end }}
     flex gap-2 sticky top-0 z-20">
     <!-- left column: just profile picture -->
@@ -269,8 +288,10 @@
   {{ $round := $item.RoundNumber }}
   <div class="flex gap-2 items-center justify-between mb-1">
     <span class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 pt-2">
-      {{ resolve $root.Pull.OwnerDid }} submitted
-      <span class="px-2 py-0.5 {{ if eq $root.ActiveRound $round }}text-white bg-blue-600 dark:bg-blue-500 border-blue-700 dark:border-blue-600{{ else }}text-black dark:text-white bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600{{ end }} rounded font-mono text-xs border">
+      {{ $handle := resolve $root.Pull.OwnerDid }} 
+      <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="/{{ $handle }}">{{ $handle }}</a>
+      submitted
+      <span class="px-2 py-0.5 text-black dark:text-white bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded font-mono text-xs border">
         #{{ $round }}
       </span>
       <span class="select-none before:content-['\00B7']"></span>
@@ -495,8 +516,9 @@
   {{ $idx := index . 1 }}
   {{ $lastIdx := index . 2 }}
   {{ $root := index . 3 }}
+  {{ $round := $item.RoundNumber }}
   {{ $c := len $item.Comments }}
-  <details class="relative ml-10 group/comments" open>
+  <details class="relative ml-10 group/comments" {{ if or (eq $c 0) (eq $root.ActiveRound $round) }}open{{ end }}>
     <summary class="cursor-pointer list-none">
       <div class="hidden group-open/comments:block absolute -left-8 top-0 bottom-0 w-16 transition-colors flex items-center justify-center group/border z-4">
         <div class="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 group-open/comments:bg-gray-200 dark:group-open/comments:bg-gray-700 group-hover/border:bg-gray-400 dark:group-hover/border:bg-gray-500 transition-colors"> </div>
@@ -554,10 +576,11 @@
     <div class="flex-1 min-w-0">
       <!-- Row 1: Author and timestamp -->
       <div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-        <span>{{ resolve .OwnerDid }}</span>
+        {{ $handle := resolve .OwnerDid }}
+        <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="/{{ $handle }}">{{ $handle }}</a>
         <span class="before:content-['·']"></span>
         <a class="text-gray-500 dark:text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" href="#comment-{{.ID}}">
-          {{ template "repo/fragments/time" .Created }}
+          {{ template "repo/fragments/shortTime" .Created }}
         </a>
       </div>
       <!-- Row 2: Body text -->
