@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/Blank-Xu/sql-adapter v1.1.1
 	github.com/alecthomas/assert/v2 v2.11.0
-	github.com/alecthomas/chroma/v2 v2.15.0
+	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/avast/retry-go/v4 v4.6.1
 	github.com/blevesearch/bleve/v2 v2.5.3
 	github.com/bluekeyes/go-gitdiff v0.8.1
@@ -61,7 +61,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
-	github.com/alecthomas/repr v0.4.0 // indirect
+	github.com/alecthomas/repr v0.5.2 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
@@ -224,7 +224,7 @@ replace github.com/go-git/go-git/v5 => github.com/oppiliappan/go-git/v5 v5.17.0
 
 replace github.com/bluekeyes/go-gitdiff => tangled.sh/oppi.li/go-gitdiff v0.8.2
 
-replace github.com/alecthomas/chroma/v2 => github.com/oppiliappan/chroma/v2 v2.19.0
+replace github.com/alecthomas/chroma/v2 => github.com/oppiliappan/chroma/v2 v2.24.2
 
 // from bluesky-social/indigo
 replace github.com/gocql/gocql => github.com/scylladb/gocql v1.14.4
