@@ -72,7 +72,6 @@ func (s *Settings) profileSettings(w http.ResponseWriter, r *http.Request) {
 
 	s.Pages.UserProfileSettings(w, pages.UserProfileSettingsParams{
 		LoggedInUser: user,
-		Tab:          "profile",
 	})
 }
 
@@ -90,7 +89,6 @@ func (s *Settings) notificationsSettings(w http.ResponseWriter, r *http.Request)
 	s.Pages.UserNotificationSettings(w, pages.UserNotificationSettingsParams{
 		LoggedInUser: user,
 		Preferences:  prefs,
-		Tab:          "notifications",
 	})
 }
 
@@ -131,7 +129,6 @@ func (s *Settings) keysSettings(w http.ResponseWriter, r *http.Request) {
 	s.Pages.UserKeysSettings(w, pages.UserKeysSettingsParams{
 		LoggedInUser: user,
 		PubKeys:      pubKeys,
-		Tab:          "keys",
 	})
 }
 
@@ -145,7 +142,6 @@ func (s *Settings) emailsSettings(w http.ResponseWriter, r *http.Request) {
 	s.Pages.UserEmailsSettings(w, pages.UserEmailsSettingsParams{
 		LoggedInUser: user,
 		Emails:       emails,
-		Tab:          "emails",
 	})
 }
 

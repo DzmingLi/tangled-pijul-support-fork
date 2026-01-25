@@ -71,7 +71,6 @@ func (k *Knots) knots(w http.ResponseWriter, r *http.Request) {
 	k.Pages.Knots(w, pages.KnotsParams{
 		LoggedInUser:  user,
 		Registrations: registrations,
-		Tab:           "knots",
 	})
 }
 
@@ -134,7 +133,6 @@ func (k *Knots) dashboard(w http.ResponseWriter, r *http.Request) {
 		Members:      members,
 		Repos:        repoMap,
 		IsOwner:      true,
-		Tab:          "knots",
 	})
 }
 

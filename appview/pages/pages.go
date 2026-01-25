@@ -342,6 +342,7 @@ type UserProfileSettingsParams struct {
 }
 
 func (p *Pages) UserProfileSettings(w io.Writer, params UserProfileSettingsParams) error {
+	params.Tab = "profile"
 	return p.execute("user/settings/profile", w, params)
 }
 
@@ -380,6 +381,7 @@ type UserKeysSettingsParams struct {
 }
 
 func (p *Pages) UserKeysSettings(w io.Writer, params UserKeysSettingsParams) error {
+	params.Tab = "keys"
 	return p.execute("user/settings/keys", w, params)
 }
 
@@ -390,6 +392,7 @@ type UserEmailsSettingsParams struct {
 }
 
 func (p *Pages) UserEmailsSettings(w io.Writer, params UserEmailsSettingsParams) error {
+	params.Tab = "emails"
 	return p.execute("user/settings/emails", w, params)
 }
 
@@ -400,6 +403,7 @@ type UserNotificationSettingsParams struct {
 }
 
 func (p *Pages) UserNotificationSettings(w io.Writer, params UserNotificationSettingsParams) error {
+	params.Tab = "notifications"
 	return p.execute("user/settings/notifications", w, params)
 }
 
@@ -419,6 +423,7 @@ type KnotsParams struct {
 }
 
 func (p *Pages) Knots(w io.Writer, params KnotsParams) error {
+	params.Tab = "knots"
 	return p.execute("knots/index", w, params)
 }
 
@@ -450,6 +455,7 @@ type SpindlesParams struct {
 }
 
 func (p *Pages) Spindles(w io.Writer, params SpindlesParams) error {
+	params.Tab = "spindles"
 	return p.execute("spindles/index", w, params)
 }
 
@@ -883,6 +889,7 @@ type RepoGeneralSettingsParams struct {
 
 func (p *Pages) RepoGeneralSettings(w io.Writer, params RepoGeneralSettingsParams) error {
 	params.Active = "settings"
+	params.Tab = "general"
 	return p.executeRepo("repo/settings/general", w, params)
 }
 
@@ -896,6 +903,7 @@ type RepoAccessSettingsParams struct {
 
 func (p *Pages) RepoAccessSettings(w io.Writer, params RepoAccessSettingsParams) error {
 	params.Active = "settings"
+	params.Tab = "access"
 	return p.executeRepo("repo/settings/access", w, params)
 }
 
@@ -911,6 +919,7 @@ type RepoPipelineSettingsParams struct {
 
 func (p *Pages) RepoPipelineSettings(w io.Writer, params RepoPipelineSettingsParams) error {
 	params.Active = "settings"
+	params.Tab = "pipelines"
 	return p.executeRepo("repo/settings/pipelines", w, params)
 }
 
