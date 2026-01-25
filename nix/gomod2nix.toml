@@ -20,12 +20,12 @@ schema = 3
     version = "v2.11.0"
     hash = "sha256-tDJCDKZ0R4qNA7hgMKWrpDyogt1802LCJDBCExxdqaU="
   [mod."github.com/alecthomas/chroma/v2"]
-    version = "v2.19.0"
-    hash = "sha256-dxsu43a+PvHg2jYR0Tfys6a8x6IVR+9oCGAh+fvL3SM="
+    version = "v2.24.2"
+    hash = "sha256-Xz4DLZpn98rwaLmNNztK3PJu9MVxDLSrhJI82ZzyFZo="
     replaced = "github.com/oppiliappan/chroma/v2"
   [mod."github.com/alecthomas/repr"]
-    version = "v0.4.0"
-    hash = "sha256-CyAzMSTfLGHDtfGXi91y7XMVpPUDNOKjsznb+osl9dU="
+    version = "v0.5.2"
+    hash = "sha256-PfIeyHh7xTbDN0g2otuDyUOQqbgS4KftVC1JKZ+6sdM="
   [mod."github.com/anmitsu/go-shlex"]
     version = "v0.0.0-20200514113438-38f4b401e2be"
     hash = "sha256-L3Ak4X2z7WXq7vMKuiHCOJ29nlpajUQ08Sfb9T0yP54="
