@@ -35,7 +35,7 @@
 
                 {{ if .BlobView.ShowingText }}
                   <span class="select-none px-1 md:px-2 [&:before]:content-['·']"></span>
-                  <span>{{ .Lines }} lines</span>
+                  <span>{{ .BlobView.Lines }} lines</span>
                 {{ end }}
 
                 {{ if .BlobView.SizeHint }}

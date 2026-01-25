@@ -130,7 +130,6 @@ type BlobView struct {
 
 	// current display mode
 	ShowingRendered bool // currently in rendered mode
-	ShowingText     bool // currently in text/code mode
 
 	// content type flags
 	ContentType BlobContentType
@@ -150,4 +149,8 @@ func (b BlobView) ShowToggle() bool {
 func (b BlobView) IsUnsupported() bool {
 	// no view available, only raw
 	return !(b.HasRenderedView || b.HasTextView)
+}
+
+func (b BlobView) ShowingText() bool {
+	return !b.ShowingRendered
 }

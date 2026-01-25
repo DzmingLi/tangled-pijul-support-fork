@@ -219,7 +219,7 @@ func NewBlobView(resp *tangled.RepoBlob_Output, config *config.Config, repo *mod
 			if resp.Content != nil {
 				bytes, _ := base64.StdEncoding.DecodeString(*resp.Content)
 				view.Contents = string(bytes)
-				view.Lines = strings.Count(view.Contents, "\n") + 1
+				view.Lines = countLines(view.Contents)
 			}
 
 		case ".mp4", ".webm", ".ogg", ".mov", ".avi":
@@ -238,7 +238,7 @@ func NewBlobView(resp *tangled.RepoBlob_Output, config *config.Config, repo *mod
 
 	if resp.Content != nil {
 		view.Contents = *resp.Content
-		view.Lines = strings.Count(view.Contents, "\n") + 1
+		view.Lines = countLines(view.Contents)
 	}
 
 	// with text, we may be dealing with markdown
@@ -290,4 +290,19 @@ func isTextualMimeType(mimeType string) bool {
 		"message/",
 	}
 	return slices.Contains(textualTypes, mimeType)
+}
+
+// TODO: dedup with strings
+func countLines(content string) int {
+	if content == "" {
+		return 0
+	}
+
+	count := strings.Count(content, "\n")
+
+	if !strings.HasSuffix(content, "\n") {
+		count++
+	}
+
+	return count
 }
