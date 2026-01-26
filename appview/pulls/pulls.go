@@ -297,7 +297,14 @@ func (s *Pulls) repoPullHelper(w http.ResponseWriter, r *http.Request, interdiff
 }
 
 func (s *Pulls) RepoSinglePull(w http.ResponseWriter, r *http.Request) {
-	s.repoPullHelper(w, r, false)
+	pull, ok := r.Context().Value("pull").(*models.Pull)
+	if !ok {
+		log.Println("failed to get pull")
+		s.pages.Notice(w, "pull-error", "Failed to edit patch. Try again later.")
+		return
+	}
+
+	http.Redirect(w, r, r.URL.String()+fmt.Sprintf("/round/%d", pull.LastRoundNumber()), http.StatusFound)
 }
 
 func (s *Pulls) mergeCheck(r *http.Request, f *models.Repo, pull *models.Pull, stack models.Stack) types.MergeCheckResponse {
