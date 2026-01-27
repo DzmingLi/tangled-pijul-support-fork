@@ -169,10 +169,16 @@ func (o *OAuth) DeleteSession(w http.ResponseWriter, r *http.Request) error {
 
 	// delete the session
 	err1 := o.ClientApp.Logout(r.Context(), sessDid, sessId)
+	if err1 != nil {
+		err1 = fmt.Errorf("failed to logout: %w", err1)
+	}
 
 	// remove the cookie
 	userSession.Options.MaxAge = -1
 	err2 := o.SessStore.Save(r, w, userSession)
+	if err2 != nil {
+		err2 = fmt.Errorf("failed to save into session store: %w", err2)
+	}
 
 	return errors.Join(err1, err2)
 }

@@ -167,7 +167,7 @@ func (o *OAuth) addToDefaultKnot(did string) {
 		return
 	}
 
-	l.Debug("addings to default knot")
+	l.Debug("adding to default knot")
 	session, err := o.createAppPasswordSession(o.Config.Core.TmpAltAppPassword, consts.IcyDid)
 	if err != nil {
 		l.Error("failed to create session", "err", err)
