@@ -1,0 +1,11 @@
+{{ define "user/fragments/pic" }}
+  {{ $did := index . 0 }}
+  {{ $classes := index . 1 }}
+  <img
+      src="{{ tinyAvatar $did }}"
+      alt=""
+      class="rounded-full border border-gray-300 dark:border-gray-700 {{ $classes }}"
+  />
+{{ end }}
+
+

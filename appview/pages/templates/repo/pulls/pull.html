@@ -265,11 +265,7 @@
     flex gap-2 sticky top-0 z-20">
     <!-- left column: just profile picture -->
     <div class="flex-shrink-0 pt-2">
-      <img
-          src="{{ tinyAvatar $root.Pull.OwnerDid }}"
-          alt=""
-          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
-      />
+      {{ template "user/fragments/picLink" (list $root.Pull.OwnerDid "size-8") }}
     </div>
     <!-- right column -->
     <div class="flex-1 min-w-0 flex flex-col gap-1">
@@ -568,11 +564,7 @@
   <div id="comment-{{.ID}}" class="flex gap-2 -ml-4 py-4 w-full mx-auto">
     <!-- left column: profile picture -->
     <div class="flex-shrink-0 h-fit relative">
-      <img
-          src="{{ tinyAvatar .OwnerDid }}"
-          alt=""
-          class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900 z-5"
-      />
+      {{ template "user/fragments/picLink" (list .OwnerDid "size-8") }}
     </div>
     <!-- right column: name and body in two rows -->
     <div class="flex-1 min-w-0">

@@ -41,11 +41,7 @@
 {{ define "topLevelComment" }}
 <div class="rounded px-6 py-4 bg-white dark:bg-gray-800 flex gap-2 ">
   <div class="flex-shrink-0">
-    <img
-        src="{{ tinyAvatar .Comment.Did }}"
-        alt=""
-        class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
-    />
+    {{ template "user/fragments/picLink" (list .Comment.Did "size-8 mr-1") }}
   </div>
   <div class="flex-1 min-w-0">
     {{ template "repo/issues/fragments/issueCommentHeader" . }}
@@ -57,11 +53,7 @@
 {{ define "replyComment" }}
 <div class="py-4 pr-4 w-full mx-auto overflow-hidden flex gap-2 ">
   <div class="flex-shrink-0">
-    <img
-        src="{{ tinyAvatar .Comment.Did }}"
-        alt=""
-        class="rounded-full size-8 mr-1 border-2 border-gray-100 dark:border-gray-900"
-    />
+    {{ template "user/fragments/picLink" (list .Comment.Did "size-8 mr-1") }}
   </div>
   <div class="flex-1 min-w-0">
     {{ template "repo/issues/fragments/issueCommentHeader" . }}

@@ -1,0 +1,15 @@
+{{ define "user/fragments/picLink" }}
+  {{ $did := index . 0 }}
+  {{ $classes := index . 1 }}
+  {{ $handle := resolve $did  }}
+  <a href="/{{ $handle }}" title="{{ $handle }}">
+    <img
+        src="{{ tinyAvatar $did }}"
+        alt=""
+        class="rounded-full border border-gray-300 dark:border-gray-700 {{ $classes }}"
+    />
+  </a>
+{{ end }}
+
+
+

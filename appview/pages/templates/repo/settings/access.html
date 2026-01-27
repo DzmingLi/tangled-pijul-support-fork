@@ -32,10 +32,7 @@
       {{ $handle := resolve .Did }}
       <div class="border border-gray-200 dark:border-gray-700 rounded p-4">
         <div class="flex items-center gap-3">
-          <img
-            src="{{ fullAvatar $handle }}"
-            alt="{{ $handle }}"
-            class="rounded-full h-10 w-10 border border-gray-300 dark:border-gray-600 flex-shrink-0"/>
+          {{ template "user/fragments/picLink" (list .Did "size-10") }}
 
           <div class="flex-1 min-w-0">
             <a href="/{{ $handle }}" class="block truncate">
