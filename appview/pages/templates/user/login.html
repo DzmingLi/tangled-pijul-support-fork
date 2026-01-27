@@ -1,138 +1,117 @@
-{{ define "user/login" }}
-    <!doctype html>
-    <html lang="en" class="dark:bg-gray-900">
-        <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <meta property="og:title" content="login · tangled" />
-            <meta property="og:url" content="https://tangled.org/login" />
-            <meta property="og:description" content="login to for tangled" />
-            <script src="/static/htmx.min.js"></script>
-            <link rel="manifest" href="/pwa-manifest.json" />
-            <link rel="stylesheet" href="/static/tw.css?{{ cssContentHash }}" type="text/css" />
-            <title>login &middot; tangled</title>
-        </head>
-        <body class="flex items-center justify-center min-h-screen">
-            <main class="max-w-md px-7 mt-4">
-                <h1 class="flex place-content-center text-3xl font-semibold italic dark:text-white" >
-                  {{ template "fragments/logotype" }}
-                </h1>
-                <h2 class="text-center text-xl italic dark:text-white">
-                    tightly-knit social coding.
-                </h2>
+{{ define "title" }} login {{ end }}
 
-                {{ if .AddAccount }}
-                <div class="flex gap-2 my-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-sky-800 rounded px-3 py-2 text-blue-600 dark:text-blue-300">
-                    <span class="py-1">{{ i "user-plus" "w-4 h-4" }}</span>
-                    <div>
-                        <h5 class="font-medium">Add another account</h5>
-                        <p class="text-sm">Sign in with a different account to add it to your account list.</p>
-                    </div>
-                </div>
-                {{ end }}
+{{ define "content" }}
+  {{ if .AddAccount }}
+  <div class="flex gap-2 my-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-300 dark:border-sky-800 rounded px-3 py-2 text-blue-600 dark:text-blue-300">
+      <span class="py-1">{{ i "user-plus" "w-4 h-4" }}</span>
+      <div>
+          <h5 class="font-medium">Add another account</h5>
+          <p class="text-sm">Sign in with a different account to add it to your account list.</p>
+      </div>
+  </div>
+  {{ end }}
 
-                {{ if and .LoggedInUser .LoggedInUser.Accounts }}
-                {{ $accounts := .LoggedInUser.Accounts }}
-                {{ if $accounts }}
-                <div class="my-4 border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
-                    <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Saved accounts</span>
-                    </div>
-                    <div class="divide-y divide-gray-200 dark:divide-gray-700">
-                        {{ range $accounts }}
-                        <div class="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <button
-                                type="button"
-                                hx-post="/account/switch"
-                                hx-vals='{"did": "{{ .Did }}"}'
-                                hx-swap="none"
-                                class="flex items-center gap-2 flex-1 text-left min-w-0"
-                            >
-                                {{ template "user/fragments/pic" (list .Did "size-8") }}
-                                <div class="flex flex-col min-w-0">
-                                    <span class="text-sm font-medium dark:text-white truncate">{{ .Did | resolve | truncateAt30 }}</span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">Click to switch</span>
-                                </div>
-                            </button>
-                            <button
-                                type="button"
-                                hx-delete="/account/{{ .Did }}"
-                                hx-swap="none"
-                                class="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
-                                title="Remove account"
-                            >
-                                {{ i "x" "w-4 h-4" }}
-                            </button>
-                        </div>
-                        {{ end }}
-                    </div>
-                </div>
-                {{ end }}
-                {{ end }}
+  {{ if and .LoggedInUser .LoggedInUser.Accounts }}
+  {{ $accounts := .LoggedInUser.Accounts }}
+  {{ if $accounts }}
+  <div class="my-4 border border-gray-200 dark:border-gray-700 rounded overflow-hidden">
+      <div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <span class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Saved accounts</span>
+      </div>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700">
+          {{ range $accounts }}
+          <div class="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <button
+                  type="button"
+                  hx-post="/account/switch"
+                  hx-vals='{"did": "{{ .Did }}"}'
+                  hx-swap="none"
+                  class="flex items-center gap-2 flex-1 text-left min-w-0"
+              >
+                  {{ template "user/fragments/pic" (list .Did "size-8") }}
+                  <div class="flex flex-col min-w-0">
+                      <span class="text-sm font-medium dark:text-white truncate">{{ .Did | resolve | truncateAt30 }}</span>
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Click to switch</span>
+                  </div>
+              </button>
+              <button
+                  type="button"
+                  hx-delete="/account/{{ .Did }}"
+                  hx-swap="none"
+                  class="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex-shrink-0"
+                  title="Remove account"
+              >
+                  {{ i "x" "w-4 h-4" }}
+              </button>
+          </div>
+          {{ end }}
+      </div>
+  </div>
+  {{ end }}
+  {{ end }}
 
-                <form
-                    class="mt-4"
-                    hx-post="/login"
-                    hx-swap="none"
-                    hx-disabled-elt="#login-button"
-                >
-                    <div class="flex flex-col">
-                        <label for="handle">handle</label>
-                        <input
-                            autocapitalize="none"
-                            autocorrect="off"
-                            autocomplete="username"
-                            type="text"
-                            id="handle"
-                            name="handle"
-                            tabindex="1"
-                            required
-                            placeholder="akshay.tngl.sh"
-                        />
-                        <span class="text-sm text-gray-500 mt-1">
-                            Use your <a href="https://atproto.com">AT Protocol</a>
-                            handle to log in. If you're unsure, this is likely
-                            your Tangled (<code>.tngl.sh</code>) or <a href="https://bsky.app">Bluesky</a> (<code>.bsky.social</code>) account.
-                        </span>
-                    </div>
-                    <input type="hidden" name="return_url" value="{{ .ReturnUrl }}">
-                    <input type="hidden" name="add_account" value="{{ if .AddAccount }}true{{ end }}">
+  <form
+      class="mt-4 group"
+      hx-post="/login"
+      hx-swap="none"
+      hx-disabled-elt="#login-button"
+  >
+      <div class="flex flex-col">
+          <label for="handle">handle</label>
+          <input
+              autocapitalize="none"
+              autocorrect="off"
+              autocomplete="username"
+              type="text"
+              id="handle"
+              name="handle"
+              tabindex="1"
+              required
+              placeholder="akshay.tngl.sh"
+          />
+          <span class="text-sm text-gray-500 mt-1">
+              Use your <a href="https://atproto.com">AT Protocol</a>
+              handle to log in. If you're unsure, this is likely
+              your Tangled (<code>.tngl.sh</code>) or <a href="https://bsky.app">Bluesky</a> (<code>.bsky.social</code>) account.
+          </span>
+      </div>
+      <input type="hidden" name="return_url" value="{{ .ReturnUrl }}">
+      <input type="hidden" name="add_account" value="{{ if .AddAccount }}true{{ end }}">
 
-                    <button
-                        class="btn w-full my-2 mt-6 text-base "
-                        type="submit"
-                        id="login-button"
-                        tabindex="3"
-                    >
-                        <span>login</span>
-                    </button>
-                </form>
-                {{ if .ErrorCode }}
-                <div class="flex gap-2 my-2 bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-3 py-2 text-red-500 dark:text-red-300">
-                    <span class="py-1">{{ i "circle-alert" "w-4 h-4" }}</span>
-                    <div>
-                        <h5 class="font-medium">Login error</h5>
-                        <p class="text-sm">
-                        {{ if eq .ErrorCode "access_denied" }}
-                        You have not authorized the app.
-                        {{ else if eq .ErrorCode "session" }}
-                        Server failed to create user session.
-                        {{ else if eq .ErrorCode "max_accounts" }}
-                        You have reached the maximum of 20 linked accounts. Please remove an account before adding a new one.
-                        {{ else }}
-                        Internal Server error.
-                        {{ end }}
-                        Please try again.
-                        </p>
-                    </div>
-                </div>
-                {{ end }}
-                <p class="text-sm text-gray-500">
-                  Don't have an account? <a href="/signup" class="underline">Create an account</a> on Tangled now!
-                </p>
+      <button
+          class="btn w-full my-2 mt-6 text-base"
+          type="submit"
+          id="login-button"
+          tabindex="3"
+      >
+      {{ i "loader-circle" "size-4 animate-spin hidden group-[.htmx-request]:inline" }}
+      <span class="inline group-[.htmx-request]:hidden">login</span>
+      </button>
+  </form>
+  {{ if .ErrorCode }}
+  <div class="flex gap-2 my-2 bg-red-50 dark:bg-red-900 border border-red-500 rounded drop-shadow-sm px-3 py-2 text-red-500 dark:text-red-300">
+      <span class="py-1">{{ i "circle-alert" "w-4 h-4" }}</span>
+      <div>
+          <h5 class="font-medium">Login error</h5>
+          <p class="text-sm">
+          {{ if eq .ErrorCode "access_denied" }}
+          You have not authorized the app.
+          {{ else if eq .ErrorCode "session" }}
+          Server failed to create user session.
+          {{ else if eq .ErrorCode "max_accounts" }}
+          You have reached the maximum of 20 linked accounts. Please remove an account before adding a new one.
+          {{ else }}
+          Internal Server error.
+          {{ end }}
+          Please try again.
+          </p>
+      </div>
+  </div>
+  {{ end }}
+  <p class="text-sm text-gray-500">
+    Don't have an account? <a href="/signup" class="underline">Create an account</a> on Tangled now!
+  </p>
 
-                <p id="login-msg" class="error w-full"></p>
-            </main>
-        </body>
-    </html>
+  <p id="login-msg" class="error w-full"></p>
 {{ end }}
+

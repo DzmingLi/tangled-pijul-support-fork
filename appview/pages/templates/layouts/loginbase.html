@@ -1,0 +1,26 @@
+{{ define "mainLayout" }}
+  <div class="w-full h-screen flex items-center justify-center bg-white dark:bg-transparent">
+    <main class="max-w-md px-7 mt-4">
+      {{ template "logo" }}
+      {{ block "content" . }}{{ end }}
+    </main>
+  </div>
+{{ end }}
+
+{{ define "topbarLayout" }}
+  <div class="hidden"></div>
+{{ end }}
+
+{{ define "footerLayout" }}
+  <div class="hidden"></div>
+{{ end }}
+
+{{ define "logo" }}
+  <h1 class="flex place-content-center text-3xl font-semibold italic dark:text-white" >
+    {{ template "fragments/logotype" }}
+  </h1>
+  <h2 class="text-center text-xl italic dark:text-white">
+      tightly-knit social coding.
+  </h2>
+{{ end }}
+

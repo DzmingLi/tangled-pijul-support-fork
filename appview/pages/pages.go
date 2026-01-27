@@ -178,6 +178,15 @@ func (p *Pages) parseProfileBase(top string) (*template.Template, error) {
 	return p.parse(stack...)
 }
 
+func (p *Pages) parseLoginBase(top string) (*template.Template, error) {
+	stack := []string{
+		"layouts/base",
+		"layouts/loginbase",
+		top,
+	}
+	return p.parse(stack...)
+}
+
 func (p *Pages) executePlain(name string, w io.Writer, params any) error {
 	tpl, err := p.parse(name)
 	if err != nil {
@@ -185,6 +194,15 @@ func (p *Pages) executePlain(name string, w io.Writer, params any) error {
 	}
 
 	return tpl.Execute(w, params)
+}
+
+func (p *Pages) executeLogin(name string, w io.Writer, params any) error {
+	tpl, err := p.parseLoginBase(name)
+	if err != nil {
+		return err
+	}
+
+	return tpl.ExecuteTemplate(w, "layouts/base", params)
 }
 
 func (p *Pages) execute(name string, w io.Writer, params any) error {
@@ -237,7 +255,7 @@ type LoginParams struct {
 }
 
 func (p *Pages) Login(w io.Writer, params LoginParams) error {
-	return p.executePlain("user/login", w, params)
+	return p.executeLogin("user/login", w, params)
 }
 
 type SignupParams struct {
@@ -245,11 +263,11 @@ type SignupParams struct {
 }
 
 func (p *Pages) Signup(w io.Writer, params SignupParams) error {
-	return p.executePlain("user/signup", w, params)
+	return p.executeLogin("user/signup", w, params)
 }
 
 func (p *Pages) CompleteSignup(w io.Writer) error {
-	return p.executePlain("user/completeSignup", w, nil)
+	return p.executeLogin("user/completeSignup", w, nil)
 }
 
 type TermsOfServiceParams struct {
