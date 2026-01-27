@@ -92,11 +92,12 @@
         label {
             @apply block text-gray-900 text-sm font-bold py-2 uppercase dark:text-gray-100;
         }
-        input {
-            @apply p-3 border border-gray-100 block rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-200 p-3 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-gray-400;;
-        }
-        textarea {
-            @apply border border-gray-100 block rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-200 p-3 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:focus:ring-gray-400;
+        input, textarea {
+            @apply
+            block rounded p-3
+            bg-gray-50 dark:bg-gray-800 dark:text-white
+            border border-gray-300 dark:border-gray-600
+            focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500;
         }
         details summary::-webkit-details-marker {
             display: none;
