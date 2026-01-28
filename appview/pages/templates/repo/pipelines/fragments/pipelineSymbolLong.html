@@ -1,12 +1,24 @@
 {{ define "repo/pipelines/fragments/pipelineSymbolLong" }}
   {{ $pipeline := .Pipeline }}
   {{ $repoinfo := .RepoInfo }}
+  {{ $popoverId := printf "pipeline-status-%d" $pipeline.Id }}
+  
   <div class="relative inline-block">
-    <details class="relative">
-      <summary class="cursor-pointer list-none">
-        {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" true) }}
-      </summary>
+    <button
+      type="button"
+      popovertarget="{{ $popoverId }}"
+      popovertargetaction="toggle"
+      class="cursor-pointer"
+    >
+      {{ template "repo/pipelines/fragments/pipelineSymbol" (dict "Pipeline" $pipeline "ShortSummary" true) }}
+    </button>
+    
+    <div
+      id="{{ $popoverId }}"
+      popover
+      class="bg-white dark:bg-gray-900 text-black dark:text-white backdrop:bg-gray-400/50 dark:backdrop:bg-gray-800/50 w-80 rounded shadow-sm p-2 [position:fixed] [inset:0] [margin:auto] [max-height:fit-content]"
+    >
       {{ template "repo/pipelines/fragments/tooltip" $ }}
-    </details>
+    </div>
   </div>
 {{ end }}

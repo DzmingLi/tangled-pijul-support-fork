@@ -7,108 +7,125 @@
 {{ end }}
 
 {{ define "repoContent" }}
-<div class="flex justify-between items-center gap-4">
-  <div class="w-full flex flex-col gap-2">
-  {{ range .Pipelines }}
-    {{ block "pipeline" (list $ .) }} {{ end }}
-  {{ else }}
-    <div class="py-6 w-fit flex flex-col gap-4 mx-auto">
-      <p>
-        No pipelines have been run for this repository yet. To get started:
-      </p>
-      {{ $bullet := "mx-2 text-xs bg-gray-200 dark:bg-gray-600 rounded-full size-5 flex items-center justify-center font-mono inline-flex align-middle" }}
-      <p>
-        <span class="{{ $bullet }}">1</span>First, choose a spindle in your
-        <a href="/{{ .RepoInfo.FullName }}/settings?tab=pipelines" class="underline">repository settings</a>.
-      </p>
-      <p>
-        <span class="{{ $bullet }}">2</span>Configure your CI/CD
-        <a href="https://docs.tangled.org/spindles.html#pipelines" class="underline">pipeline</a>.
-      </p>
-      <p><span class="{{ $bullet }}">3</span>Trigger a workflow with a push or a pull-request!</p>
-    </div>
-  {{ end }}
+<div class="flex justify-between items-center gap-4 mb-4">
+  <div class="text-sm text-gray-600 dark:text-gray-400">
+    {{ len .Pipelines }} pipeline run{{ if ne (len .Pipelines) 1 }}s{{ end }}
   </div>
+  <!-- Future: Add filter tabs here similar to issues/pulls -->
 </div>
 {{ end }}
 
+{{ define "repoAfter" }}
+{{ if .Pipelines }}
+  <div class="flex flex-col gap-2 mt-2">
+    {{ range .Pipelines }}
+      {{ template "pipelineCard" (dict "Root" $ "Pipeline" .) }}
+    {{ end }}
+  </div>
+{{ else }}
+  <div class="mt-2 py-12 flex flex-col items-center justify-center gap-6 text-center border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900">
+    <div class="flex justify-center">
+      {{ i "package" "size-16 text-gray-300 dark:text-gray-700" }}
+    </div>
 
-{{ define "pipeline" }}
-  {{ $root := index . 0 }}
-  {{ $p := index . 1 }}
-  <div class="py-2 bg-white dark:bg-gray-800 dark:text-white">
-    {{ block "pipelineHeader" $ }} {{ end }}
+    <div class="flex flex-col gap-2">
+      <p class="text-lg font-semibold dark:text-white">
+        No pipelines have been run yet
+      </p>
+      <p class="text-sm text-gray-600 dark:text-gray-400 max-w-md">
+        Get started by configuring CI/CD for this repository
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-3 text-left max-w-md">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full size-6 flex items-center justify-center font-semibold shrink-0">1</span>
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          Choose a spindle in your
+          <a href="/{{ .RepoInfo.FullName }}/settings?tab=pipelines" class="underline hover:no-underline">repository settings</a>
+        </p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full size-6 flex items-center justify-center font-semibold shrink-0">2</span>
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          Configure your CI/CD
+          <a href="https://docs.tangled.org/spindles.html#pipelines" class="underline hover:no-underline" target="_blank" rel="noopener">pipeline</a>
+        </p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-xs bg-gray-200 dark:bg-gray-700 rounded-full size-6 flex items-center justify-center font-semibold shrink-0">3</span>
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          Trigger a workflow with a push or pull request
+        </p>
+      </div>
+    </div>
   </div>
 {{ end }}
+{{ end }}
 
-{{ define "pipelineHeader" }}
-  {{ $root := index . 0 }}
-  {{ $p := index . 1 }}
+{{ define "pipelineCard" }}
+  {{ $root := .Root }}
+  {{ $p := .Pipeline }}
   {{ with $p }}
-      <div class="grid grid-cols-6 md:grid-cols-12 gap-2 items-center w-full">
-        <div class="text-sm md:text-base col-span-1">
-          {{ .Trigger.Kind.String }}
-        </div>
+  <div class="relative rounded drop-shadow-sm bg-white px-6 py-4 dark:bg-gray-800">
+    <div class="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_9rem_7rem] gap-3 md:gap-4 items-start md:items-center">
+      <!-- Trigger info -->
+      <div class="flex items-center gap-2 flex-wrap">
+        {{ $target := .Trigger.TargetRef }}
+        {{ $workflows := .Workflows }}
 
-        <div class="col-span-2 md:col-span-7 flex items-center gap-4">
-          {{ $target := .Trigger.TargetRef }}
-          {{ $workflows := .Workflows }}
-          {{ $link := "" }}
-          {{ if .IsResponding }}
-            {{ $link = printf "/%s/pipelines/%s/workflow/%d" $root.RepoInfo.FullName .Id (index $workflows 0) }}
-          {{ end }}
-          {{ if .Trigger.IsPush }}
-            <span class="font-bold">{{ $target }}</span>
-            <span class="hidden md:inline-flex gap-2 items-center font-mono text-sm">
-              {{ $old := deref .Trigger.PushOldSha }}
-              {{ $new := deref .Trigger.PushNewSha }}
-
-              <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ $new }}">{{ slice $new 0 8 }}</a>
-              {{ i "arrow-left" "size-4" }}
-              <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ $old }}">{{ slice $old 0 8 }}</a>
-            </span>
-          {{ else if .Trigger.IsPullRequest }}
-            {{ $sha := deref .Trigger.PRSourceSha }}
-            <span class="inline-flex gap-2 items-center">
-              <span class="font-bold">{{ $target }}</span>
-              {{ i "arrow-left" "size-4" }}
-              {{ .Trigger.PRSourceBranch }}
-              <span class="text-sm font-mono">
-                @
-                <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ $sha }}">{{ slice $sha 0 8 }}</a>
-              </span>
-            </span>
-          {{ end }}
-        </div>
-
-        <div class="text-sm md:text-base col-span-1">
+        <!-- Status icon with tooltip -->
+        <span class="relative z-50 mr-4">
           {{ template "repo/pipelines/fragments/pipelineSymbolLong" (dict "Pipeline" . "RepoInfo" $root.RepoInfo) }}
-        </div>
+        </span>
 
-        <div class="text-sm md:text-base col-span-1 text-right">
-          {{ template "repo/fragments/shortTimeAgo" .Created }}
-        </div>
-
-        {{ $t := .TimeTaken }}
-        <div class="text-sm md:text-base col-span-1 text-right">
-          {{ if $t }}
-            <time title="{{ $t }}">{{ $t | durationFmt }}</time>
-          {{ else }}
-            <time>--</time>
-          {{ end }}
-        </div>
-
-        <div class="col-span-1 flex justify-end">
-          {{ if $link }}
-            <a class="md:hidden" href="/{{ $root.RepoInfo.FullName }}/pipelines/{{ .Id }}/workflow/{{ index $workflows 0 }}">
-              {{ i "arrow-up-right" "size-4" }}
-            </a>
-            <a class="hidden md:inline underline" href="/{{ $root.RepoInfo.FullName }}/pipelines/{{ .Id }}/workflow/{{ index $workflows 0 }}">
-              view
-            </a>
-          {{ end }}
-        </div>
-
+        {{ if .IsResponding }}
+          <a href="/{{ $root.RepoInfo.FullName }}/pipelines/{{ .Id }}/workflow/{{ index $workflows 0 }}" class="flex items-center gap-2 flex-wrap no-underline hover:underline">
+        {{ end }}
+        {{ if .Trigger.IsPush }}
+          {{ i "git-commit-horizontal" "size-4 text-gray-500 dark:text-gray-400 shrink-0" }}
+          <span class="text-sm text-gray-600 dark:text-gray-400">Push to</span>
+          <span class="font-semibold dark:text-white">{{ $target }}</span>
+        {{ else if .Trigger.IsPullRequest }}
+          {{ i "git-pull-request" "size-4 text-gray-500 dark:text-gray-400 shrink-0" }}
+          <span class="text-sm text-gray-600 dark:text-gray-400">Pull request</span>
+          <span class="font-semibold dark:text-white">{{ $target }}</span>
+          {{ i "arrow-left" "size-3 text-gray-500 dark:text-gray-400" }}
+          <span class="font-semibold dark:text-white">{{ .Trigger.PRSourceBranch }}</span>
+        {{ end }}
+        {{ if .IsResponding }}
+          </a>
+        {{ end }}
       </div>
+
+      <!-- Metadata stacked on mobile, separate columns on desktop -->
+      <div class="flex flex-col gap-2 items-end md:contents">
+        <!-- Commit SHA -->
+        <div class="font-mono text-xs text-gray-500 dark:text-gray-400">
+          <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ .Sha }}" class="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 no-underline hover:underline px-2 py-1 rounded">
+            {{ slice .Sha 0 8 }}
+          </a>
+        </div>
+
+        <!-- Time -->
+        <div class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap text-right">
+          {{ template "repo/fragments/time" .Created }}
+        </div>
+
+        <!-- Duration -->
+        <div class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap text-right">
+          {{ $t := .TimeTaken }}
+          {{ if $t }}
+            <span class="flex items-center gap-1">
+              {{ i "clock" "size-3" }}
+              <time title="{{ $t }}">{{ $t | durationFmt }}</time>
+            </span>
+          {{ else }}
+            <span class="text-gray-400 dark:text-gray-600">--</span>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  </div>
   {{ end }}
 {{ end }}

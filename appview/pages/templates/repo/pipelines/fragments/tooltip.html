@@ -2,10 +2,9 @@
   {{ $repoinfo := .RepoInfo }}
   {{ $pipeline := .Pipeline }}
   {{ $id := $pipeline.Id }}
-  <div class="absolute z-[9999] bg-white dark:bg-gray-900 text-black dark:text-white rounded shadow-sm w-80 top-full mt-2 p-2">
-    <div class="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
+  <div class="flex flex-col">
       {{ range $name, $all := $pipeline.Statuses }}
-      <a href="/{{ $repoinfo.FullName }}/pipelines/{{ $id }}/workflow/{{ $name }}" class="hover:no-underline">
+      <a href="/{{ $repoinfo.FullName }}/pipelines/{{ $id }}/workflow/{{ $name }}" class="hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors first:rounded-t last:rounded-b">
         <div class="flex items-center justify-between p-2">
           {{ $lastStatus := $all.Latest }}
           {{ $kind := $lastStatus.Status.String }}
@@ -30,6 +29,5 @@
         Waiting for spindle ...
       </div>
       {{ end }}
-    </div>
   </div>
 {{ end }}
