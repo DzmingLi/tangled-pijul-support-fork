@@ -1,0 +1,113 @@
+{{ define "fragments/resizable" }}
+  <script>
+    class ResizablePanel {
+      constructor(resizerElement) {
+        this.resizer = resizerElement;
+        this.isResizing = false;
+        this.type = resizerElement.dataset.resizer;
+        this.targetId = resizerElement.dataset.target;
+        this.target = document.getElementById(this.targetId);
+        this.min = parseInt(resizerElement.dataset.min) || 100;
+        this.max = parseInt(resizerElement.dataset.max) || Infinity;
+
+        this.direction = resizerElement.dataset.direction || 'before'; // 'before' or 'after'
+
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
+
+        this.init();
+      }
+
+      init() {
+        this.resizer.addEventListener('mousedown', this.handleMouseDown);
+      }
+
+      handleMouseDown(e) {
+        e.preventDefault();
+        this.isResizing = true;
+        this.resizer.classList.add('resizing');
+        document.body.style.cursor = this.type === 'vertical' ? 'col-resize' : 'row-resize';
+        document.body.style.userSelect = 'none';
+
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.startWidth = this.target.offsetWidth;
+        this.startHeight = this.target.offsetHeight;
+
+        document.addEventListener('mousemove', this.handleMouseMove);
+        document.addEventListener('mouseup', this.handleMouseUp);
+      }
+
+      handleMouseMove(e) {
+        if (!this.isResizing) return;
+
+        if (this.type === 'vertical') {
+          let newWidth;
+
+          if (this.direction === 'after') {
+            const deltaX = this.startX - e.clientX;
+            newWidth = this.startWidth + deltaX;
+          } else {
+            const deltaX = e.clientX - this.startX;
+            newWidth = this.startWidth + deltaX;
+          }
+
+          if (newWidth >= this.min && newWidth <= this.max) {
+            this.target.style.width = newWidth + 'px';
+            this.target.style.flexShrink = '0';
+          }
+        } else {
+          let newHeight;
+
+          if (this.direction === 'after') {
+            const deltaY = this.startY - e.clientY;
+            newHeight = this.startHeight + deltaY;
+          } else {
+            const deltaY = e.clientY - this.startY;
+            newHeight = this.startHeight + deltaY;
+          }
+
+          if (newHeight >= this.min && newHeight <= this.max) {
+            this.target.style.height = newHeight + 'px';
+          }
+        }
+      }
+
+      handleMouseUp() {
+        if (!this.isResizing) return;
+
+        this.isResizing = false;
+        this.resizer.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+      }
+
+      destroy() {
+        this.resizer.removeEventListener('mousedown', this.handleMouseDown);
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+      }
+    }
+
+    function initializeResizers() {
+      const resizers = document.querySelectorAll('[data-resizer]');
+      const instances = [];
+
+      resizers.forEach(resizer => {
+        instances.push(new ResizablePanel(resizer));
+      });
+
+      return instances;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeResizers);
+    } else {
+      initializeResizers();
+    }
+  </script>
+{{ end }}
