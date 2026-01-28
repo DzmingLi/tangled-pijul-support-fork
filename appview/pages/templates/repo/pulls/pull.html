@@ -111,6 +111,19 @@
   {{ end }}
 {{ end }}
 
+{{ define "resize-grip" }}
+  {{ $id := index . 0 }}
+  {{ $target := index . 1 }}
+  {{ $direction := index . 2 }}
+  <div id="{{ $id }}" 
+    data-resizer="vertical"
+    data-target="{{ $target }}"
+    data-direction="{{ $direction }}"
+    class="resizer-vertical hidden md:flex w-4 sticky top-12 max-h-screen flex-col items-center justify-center group">
+    <div class="w-1 h-16 group-hover:h-24 group-[.resizing]:h-24 transition-all rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-gray-500 group-hover:dark:bg-gray-400"></div>
+  </div>
+{{ end }}
+
 {{ define "diffLayout" }}
   {{ $diff := index . 0 }}
   {{ $opts := index . 1 }}
@@ -124,10 +137,14 @@
       </section>
     </div>
 
+    {{ template "resize-grip" (list "resize-files" "files" "before") }}
+
     <!-- main content -->
-    <div class="flex-1 min-w-0 sticky top-12 pb-12">
+    <div id="diff-files" class="flex-1 min-w-0 sticky top-12 pb-12">
       {{ template "diffFiles" (list $diff $opts) }}
     </div>
+
+    {{ template "resize-grip" (list "resize-subs" "subs" "after") }}
 
     <!-- right panel -->
     {{ template "subsPanel" $ }}
@@ -187,7 +204,6 @@
 
 {{ define "subsToggle" }}
   <style>
-    /* Mobile: full width */
     #subsToggle:checked ~ div div#subs {
       width: 100%;
       margin-left: 0;
@@ -196,17 +212,18 @@
     #subsToggle:checked ~ div label[for="subsToggle"] .hide-toggle { display: flex; }
     #subsToggle:not(:checked) ~ div label[for="subsToggle"] .hide-toggle { display: none; }
 
-    /* Desktop: 25vw with left margin */
     @media (min-width: 768px) {
       #subsToggle:checked ~ div div#subs {
         width: 25vw;
-        margin-left: 1rem;
+        max-width: 50vw;
       }
-      /* Unchecked state */
       #subsToggle:not(:checked) ~ div div#subs {
         width: 0;
         display: none;
         margin-left: 0;
+      }
+      #subsToggle:not(:checked) ~ div div#resize-subs {
+        display: none;
       }
     }
   </style>
