@@ -9,17 +9,21 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/config"
+	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/appview/reporesolver"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
+	"tangled.org/core/types"
 
 	indigoxrpc "github.com/bluesky-social/indigo/xrpc"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // the content can be one of the following:
@@ -78,11 +82,34 @@ func (rp *Repo) Blob(w http.ResponseWriter, r *http.Request) {
 
 	user := rp.oauth.GetMultiAccountUser(r)
 
+	// Get email to DID mapping for commit author
+	var emails []string
+	if resp.LastCommit != nil && resp.LastCommit.Author != nil {
+		emails = append(emails, resp.LastCommit.Author.Email)
+	}
+	emailToDidMap, err := db.GetEmailToDid(rp.db, emails, true)
+	if err != nil {
+		l.Error("failed to get email to did mapping", "err", err)
+		emailToDidMap = make(map[string]string)
+	}
+
+	var lastCommitInfo *types.LastCommitInfo
+	if resp.LastCommit != nil {
+		when, _ := time.Parse(time.RFC3339, resp.LastCommit.When)
+		lastCommitInfo = &types.LastCommitInfo{
+			Hash:    plumbing.NewHash(resp.LastCommit.Hash),
+			Message: resp.LastCommit.Message,
+			When:    when,
+		}
+	}
+
 	rp.pages.RepoBlob(w, pages.RepoBlobParams{
 		LoggedInUser:    user,
 		RepoInfo:        rp.repoResolver.GetRepoInfo(r, user),
 		BreadCrumbs:     breadcrumbs,
 		BlobView:        blobView,
+		EmailToDid:      emailToDidMap,
+		LastCommitInfo:  lastCommitInfo,
 		RepoBlob_Output: resp,
 	})
 }

@@ -855,11 +855,13 @@ func (p *Pages) RepoArtifactFragment(w io.Writer, params RepoArtifactParams) err
 }
 
 type RepoBlobParams struct {
-	LoggedInUser *oauth.MultiAccountUser
-	RepoInfo     repoinfo.RepoInfo
-	Active       string
-	BreadCrumbs  [][]string
-	BlobView     models.BlobView
+	LoggedInUser   *oauth.MultiAccountUser
+	RepoInfo       repoinfo.RepoInfo
+	Active         string
+	BreadCrumbs    [][]string
+	BlobView       models.BlobView
+	EmailToDid     map[string]string
+	LastCommitInfo *types.LastCommitInfo
 	*tangled.RepoBlob_Output
 }
 
