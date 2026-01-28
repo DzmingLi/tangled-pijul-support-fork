@@ -39,6 +39,7 @@ import (
 	"tangled.org/core/rbac"
 	"tangled.org/core/tid"
 	"tangled.org/core/types"
+	"tangled.org/core/xrpc"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/atproto/syntax"
@@ -47,6 +48,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
+
+const ApplicationGzip = "application/gzip"
 
 type Pulls struct {
 	oauth            *oauth.OAuth
@@ -1227,7 +1230,7 @@ func (s *Pulls) createPullRequest(
 		return
 	}
 
-	blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
+	blob, err := xrpc.RepoUploadBlob(r.Context(), client, gz(patch), ApplicationGzip)
 	if err != nil {
 		log.Println("failed to upload patch", err)
 		s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
@@ -1321,7 +1324,7 @@ func (s *Pulls) createStackedPullRequest(
 	// apply all record creations at once
 	var writes []*comatproto.RepoApplyWrites_Input_Writes_Elem
 	for _, p := range stack {
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(p.LatestPatch()))
+		blob, err := xrpc.RepoUploadBlob(r.Context(), client, gz(p.LatestPatch()), ApplicationGzip)
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "pull", "Failed to create pull request. Try again later.")
@@ -1871,7 +1874,7 @@ func (s *Pulls) resubmitPullHelper(
 		return
 	}
 
-	blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
+	blob, err := xrpc.RepoUploadBlob(r.Context(), client, gz(patch), ApplicationGzip)
 	if err != nil {
 		log.Println("failed to upload patch blob", err)
 		s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
@@ -2014,7 +2017,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
+		blob, err := xrpc.RepoUploadBlob(r.Context(), client, gz(patch), ApplicationGzip)
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")
@@ -2056,7 +2059,7 @@ func (s *Pulls) resubmitStackedPullHelper(
 			return
 		}
 
-		blob, err := comatproto.RepoUploadBlob(r.Context(), client, gz(patch))
+		blob, err := xrpc.RepoUploadBlob(r.Context(), client, gz(patch), ApplicationGzip)
 		if err != nil {
 			log.Println("failed to upload patch blob", err)
 			s.pages.Notice(w, "resubmit-error", "Failed to update pull request on the PDS. Try again later.")

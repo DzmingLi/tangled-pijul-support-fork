@@ -20,6 +20,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/orm"
+	"tangled.org/core/xrpc"
 )
 
 func (s *State) Profile(w http.ResponseWriter, r *http.Request) {
@@ -741,7 +742,7 @@ func (s *State) UploadProfileAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, handler, err := r.FormFile("avatar")
+	file, header, err := r.FormFile("avatar")
 	if err != nil {
 		l.Error("failed to read avatar file", "err", err)
 		s.pages.Notice(w, "avatar-error", "Failed to read avatar file")
@@ -749,13 +750,13 @@ func (s *State) UploadProfileAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	if handler.Size > 1000000 {
-		l.Warn("avatar file too large", "size", handler.Size)
+	if header.Size > 1000000 {
+		l.Warn("avatar file too large", "size", header.Size)
 		s.pages.Notice(w, "avatar-error", "Avatar file too large (max 1MB)")
 		return
 	}
 
-	contentType := handler.Header.Get("Content-Type")
+	contentType := header.Header.Get("Content-Type")
 	if contentType != "image/png" && contentType != "image/jpeg" {
 		l.Warn("invalid image type", "contentType", contentType)
 		s.pages.Notice(w, "avatar-error", "Invalid image type (only PNG and JPEG allowed)")
@@ -769,7 +770,7 @@ func (s *State) UploadProfileAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uploadBlobResp, err := comatproto.RepoUploadBlob(r.Context(), client, file)
+	uploadBlobResp, err := xrpc.RepoUploadBlob(r.Context(), client, file, header.Header.Get("Content-Type"))
 	if err != nil {
 		l.Error("failed to upload avatar blob", "err", err)
 		s.pages.Notice(w, "avatar-error", "Failed to upload avatar to your PDS")

@@ -18,6 +18,7 @@ import (
 	"tangled.org/core/orm"
 	"tangled.org/core/tid"
 	"tangled.org/core/types"
+	"tangled.org/core/xrpc"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
 	lexutil "github.com/bluesky-social/indigo/lex/util"
@@ -46,7 +47,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, handler, err := r.FormFile("artifact")
+	file, header, err := r.FormFile("artifact")
 	if err != nil {
 		log.Println("failed to upload artifact", err)
 		rp.pages.Notice(w, "upload", "failed to upload artifact")
@@ -61,7 +62,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uploadBlobResp, err := comatproto.RepoUploadBlob(r.Context(), client, file)
+	uploadBlobResp, err := xrpc.RepoUploadBlob(r.Context(), client, file, header.Header.Get("Content-Type"))
 	if err != nil {
 		log.Println("failed to upload blob", err)
 		rp.pages.Notice(w, "upload", "Failed to upload blob to your PDS. Try again later.")
@@ -81,7 +82,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 			Val: &tangled.RepoArtifact{
 				Artifact:  uploadBlobResp.Blob,
 				CreatedAt: createdAt.Format(time.RFC3339),
-				Name:      handler.Filename,
+				Name:      header.Filename,
 				Repo:      f.RepoAt().String(),
 				Tag:       tag.Tag.Hash[:],
 			},
@@ -110,7 +111,7 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 		Tag:       tag.Tag.Hash,
 		CreatedAt: createdAt,
 		BlobCid:   cid.Cid(uploadBlobResp.Blob.Ref),
-		Name:      handler.Filename,
+		Name:      header.Filename,
 		Size:      uint64(uploadBlobResp.Blob.Size),
 		MimeType:  uploadBlobResp.Blob.MimeType,
 	}
