@@ -1,6 +1,7 @@
 package xrpc
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/knotserver/git"
@@ -140,6 +142,29 @@ func (x *Xrpc) RepoBlob(w http.ResponseWriter, r *http.Request) {
 
 	if mimeType != "" {
 		response.MimeType = &mimeType
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	lastCommit, err := gr.GetLastCommitForPath(ctx, treePath)
+	if err == nil && lastCommit != nil {
+		shortHash := lastCommit.Hash.String()[:8]
+		response.LastCommit = &tangled.RepoBlob_LastCommit{
+			Hash:      lastCommit.Hash.String(),
+			ShortHash: &shortHash,
+			Message:   lastCommit.Message,
+			When:      lastCommit.When.Format(time.RFC3339),
+		}
+
+		// try to get author information
+		commit, err := gr.Commit(lastCommit.Hash)
+		if err == nil {
+			response.LastCommit.Author = &tangled.RepoBlob_Signature{
+				Name:  commit.Author.Name,
+				Email: commit.Author.Email,
+			}
+		}
 	}
 
 	writeJson(w, response)

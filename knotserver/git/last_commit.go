@@ -14,6 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"tangled.org/core/types"
 )
 
 var (
@@ -184,4 +185,39 @@ func ancestors(p string) []string {
 		ancestors = append(ancestors, p)
 	}
 	return ancestors
+}
+
+// GetLastCommitForPath returns the last commit information for a specific file path
+func (g *GitRepo) GetLastCommitForPath(ctx context.Context, filePath string) (*types.LastCommitInfo, error) {
+	c, err := g.r.CommitObject(g.h)
+	if err != nil {
+		return nil, fmt.Errorf("commit object: %w", err)
+	}
+
+	tree, err := c.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("file tree: %w", err)
+	}
+
+	// parent directory for calculateCommitTime
+	parent := path.Dir(filePath)
+	if parent == "." {
+		parent = ""
+	}
+
+	times, err := g.calculateCommitTimeIn(ctx, tree, parent, 2*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("calculate commit time: %w", err)
+	}
+
+	commitInfo, ok := times[filePath]
+	if !ok {
+		return nil, fmt.Errorf("no commit found for path: %s", filePath)
+	}
+
+	return &types.LastCommitInfo{
+		Hash:    commitInfo.hash,
+		Message: commitInfo.message,
+		When:    commitInfo.when,
+	}, nil
 }
