@@ -9,6 +9,7 @@ import (
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/patchutil"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
 
@@ -51,7 +52,12 @@ func (x *Xrpc) MergeCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = gr.MergeCheck(data.Patch, data.Branch)
+	mo := git.MergeOptions{}
+	mo.CommitterName = x.Config.Git.UserName
+	mo.CommitterEmail = x.Config.Git.UserEmail
+	mo.FormatPatch = patchutil.IsFormatPatch(data.Patch)
+
+	err = gr.MergeCheckWithOptions(data.Patch, data.Branch, mo)
 
 	response := tangled.RepoMergeCheck_Output{
 		Is_conflicted: false,

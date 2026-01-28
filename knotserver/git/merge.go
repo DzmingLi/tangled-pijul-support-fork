@@ -107,13 +107,13 @@ func (e ErrMerge) Error() string {
 	return fmt.Sprintf("merge failed: %s", e.Message)
 }
 
-func (g *GitRepo) createTempFileWithPatch(patchData string) (string, error) {
+func createTemp(data string) (string, error) {
 	tmpFile, err := os.CreateTemp("", "git-patch-*.patch")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary patch file: %w", err)
 	}
 
-	if _, err := tmpFile.Write([]byte(patchData)); err != nil {
+	if _, err := tmpFile.Write([]byte(data)); err != nil {
 		tmpFile.Close()
 		os.Remove(tmpFile.Name())
 		return "", fmt.Errorf("failed to write patch data to temporary file: %w", err)
@@ -127,7 +127,7 @@ func (g *GitRepo) createTempFileWithPatch(patchData string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func (g *GitRepo) cloneRepository(targetBranch string) (string, error) {
+func (g *GitRepo) cloneTemp(targetBranch string) (string, error) {
 	tmpDir, err := os.MkdirTemp("", "git-clone-")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
@@ -147,24 +147,6 @@ func (g *GitRepo) cloneRepository(targetBranch string) (string, error) {
 	return tmpDir, nil
 }
 
-func (g *GitRepo) checkPatch(tmpDir, patchFile string) error {
-	var stderr bytes.Buffer
-
-	cmd := exec.Command("git", "-C", tmpDir, "apply", "--check", "-v", patchFile)
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		conflicts := parseGitApplyErrors(stderr.String())
-		return &ErrMerge{
-			Message:     "patch cannot be applied cleanly",
-			Conflicts:   conflicts,
-			HasConflict: len(conflicts) > 0,
-			OtherError:  err,
-		}
-	}
-	return nil
-}
-
 func (g *GitRepo) applyPatch(patchData, patchFile string, opts MergeOptions) error {
 	var stderr bytes.Buffer
 	var cmd *exec.Cmd
@@ -173,6 +155,7 @@ func (g *GitRepo) applyPatch(patchData, patchFile string, opts MergeOptions) err
 	exec.Command("git", "-C", g.path, "config", "user.name", opts.CommitterName).Run()
 	exec.Command("git", "-C", g.path, "config", "user.email", opts.CommitterEmail).Run()
 	exec.Command("git", "-C", g.path, "config", "advice.mergeConflict", "false").Run()
+	exec.Command("git", "-C", g.path, "config", "advice.amWorkDir", "false").Run()
 
 	// if patch is a format-patch, apply using 'git am'
 	if opts.FormatPatch {
@@ -213,7 +196,13 @@ func (g *GitRepo) applyPatch(patchData, patchFile string, opts MergeOptions) err
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("patch application failed: %s", stderr.String())
+		conflicts := parseGitApplyErrors(stderr.String())
+		return &ErrMerge{
+			Message:     "patch cannot be applied cleanly",
+			Conflicts:   conflicts,
+			HasConflict: len(conflicts) > 0,
+			OtherError:  err,
+		}
 	}
 
 	return nil
@@ -241,7 +230,7 @@ func (g *GitRepo) applyMailbox(patchData string) error {
 }
 
 func (g *GitRepo) applySingleMailbox(singlePatch types.FormatPatch) (plumbing.Hash, error) {
-	tmpPatch, err := g.createTempFileWithPatch(singlePatch.Raw)
+	tmpPatch, err := createTemp(singlePatch.Raw)
 	if err != nil {
 		return plumbing.ZeroHash, fmt.Errorf("failed to create temporary patch file for singluar mailbox patch: %w", err)
 	}
@@ -257,7 +246,13 @@ func (g *GitRepo) applySingleMailbox(singlePatch types.FormatPatch) (plumbing.Ha
 	log.Println("head before apply", head.Hash().String())
 
 	if err := cmd.Run(); err != nil {
-		return plumbing.ZeroHash, fmt.Errorf("patch application failed: %s", stderr.String())
+		conflicts := parseGitApplyErrors(stderr.String())
+		return plumbing.ZeroHash, &ErrMerge{
+			Message:     "patch cannot be applied cleanly",
+			Conflicts:   conflicts,
+			HasConflict: len(conflicts) > 0,
+			OtherError:  err,
+		}
 	}
 
 	if err := g.Refresh(); err != nil {
@@ -324,12 +319,12 @@ func (g *GitRepo) setChangeId(hash plumbing.Hash, changeId string) (plumbing.Has
 	return newHash, nil
 }
 
-func (g *GitRepo) MergeCheck(patchData string, targetBranch string) error {
+func (g *GitRepo) MergeCheckWithOptions(patchData string, targetBranch string, mo MergeOptions) error {
 	if val, ok := mergeCheckCache.Get(g, patchData, targetBranch); ok {
 		return val
 	}
 
-	patchFile, err := g.createTempFileWithPatch(patchData)
+	patchFile, err := createTemp(patchData)
 	if err != nil {
 		return &ErrMerge{
 			Message:    err.Error(),
@@ -338,7 +333,7 @@ func (g *GitRepo) MergeCheck(patchData string, targetBranch string) error {
 	}
 	defer os.Remove(patchFile)
 
-	tmpDir, err := g.cloneRepository(targetBranch)
+	tmpDir, err := g.cloneTemp(targetBranch)
 	if err != nil {
 		return &ErrMerge{
 			Message:    err.Error(),
@@ -347,13 +342,18 @@ func (g *GitRepo) MergeCheck(patchData string, targetBranch string) error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	result := g.checkPatch(tmpDir, patchFile)
+	tmpRepo, err := PlainOpen(tmpDir)
+	if err != nil {
+		return err
+	}
+
+	result := tmpRepo.applyPatch(patchData, patchFile, mo)
 	mergeCheckCache.Set(g, patchData, targetBranch, result)
 	return result
 }
 
 func (g *GitRepo) MergeWithOptions(patchData string, targetBranch string, opts MergeOptions) error {
-	patchFile, err := g.createTempFileWithPatch(patchData)
+	patchFile, err := createTemp(patchData)
 	if err != nil {
 		return &ErrMerge{
 			Message:    err.Error(),
@@ -362,7 +362,7 @@ func (g *GitRepo) MergeWithOptions(patchData string, targetBranch string, opts M
 	}
 	defer os.Remove(patchFile)
 
-	tmpDir, err := g.cloneRepository(targetBranch)
+	tmpDir, err := g.cloneTemp(targetBranch)
 	if err != nil {
 		return &ErrMerge{
 			Message:    err.Error(),
