@@ -23,6 +23,7 @@ func (rp *Repo) Router(mw *middleware.Middleware) http.Handler {
 	r.Route("/tags", func(r chi.Router) {
 		r.Get("/", rp.Tags)
 		r.Route("/{tag}", func(r chi.Router) {
+			r.Get("/", rp.Tag)
 			r.Get("/download/{file}", rp.DownloadArtifact)
 
 			// require repo:push to upload or delete artifacts

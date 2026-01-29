@@ -1,0 +1,70 @@
+{{ define "repo/fragments/artifactList" }}
+  {{ $root := index . 0 }}
+  {{ $tag := index . 1 }}
+  {{ $isPushAllowed := $root.RepoInfo.Roles.IsPushAllowed }}
+  {{ $artifacts := index $root.ArtifactMap $tag.Tag.Hash }}
+
+  <h2 class="my-4 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold">artifacts</h2>
+  <div class="flex flex-col rounded border border-gray-200 dark:border-gray-700">
+    {{ range $artifact := $artifacts }}
+      {{ $args := dict "LoggedInUser" $root.LoggedInUser "RepoInfo" $root.RepoInfo "Artifact" $artifact }}
+      {{ template "repo/fragments/artifact" $args }}
+    {{ end }}
+    <div id="artifact-git-source" class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+      <div id="left-side" class="flex items-center gap-2 min-w-0 max-w-[60%]">
+        {{ i "archive" "w-4 h-4" }}
+        <a href="/{{ $root.RepoInfo.FullName }}/archive/{{ pathEscape (print "refs/tags/" $tag.Name) }}" class="no-underline hover:no-underline">
+            Source code (.tar.gz)
+        </a>
+      </div>
+    </div>
+    {{ if $isPushAllowed }}
+      {{ template "uploadArtifact" (list $root $tag) }}
+    {{ end }}
+  </div>
+{{ end }}
+
+{{ define "uploadArtifact" }}
+{{ $root := index . 0 }}
+{{ $tag := index . 1 }}
+{{ $unique := $tag.Tag.Target.String }}
+  <form
+    id="upload-{{$unique}}"
+    method="post"
+    enctype="multipart/form-data"
+    hx-post="/{{ $root.RepoInfo.FullName }}/tags/{{ $tag.Name | urlquery }}/upload"
+    hx-on::after-request="if(event.detail.successful) this.reset()"
+    hx-disabled-elt="#upload-btn-{{$unique}}"
+    hx-swap="beforebegin"
+    hx-target="#artifact-git-source"
+    class="flex items-center gap-2 px-2 group">
+    <div class="flex-grow">
+      <input type="file"
+        name="artifact"
+        required
+        class="block py-2 px-0 w-full border-none
+        text-black dark:text-white
+        bg-white dark:bg-gray-800
+        file:mr-4 file:px-2 file:py-2
+        file:rounded file:border-0
+        file:text-sm file:font-medium
+        file:text-gray-700 file:dark:text-gray-300
+        file:bg-gray-200 file:dark:bg-gray-700
+        file:hover:bg-gray-100 file:hover:dark:bg-gray-600
+        ">
+      </input>
+    </div>
+    <div class="flex justify-end">
+      <button
+        type="submit"
+        class="btn-create gap-2"
+        id="upload-btn-{{$unique}}"
+        title="Upload artifact">
+        {{ i "upload" "size-4 inline group-[.htmx-request]:hidden" }}
+        {{ i "loader-circle" "size-4 animate-spin hidden group-[.htmx-request]:inline" }}
+        <span class="hidden md:inline">upload</span>
+      </button>
+    </div>
+  </form>
+{{ end }}
+

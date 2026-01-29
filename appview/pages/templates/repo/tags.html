@@ -14,66 +14,7 @@
   <h2 class="mb-4 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold">tags</h2>
   <div class="flex flex-col py-2 gap-12 md:gap-0">
     {{ range .Tags }}
-    <div class="md:grid md:grid-cols-12 md:items-start flex flex-col">
-      <!-- Header column (top on mobile, left on md+) -->
-      <div class="md:col-span-2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-700 w-full md:h-full">
-        <!-- Mobile layout: horizontal -->
-        <div class="flex md:hidden flex-col py-2 px-2 text-xl">
-          <a href="/{{ $.RepoInfo.FullName }}/tree/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2 font-bold">
-            {{ i "tag" "w-4 h-4" }}
-            {{ .Name }}
-          </a>
-
-          <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm">
-            {{ if .Tag }}
-            <a href="/{{ $.RepoInfo.FullName }}/commit/{{ .Tag.Target.String }}"
-              class="no-underline hover:underline text-gray-500 dark:text-gray-400">
-              {{  slice .Tag.Target.String 0 8  }}
-            </a>
-
-            <span class="px-1 text-gray-500 dark:text-gray-400 select-none after:content-['·']"></span>
-            <span>{{ .Tag.Tagger.Name }}</span>
-
-            <span class="px-1 text-gray-500 dark:text-gray-400 select-none after:content-['·']"></span>
-            {{ template "repo/fragments/shortTime" .Tag.Tagger.When }}
-            {{ end }}
-          </div>
-        </div>
-
-        <!-- Desktop layout: vertical and left-aligned -->
-        <div class="hidden md:block text-left px-2 pb-6">
-          <a href="/{{ $.RepoInfo.FullName }}/tree/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2 font-bold">
-            {{ i "tag" "w-4 h-4" }}
-            {{ .Name }}
-          </a>
-          <div class="flex flex-grow flex-col text-gray-500 dark:text-gray-400 text-sm">
-            {{ if .Tag }}
-            <a href="/{{ $.RepoInfo.FullName }}/commit/{{ .Tag.Target.String }}"
-              class="no-underline hover:underline text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              {{ i "git-commit-horizontal" "w-4 h-4" }}
-              {{  slice .Tag.Target.String 0 8  }}
-            </a>
-            <span>{{ .Tag.Tagger.Name }}</span>
-            {{ template "repo/fragments/time" .Tag.Tagger.When }}
-            {{ end }}
-          </div>
-        </div>
-      </div>
-
-      <!-- Content column (bottom on mobile, right on md+) -->
-      <div class="md:col-span-10 px-2 py-3 md:py-0 md:pb-6">
-        {{ if .Tag }}
-          {{ $messageParts := splitN .Tag.Message "\n\n" 2 }}
-          <p class="font-bold text-lg">{{ index $messageParts 0 }}</p>
-          {{ if gt (len $messageParts) 1 }}
-            <p class="cursor-text py-2">{{ nl2br (index $messageParts 1) }}</p>
-          {{ end }}
-          {{ block "artifacts" (list $ .) }} {{ end }}
-        {{ else }}
-          <p class="italic text-gray-500 dark:text-gray-400">no message</p>
-        {{ end }}
-      </div>
-    </div>
+      {{ template "repo/fragments/singleTag" (list $ . ) }}
     {{ else }}
       <p class="text-center text-gray-400 dark:text-gray-500 p-4">
         This repository does not contain any tags.
@@ -89,75 +30,6 @@
     {{ block "dangling" . }} {{ end }}
   </section>
 {{ end }}
-{{ end }}
-
-{{ define "artifacts" }}
-  {{ $root := index . 0 }}
-  {{ $tag := index . 1 }}
-  {{ $isPushAllowed := $root.RepoInfo.Roles.IsPushAllowed }}
-  {{ $artifacts := index $root.ArtifactMap $tag.Tag.Hash }}
-
-  <h2 class="my-4 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold">artifacts</h2>
-  <div class="flex flex-col rounded border border-gray-200 dark:border-gray-700">
-    {{ range $artifact := $artifacts }}
-      {{ $args := dict "LoggedInUser" $root.LoggedInUser "RepoInfo" $root.RepoInfo "Artifact" $artifact }}
-      {{ template "repo/fragments/artifact" $args }}
-    {{ end }}
-    <div id="artifact-git-source" class="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
-      <div id="left-side" class="flex items-center gap-2 min-w-0 max-w-[60%]">
-        {{ i "archive" "w-4 h-4" }}
-        <a href="/{{ $root.RepoInfo.FullName }}/archive/{{ pathEscape (print "refs/tags/" $tag.Name) }}" class="no-underline hover:no-underline">
-            Source code (.tar.gz)
-        </a>
-      </div>
-    </div>
-    {{ if $isPushAllowed }}
-      {{ block "uploadArtifact" (list $root $tag) }} {{ end }}
-    {{ end }}
-  </div>
-{{ end }}
-
-{{ define "uploadArtifact" }}
-{{ $root := index . 0 }}
-{{ $tag := index . 1 }}
-{{ $unique := $tag.Tag.Target.String }}
-  <form
-    id="upload-{{$unique}}"
-    method="post"
-    enctype="multipart/form-data"
-    hx-post="/{{ $root.RepoInfo.FullName }}/tags/{{ $tag.Name | urlquery }}/upload"
-    hx-on::after-request="if(event.detail.successful) this.reset()"
-    hx-disabled-elt="#upload-btn-{{$unique}}"
-    hx-swap="beforebegin"
-    hx-target="this"
-    class="flex items-center gap-2 px-2">
-    <div class="flex-grow">
-      <input type="file"
-        name="artifact"
-        required
-        class="block py-2 px-0 w-full border-none
-        text-black dark:text-white
-        bg-white dark:bg-gray-800
-        file:mr-4 file:px-2 file:py-2
-        file:rounded file:border-0
-        file:text-sm file:font-medium
-        file:text-gray-700 file:dark:text-gray-300
-        file:bg-gray-200 file:dark:bg-gray-700
-        file:hover:bg-gray-100 file:hover:dark:bg-gray-600
-        ">
-      </input>
-    </div>
-    <div class="flex justify-end">
-      <button
-        type="submit"
-        class="btn gap-2"
-        id="upload-btn-{{$unique}}"
-        title="Upload artifact">
-        {{ i "upload" "w-4 h-4" }}
-        <span class="hidden md:inline">upload</span>
-      </button>
-    </div>
-  </form>
 {{ end }}
 
 {{ define "dangling" }}

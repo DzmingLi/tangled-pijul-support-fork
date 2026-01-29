@@ -846,6 +846,20 @@ func (p *Pages) RepoTags(w io.Writer, params RepoTagsParams) error {
 	return p.executeRepo("repo/tags", w, params)
 }
 
+type RepoTagParams struct {
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Active       string
+	types.RepoTagResponse
+	ArtifactMap       map[plumbing.Hash][]models.Artifact
+	DanglingArtifacts []models.Artifact
+}
+
+func (p *Pages) RepoTag(w io.Writer, params RepoTagParams) error {
+	params.Active = "overview"
+	return p.executeRepo("repo/tag", w, params)
+}
+
 type RepoArtifactParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo

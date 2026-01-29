@@ -14,6 +14,7 @@ import (
 	"tangled.org/core/types"
 
 	indigoxrpc "github.com/bluesky-social/indigo/xrpc"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
@@ -70,11 +71,68 @@ func (rp *Repo) Tags(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	user := rp.oauth.GetMultiAccountUser(r)
+
 	rp.pages.RepoTags(w, pages.RepoTagsParams{
 		LoggedInUser:      user,
 		RepoInfo:          rp.repoResolver.GetRepoInfo(r, user),
 		RepoTagsResponse:  result,
 		ArtifactMap:       artifactMap,
 		DanglingArtifacts: danglingArtifacts,
+	})
+}
+
+func (rp *Repo) Tag(w http.ResponseWriter, r *http.Request) {
+	l := rp.logger.With("handler", "RepoTag")
+	f, err := rp.repoResolver.Resolve(r)
+	if err != nil {
+		l.Error("failed to get repo and knot", "err", err)
+		return
+	}
+	scheme := "http"
+	if !rp.config.Core.Dev {
+		scheme = "https"
+	}
+	host := fmt.Sprintf("%s://%s", scheme, f.Knot)
+	xrpcc := &indigoxrpc.Client{
+		Host: host,
+	}
+	repo := fmt.Sprintf("%s/%s", f.Did, f.Name)
+	tag := chi.URLParam(r, "tag")
+
+	xrpcBytes, err := tangled.RepoTag(r.Context(), xrpcc, repo, tag)
+	if xrpcerr := xrpcclient.HandleXrpcErr(err); xrpcerr != nil {
+		l.Error("failed to call XRPC repo.tags", "err", xrpcerr)
+		rp.pages.Error503(w)
+		return
+	}
+	var result types.RepoTagResponse
+	if err := json.Unmarshal(xrpcBytes, &result); err != nil {
+		l.Error("failed to decode XRPC response", "err", err)
+		rp.pages.Error503(w)
+		return
+	}
+
+	filters := []orm.Filter{orm.FilterEq("repo_at", f.RepoAt())}
+	if result.Tag.Tag != nil {
+		filters = append(filters, orm.FilterEq("tag", result.Tag.Tag.Hash[:]))
+	}
+
+	artifacts, err := db.GetArtifact(rp.db, filters...)
+	if err != nil {
+		l.Error("failed grab artifacts", "err", err)
+		return
+	}
+	// convert artifacts to map for easy UI building
+	artifactMap := make(map[plumbing.Hash][]models.Artifact)
+	for _, a := range artifacts {
+		artifactMap[a.Tag] = append(artifactMap[a.Tag], a)
+	}
+
+	user := rp.oauth.GetMultiAccountUser(r)
+	rp.pages.RepoTag(w, pages.RepoTagParams{
+		LoggedInUser:    user,
+		RepoInfo:        rp.repoResolver.GetRepoInfo(r, user),
+		RepoTagResponse: result,
+		ArtifactMap:     artifactMap,
 	})
 }

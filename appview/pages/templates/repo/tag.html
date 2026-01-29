@@ -1,0 +1,16 @@
+{{ define "title" }}
+    tags · {{ .RepoInfo.FullName }}
+{{ end }}
+
+{{ define "extrameta" }}
+    {{ $title := printf "tags &middot; %s" .RepoInfo.FullName }}
+    {{ $url := printf "https://tangled.org/%s/tag/%s" .RepoInfo.FullName .Tag.Name }}
+
+    {{ template "repo/fragments/og" (dict "RepoInfo" .RepoInfo "Title" $title "Url" $url) }}
+{{ end }}
+
+{{ define "repoContent" }}
+<section class="flex flex-col py-2 gap-12 md:gap-0">
+  {{ template "repo/fragments/singleTag" (list $ .Tag ) }}
+</section>
+{{ end }}

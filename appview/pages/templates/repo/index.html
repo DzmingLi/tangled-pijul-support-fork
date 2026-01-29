@@ -334,7 +334,7 @@
         {{ with $tag }}
         <div>
           <div class="text-base flex items-center gap-2">
-            <a href="/{{ $.RepoInfo.FullName }}/tree/{{ .Reference.Name | urlquery }}"
+            <a href="/{{ $.RepoInfo.FullName }}/tags/{{ .Reference.Name | urlquery }}"
               class="inline no-underline hover:underline dark:text-white">
               {{ .Reference.Name }}
             </a>

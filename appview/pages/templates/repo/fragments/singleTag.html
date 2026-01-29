@@ -1,0 +1,67 @@
+{{ define "repo/fragments/singleTag" }}
+  {{ $root := index . 0 }}
+  {{ $item := index . 1 }}
+  {{ with $item }}
+    <div class="md:grid md:grid-cols-12 md:items-start flex flex-col">
+      <!-- Header column (top on mobile, left on md+) -->
+      <div class="md:col-span-2 md:border-r border-b md:border-b-0 border-gray-200 dark:border-gray-700 w-full md:h-full">
+        <!-- Mobile layout: horizontal -->
+        <div class="flex md:hidden flex-col py-2 px-2 text-xl">
+          <a href="/{{ $root.RepoInfo.FullName }}/tags/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2 font-bold">
+            {{ i "tag" "w-4 h-4" }}
+            {{ .Name }}
+          </a>
+
+          <div class="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm">
+            {{ if .Tag }}
+            <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ .Tag.Target.String }}"
+              class="no-underline hover:underline text-gray-500 dark:text-gray-400">
+              {{  slice .Tag.Target.String 0 8  }}
+            </a>
+
+            <span class="px-1 text-gray-500 dark:text-gray-400 select-none after:content-['·']"></span>
+            <span>{{ .Tag.Tagger.Name }}</span>
+
+            <span class="px-1 text-gray-500 dark:text-gray-400 select-none after:content-['·']"></span>
+            {{ template "repo/fragments/shortTime" .Tag.Tagger.When }}
+            {{ end }}
+          </div>
+        </div>
+
+        <!-- Desktop layout: vertical and left-aligned -->
+        <div class="hidden md:block text-left px-2 pb-6">
+          <a href="/{{ $root.RepoInfo.FullName }}/tags/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2 font-bold">
+            {{ i "tag" "w-4 h-4" }}
+            {{ .Name }}
+          </a>
+          <div class="flex flex-grow flex-col text-gray-500 dark:text-gray-400 text-sm">
+            {{ if .Tag }}
+            <a href="/{{ $root.RepoInfo.FullName }}/commit/{{ .Tag.Target.String }}"
+              class="no-underline hover:underline text-gray-500 dark:text-gray-400 flex items-center gap-2">
+              {{ i "git-commit-horizontal" "w-4 h-4" }}
+              {{  slice .Tag.Target.String 0 8  }}
+            </a>
+            <span>{{ .Tag.Tagger.Name }}</span>
+            {{ template "repo/fragments/time" .Tag.Tagger.When }}
+            {{ end }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Content column (bottom on mobile, right on md+) -->
+      <div class="md:col-span-10 px-2 py-3 md:py-0 md:pb-6">
+        {{ if .Tag }}
+          {{ $messageParts := splitN .Tag.Message "\n\n" 2 }}
+          <p class="font-bold text-lg">{{ index $messageParts 0 }}</p>
+          {{ if gt (len $messageParts) 1 }}
+            <p class="cursor-text py-2">{{ nl2br (index $messageParts 1) }}</p>
+          {{ end }}
+          {{ template "repo/fragments/artifactList" (list $root .) }}
+        {{ else }}
+          <p class="italic text-gray-500 dark:text-gray-400">no message</p>
+        {{ end }}
+      </div>
+    </div>
+  {{ end }}
+{{ end }}
+
