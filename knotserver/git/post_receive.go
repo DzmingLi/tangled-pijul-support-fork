@@ -95,7 +95,7 @@ func (g *GitRepo) newCommitCount(line PostReceiveLine) (CommitCount, error) {
 		// git rev-list <newsha> ^other-branches --not ^this-branch
 		args = append(args, line.NewSha.String())
 
-		branches, _ := g.Branches()
+		branches, _ := g.Branches(nil)
 		for _, b := range branches {
 			if !strings.Contains(line.Ref, b.Name) {
 				args = append(args, fmt.Sprintf("^%s", b.Name))

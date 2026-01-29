@@ -17,16 +17,17 @@ func (x *Xrpc) RepoBranches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cursor := r.URL.Query().Get("cursor")
+	// default
+	limit := 50
+	offset := 0
 
-	// limit := 50 // default
-	// if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-	// 	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
-	// 		limit = l
-	// 	}
-	// }
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
 
-	limit := 500
+	if o, err := strconv.Atoi(r.URL.Query().Get("cursor")); err == nil && o > 0 {
+		offset = o
+	}
 
 	gr, err := git.PlainOpen(repoPath)
 	if err != nil {
@@ -34,22 +35,14 @@ func (x *Xrpc) RepoBranches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	branches, _ := gr.Branches()
-
-	offset := 0
-	if cursor != "" {
-		if o, err := strconv.Atoi(cursor); err == nil && o >= 0 && o < len(branches) {
-			offset = o
-		}
-	}
-
-	end := min(offset+limit, len(branches))
-
-	paginatedBranches := branches[offset:end]
+	branches, _ := gr.Branches(&git.BranchesOptions{
+		Limit:  limit,
+		Offset: offset,
+	})
 
 	// Create response using existing types.RepoBranchesResponse
 	response := types.RepoBranchesResponse{
-		Branches: paginatedBranches,
+		Branches: branches,
 	}
 
 	writeJson(w, response)

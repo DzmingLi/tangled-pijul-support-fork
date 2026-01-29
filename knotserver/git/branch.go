@@ -12,7 +12,16 @@ import (
 	"tangled.org/core/types"
 )
 
-func (g *GitRepo) Branches() ([]types.Branch, error) {
+type BranchesOptions struct {
+	Limit  int
+	Offset int
+}
+
+func (g *GitRepo) Branches(opts *BranchesOptions) ([]types.Branch, error) {
+	if opts == nil {
+		opts = &BranchesOptions{}
+	}
+
 	fields := []string{
 		"refname:short",
 		"objectname",
@@ -33,12 +42,22 @@ func (g *GitRepo) Branches() ([]types.Branch, error) {
 		if i != 0 {
 			outFormat.WriteString(fieldSeparator)
 		}
-		outFormat.WriteString(fmt.Sprintf("%%(%s)", f))
+		fmt.Fprintf(&outFormat, "%%(%s)", f)
 	}
 	outFormat.WriteString("")
 	outFormat.WriteString(recordSeparator)
 
-	output, err := g.forEachRef(outFormat.String(), "refs/heads")
+	args := []string{outFormat.String(), "--sort=-creatordate"}
+
+	// only add the count if the limit is a non-zero value,
+	// if it is zero, get as many tags as we can
+	if opts.Limit > 0 {
+		args = append(args, fmt.Sprintf("--count=%d", opts.Offset+opts.Limit))
+	}
+
+	args = append(args, "refs/heads")
+
+	output, err := g.forEachRef(args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get branches: %w", err)
 	}
@@ -48,6 +67,17 @@ func (g *GitRepo) Branches() ([]types.Branch, error) {
 		return nil, nil
 	}
 
+	startIdx := opts.Offset
+	if startIdx >= len(records) {
+		return nil, nil
+	}
+
+	endIdx := len(records)
+	if opts.Limit > 0 {
+		endIdx = min(startIdx+opts.Limit, len(records))
+	}
+
+	records = records[startIdx:endIdx]
 	branches := make([]types.Branch, 0, len(records))
 
 	// ignore errors here
