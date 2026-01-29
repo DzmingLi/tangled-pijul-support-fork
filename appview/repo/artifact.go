@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -31,25 +30,27 @@ import (
 
 // TODO: proper statuses here on early exit
 func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
+	l := rp.logger.With("handler", "AttachArtifact")
+
 	user := rp.oauth.GetMultiAccountUser(r)
 	tagParam := chi.URLParam(r, "tag")
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
-		log.Println("failed to get repo and knot", err)
+		l.Error("failed to get repo and knot", "err", err)
 		rp.pages.Notice(w, "upload", "failed to upload artifact, error in repo resolution")
 		return
 	}
 
 	tag, err := rp.resolveTag(r.Context(), f, tagParam)
 	if err != nil {
-		log.Println("failed to resolve tag", err)
+		l.Error("failed to resolve tag", "err", err)
 		rp.pages.Notice(w, "upload", "failed to upload artifact, error in tag resolution")
 		return
 	}
 
 	file, header, err := r.FormFile("artifact")
 	if err != nil {
-		log.Println("failed to upload artifact", err)
+		l.Error("failed to upload artifact", "err", err)
 		rp.pages.Notice(w, "upload", "failed to upload artifact")
 		return
 	}
@@ -57,19 +58,19 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 
 	client, err := rp.oauth.AuthorizedClient(r)
 	if err != nil {
-		log.Println("failed to get authorized client", err)
+		l.Error("failed to get authorized client", "err", err)
 		rp.pages.Notice(w, "upload", "failed to get authorized client")
 		return
 	}
 
 	uploadBlobResp, err := xrpc.RepoUploadBlob(r.Context(), client, file, header.Header.Get("Content-Type"))
 	if err != nil {
-		log.Println("failed to upload blob", err)
+		l.Error("failed to upload blob", "err", err)
 		rp.pages.Notice(w, "upload", "Failed to upload blob to your PDS. Try again later.")
 		return
 	}
 
-	log.Println("uploaded blob", humanize.Bytes(uint64(uploadBlobResp.Blob.Size)), uploadBlobResp.Blob.Ref.String())
+	l.Info("uploaded blob", "size", humanize.Bytes(uint64(uploadBlobResp.Blob.Size)), "blobRef", uploadBlobResp.Blob.Ref.String())
 
 	rkey := tid.TID()
 	createdAt := time.Now()
@@ -89,16 +90,16 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		log.Println("failed to create record", err)
+		l.Error("failed to create record", "err", err)
 		rp.pages.Notice(w, "upload", "Failed to create artifact record. Try again later.")
 		return
 	}
 
-	log.Println(putRecordResp.Uri)
+	l.Debug("created record for blob", "aturi", putRecordResp.Uri)
 
 	tx, err := rp.db.BeginTx(r.Context(), nil)
 	if err != nil {
-		log.Println("failed to start tx")
+		l.Error("failed to start tx")
 		rp.pages.Notice(w, "upload", "Failed to create artifact. Try again later.")
 		return
 	}
@@ -118,14 +119,14 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 
 	err = db.AddArtifact(tx, artifact)
 	if err != nil {
-		log.Println("failed to add artifact record to db", err)
+		l.Error("failed to add artifact record to db", "err", err)
 		rp.pages.Notice(w, "upload", "Failed to create artifact. Try again later.")
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Println("failed to add artifact record to db")
+		l.Error("failed to add artifact record to db")
 		rp.pages.Notice(w, "upload", "Failed to create artifact. Try again later.")
 		return
 	}
@@ -138,9 +139,11 @@ func (rp *Repo) AttachArtifact(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
+	l := rp.logger.With("handler", "DownloadArtifact")
+
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
-		log.Println("failed to get repo and knot", err)
+		l.Error("failed to get repo and knot", "err", err)
 		http.Error(w, "failed to resolve repo", http.StatusInternalServerError)
 		return
 	}
@@ -150,7 +153,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	tag, err := rp.resolveTag(r.Context(), f, tagParam)
 	if err != nil {
-		log.Println("failed to resolve tag", err)
+		l.Error("failed to resolve tag", "err", err)
 		rp.pages.Notice(w, "upload", "failed to upload artifact, error in tag resolution")
 		return
 	}
@@ -162,13 +165,13 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 		orm.FilterEq("name", filename),
 	)
 	if err != nil {
-		log.Println("failed to get artifacts", err)
+		l.Error("failed to get artifacts", "err", err)
 		http.Error(w, "failed to get artifact", http.StatusInternalServerError)
 		return
 	}
 
 	if len(artifacts) != 1 {
-		log.Printf("too many or too few artifacts found")
+		l.Error("too many or too few artifacts found")
 		http.Error(w, "artifact not found", http.StatusNotFound)
 		return
 	}
@@ -177,7 +180,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	ownerId, err := rp.idResolver.ResolveIdent(r.Context(), f.Did)
 	if err != nil {
-		log.Println("failed to resolve repo owner did", f.Did, err)
+		l.Error("failed to resolve repo owner did", f.Did, "err", err)
 		http.Error(w, "repository owner not found", http.StatusNotFound)
 		return
 	}
@@ -191,7 +194,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		log.Println("failed to create request", err)
+		l.Error("failed to create request", "err", err)
 		http.Error(w, "failed to create request", http.StatusInternalServerError)
 		return
 	}
@@ -199,7 +202,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("failed to make request", err)
+		l.Error("failed to make request", "err", err)
 		http.Error(w, "failed to make request to PDS", http.StatusInternalServerError)
 		return
 	}
@@ -215,18 +218,20 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	// stream the body directly to the client
 	if _, err := io.Copy(w, resp.Body); err != nil {
-		log.Println("error streaming response to client:", err)
+		l.Error("error streaming response to client:", "err", err)
 	}
 }
 
 // TODO: proper statuses here on early exit
 func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
+	l := rp.logger.With("handler", "DeleteArtifact")
+
 	user := rp.oauth.GetMultiAccountUser(r)
 	tagParam := chi.URLParam(r, "tag")
 	filename := chi.URLParam(r, "file")
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
-		log.Println("failed to get repo and knot", err)
+		l.Error("failed to get repo and knot", "err", err)
 		return
 	}
 
@@ -241,7 +246,7 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 		orm.FilterEq("name", filename),
 	)
 	if err != nil {
-		log.Println("failed to get artifacts", err)
+		l.Error("failed to get artifacts", "err", err)
 		rp.pages.Notice(w, "remove", "Failed to delete artifact. Try again later.")
 		return
 	}
@@ -253,7 +258,7 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 	artifact := artifacts[0]
 
 	if user.Active.Did != artifact.Did {
-		log.Println("user not authorized to delete artifact", err)
+		l.Error("user not authorized to delete artifact", "err", err)
 		rp.pages.Notice(w, "remove", "Unauthorized deletion of artifact.")
 		return
 	}
@@ -264,14 +269,14 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 		Rkey:       artifact.Rkey,
 	})
 	if err != nil {
-		log.Println("failed to get blob from pds", err)
+		l.Error("failed to get blob from pds", "err", err)
 		rp.pages.Notice(w, "remove", "Failed to remove blob from PDS.")
 		return
 	}
 
 	tx, err := rp.db.BeginTx(r.Context(), nil)
 	if err != nil {
-		log.Println("failed to start tx")
+		l.Error("failed to start tx")
 		rp.pages.Notice(w, "remove", "Failed to delete artifact. Try again later.")
 		return
 	}
@@ -283,22 +288,26 @@ func (rp *Repo) DeleteArtifact(w http.ResponseWriter, r *http.Request) {
 		orm.FilterEq("name", filename),
 	)
 	if err != nil {
-		log.Println("failed to remove artifact record from db", err)
+		l.Error("failed to remove artifact record from db", "err", err)
 		rp.pages.Notice(w, "remove", "Failed to delete artifact. Try again later.")
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Println("failed to remove artifact record from db")
+		l.Error("failed to remove artifact record from db")
 		rp.pages.Notice(w, "remove", "Failed to delete artifact. Try again later.")
 		return
 	}
+
+	l.Info("successfully deleted artifact", "tag", tagParam, "file", filename)
 
 	w.Write([]byte{})
 }
 
 func (rp *Repo) resolveTag(ctx context.Context, f *models.Repo, tagParam string) (*types.TagReference, error) {
+	l := rp.logger.With("handler", "resolveTag")
+
 	tagParam, err := url.QueryUnescape(tagParam)
 	if err != nil {
 		return nil, err
@@ -317,16 +326,16 @@ func (rp *Repo) resolveTag(ctx context.Context, f *models.Repo, tagParam string)
 	xrpcBytes, err := tangled.RepoTags(ctx, xrpcc, "", 0, repo)
 	if err != nil {
 		if xrpcerr := xrpcclient.HandleXrpcErr(err); xrpcerr != nil {
-			log.Println("failed to call XRPC repo.tags", xrpcerr)
+			l.Error("failed to call XRPC repo.tags", "err", xrpcerr)
 			return nil, xrpcerr
 		}
-		log.Println("failed to reach knotserver", err)
+		l.Error("failed to reach knotserver", "err", err)
 		return nil, err
 	}
 
 	var result types.RepoTagsResponse
 	if err := json.Unmarshal(xrpcBytes, &result); err != nil {
-		log.Println("failed to decode XRPC tags response", err)
+		l.Error("failed to decode XRPC tags response", "err", err)
 		return nil, err
 	}
 
