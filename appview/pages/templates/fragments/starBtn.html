@@ -15,13 +15,13 @@
         hx-disabled-elt="#starBtn"
     >
         {{ if .IsStarred }}
-            {{ i "star" "w-4 h-4 fill-current" }}
+            {{ i "star" "w-4 h-4 fill-current inline group-[.htmx-request]:hidden" }}
         {{ else }}
-            {{ i "star" "w-4 h-4" }}
+            {{ i "star" "w-4 h-4 inline group-[.htmx-request]:hidden" }}
         {{ end }}
+        {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
         <span class="text-sm">
             {{ .StarCount }}
         </span>
-        {{ i "loader-circle" "w-4 h-4 animate-spin hidden group-[.htmx-request]:inline" }}
     </button>
 {{ end }}
