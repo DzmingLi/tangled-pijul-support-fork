@@ -122,7 +122,7 @@ func (g *GitRepo) Commits(offset, limit int) ([]*object.Commit, error) {
 func (g *GitRepo) TotalCommits() (int, error) {
 	output, err := g.revList(
 		g.h.String(),
-		fmt.Sprintf("--count"),
+		"--count",
 	)
 	if err != nil {
 		return 0, fmt.Errorf("failed to run rev-list: %w", err)
@@ -250,19 +250,6 @@ func (g *GitRepo) Submodule(path string) (*config.Submodule, error) {
 
 	// path is not a submodule
 	return nil, ErrNotSubmodule
-}
-
-func (g *GitRepo) Branch(name string) (*plumbing.Reference, error) {
-	ref, err := g.r.Reference(plumbing.NewBranchReferenceName(name), false)
-	if err != nil {
-		return nil, fmt.Errorf("branch: %w", err)
-	}
-
-	if !ref.Name().IsBranch() {
-		return nil, fmt.Errorf("branch: %s is not a branch", ref.Name())
-	}
-
-	return ref, nil
 }
 
 func (g *GitRepo) SetDefaultBranch(branch string) error {

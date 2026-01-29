@@ -141,6 +141,19 @@ func (g *GitRepo) Branches(opts *BranchesOptions) ([]types.Branch, error) {
 	return branches, nil
 }
 
+func (g *GitRepo) Branch(name string) (*plumbing.Reference, error) {
+	ref, err := g.r.Reference(plumbing.NewBranchReferenceName(name), false)
+	if err != nil {
+		return nil, fmt.Errorf("branch: %w", err)
+	}
+
+	if !ref.Name().IsBranch() {
+		return nil, fmt.Errorf("branch: %s is not a branch", ref.Name())
+	}
+
+	return ref, nil
+}
+
 func (g *GitRepo) DeleteBranch(branch string) error {
 	ref := plumbing.NewBranchReferenceName(branch)
 	return g.r.Storer.RemoveReference(ref)
