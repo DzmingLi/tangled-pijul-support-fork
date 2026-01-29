@@ -94,6 +94,10 @@ type RepoTagsResponse struct {
 	Tags []*TagReference `json:"tags,omitempty"`
 }
 
+type RepoTagResponse struct {
+	Tag *TagReference `json:"tag,omitempty"`
+}
+
 type RepoBranchesResponse struct {
 	Branches []Branch `json:"branches,omitempty"`
 }

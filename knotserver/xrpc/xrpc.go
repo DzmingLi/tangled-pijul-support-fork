@@ -59,6 +59,7 @@ func (x *Xrpc) Router() http.Handler {
 	r.Get("/"+tangled.RepoLogNSID, x.RepoLog)
 	r.Get("/"+tangled.RepoBranchesNSID, x.RepoBranches)
 	r.Get("/"+tangled.RepoTagsNSID, x.RepoTags)
+	r.Get("/"+tangled.RepoTagNSID, x.RepoTag)
 	r.Get("/"+tangled.RepoBlobNSID, x.RepoBlob)
 	r.Get("/"+tangled.RepoDiffNSID, x.RepoDiff)
 	r.Get("/"+tangled.RepoCompareNSID, x.RepoCompare)
