@@ -20,13 +20,16 @@ func (x *Xrpc) RepoTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cursor := r.URL.Query().Get("cursor")
+	// default
+	limit := 50
+	offset := 0
 
-	limit := 50 // default
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
-			limit = l
-		}
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+
+	if o, err := strconv.Atoi(r.URL.Query().Get("cursor")); err == nil && o > 0 {
+		offset = o
 	}
 
 	gr, err := git.PlainOpen(repoPath)
@@ -36,7 +39,11 @@ func (x *Xrpc) RepoTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := gr.Tags()
+	tags, err := gr.Tags(&git.TagsOptions{
+		Limit:  limit,
+		Offset: offset,
+	})
+
 	if err != nil {
 		x.Logger.Warn("getting tags", "error", err.Error())
 		tags = []object.Tag{}
@@ -64,22 +71,8 @@ func (x *Xrpc) RepoTags(w http.ResponseWriter, r *http.Request) {
 		rtags = append(rtags, &tr)
 	}
 
-	// apply pagination manually
-	offset := 0
-	if cursor != "" {
-		if o, err := strconv.Atoi(cursor); err == nil && o >= 0 && o < len(rtags) {
-			offset = o
-		}
-	}
-
-	// calculate end index
-	end := min(offset+limit, len(rtags))
-
-	paginatedTags := rtags[offset:end]
-
-	// Create response using existing types.RepoTagsResponse
 	response := types.RepoTagsResponse{
-		Tags: paginatedTags,
+		Tags: rtags,
 	}
 
 	writeJson(w, response)

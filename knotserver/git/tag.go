@@ -10,7 +10,21 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-func (g *GitRepo) Tags() ([]object.Tag, error) {
+type TagsOptions struct {
+	Limit   int
+	Offset  int
+	Pattern string
+}
+
+func (g *GitRepo) Tags(opts *TagsOptions) ([]object.Tag, error) {
+	if opts == nil {
+		opts = &TagsOptions{}
+	}
+
+	if opts.Pattern == "" {
+		opts.Pattern = "refs/tags"
+	}
+
 	fields := []string{
 		"refname:short",
 		"objectname",
@@ -29,12 +43,22 @@ func (g *GitRepo) Tags() ([]object.Tag, error) {
 		if i != 0 {
 			outFormat.WriteString(fieldSeparator)
 		}
-		outFormat.WriteString(fmt.Sprintf("%%(%s)", f))
+		fmt.Fprintf(&outFormat, "%%(%s)", f)
 	}
 	outFormat.WriteString("")
 	outFormat.WriteString(recordSeparator)
 
-	output, err := g.forEachRef(outFormat.String(), "--sort=-creatordate", "refs/tags")
+	args := []string{outFormat.String(), "--sort=-creatordate"}
+
+	// only add the count if the limit is a non-zero value,
+	// if it is zero, get as many tags as we can
+	if opts.Limit > 0 {
+		args = append(args, fmt.Sprintf("--count=%d", opts.Offset+opts.Limit))
+	}
+
+	args = append(args, opts.Pattern)
+
+	output, err := g.forEachRef(args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tags: %w", err)
 	}
@@ -44,6 +68,17 @@ func (g *GitRepo) Tags() ([]object.Tag, error) {
 		return nil, nil
 	}
 
+	startIdx := opts.Offset
+	if startIdx >= len(records) {
+		return nil, nil
+	}
+
+	endIdx := len(records)
+	if opts.Limit > 0 {
+		endIdx = min(startIdx+opts.Limit, len(records))
+	}
+
+	records = records[startIdx:endIdx]
 	tags := make([]object.Tag, 0, len(records))
 
 	for _, line := range records {
