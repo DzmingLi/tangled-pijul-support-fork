@@ -12,8 +12,7 @@
 
 {{ define "repoContent" }}
     {{ $linkstyle := "no-underline hover:underline" }}
-
-    <div class="pb-2 mb-3 text-base border-b border-gray-200 dark:border-gray-700">
+    <div class="peer pb-2 mb-3 text-base border-b border-gray-200 dark:border-gray-700">
         <div class="flex flex-col md:flex-row md:justify-between gap-2">
             <div id="breadcrumbs" class="overflow-x-auto whitespace-nowrap text-gray-400 dark:text-gray-500">
                 {{ range $idx, $value := .BreadCrumbs }}
@@ -55,6 +54,16 @@
                     view {{ if .BlobView.ShowingRendered }}code{{ else }}rendered{{ end }}
                   </a>
                 {{ end }}
+
+                {{ if .BlobView.ShowingText }}
+                  <div id="toggle-wrap-content" class="flex items-center">
+                    <span class="select-none px-1 md:px-2 [&:before]:content-['·']"></span>
+                    <label class="flex lowercase font-normal px-1 py-0 gap-1 text-xs md:text-sm">
+                      <input id="toggle-wrap-content-checkbox" type="checkbox" name="wrap"/>
+                      wrap content
+                    </label>
+                  </div>
+                {{ end }}
             </div>
         </div>
     </div>
@@ -62,6 +71,8 @@
     {{ if .LastCommitInfo }}
       {{ template "repo/fragments/lastCommitPanel" $ }}
     {{ end }}
+
+    {{ $wrapContentClasses := "peer-has-[:checked]:*:whitespace-pre-wrap peer-has-[:checked]:*:[overflow-wrap:anywhere]" }}
 
     {{ if .BlobView.IsUnsupported }}
       <p class="text-center text-gray-400 dark:text-gray-500">
@@ -85,7 +96,7 @@
         </video>
       </div>
     {{ else if .BlobView.ContentType.IsSvg }}
-      <div class="overflow-auto relative">
+      <div class="overflow-auto relative {{ $wrapContentClasses }}">
         {{ if .BlobView.ShowingRendered }}
           <div class="text-center">
             <img src="{{ .BlobView.ContentSrc }}"
@@ -97,7 +108,7 @@
         {{ end }}
       </div>
     {{ else if .BlobView.ContentType.IsMarkup }}
-      <div class="overflow-auto relative">
+      <div class="overflow-auto relative {{ $wrapContentClasses }}">
         {{ if .BlobView.ShowingRendered }}
           <div id="blob-contents" class="prose dark:prose-invert">{{ .BlobView.Contents | readme }}</div>
         {{ else }}
@@ -105,9 +116,40 @@
         {{ end }}
       </div>
     {{ else if .BlobView.ContentType.IsCode }}
-      <div class="overflow-auto relative">
+      <div class="overflow-auto relative {{ $wrapContentClasses }}">
         <div id="blob-contents" class="whitespace-pre peer-target:bg-yellow-200 dark:peer-target:bg-yellow-900">{{ code .BlobView.Contents .Path | escapeHtml }}</div>
       </div>
     {{ end }}
     {{ template "fragments/multiline-select" }}
+    <script>
+      (() => {
+        const abortController = new AbortController();
+        const toggle = document.querySelector('#toggle-wrap-content');
+        const toggleCheckbox = document.querySelector('#toggle-wrap-content-checkbox');
+        const contents = document.querySelector('#blob-contents');
+
+        function showWrapContentToggleOnOverflow() {
+          if(!toggle || !toggleCheckbox || !contents) return;
+
+          const isScrollable = contents.scrollWidth > contents.clientWidth;
+          const showToggle = isScrollable || toggleCheckbox.checked;
+
+          if(showToggle) {
+            toggle.classList.remove('hidden');
+          } else {
+            toggle.classList.add('hidden');
+          }
+        }
+
+        window.addEventListener('resize', () => showWrapContentToggleOnOverflow(), {signal: abortController.signal});
+        document.body.addEventListener('htmx:afterSettle', () => showWrapContentToggleOnOverflow(), {signal: abortController.signal});
+        document.body.addEventListener('htmx:beforeCleanupElement', (e) => {
+          if(e.target === toggle) {
+            abortController.abort();
+          }
+        }, {signal: abortController.signal});
+
+        showWrapContentToggleOnOverflow();
+      })();
+    </script>
 {{ end }}
