@@ -77,7 +77,7 @@ func (v VanityStatKind) String() string {
 	case VanityStatRepositoryCount:
 		return "Repositories"
 	case VanityStatStarCount:
-		return "Stars"
+		return "Stars Received"
 	}
 	return ""
 }

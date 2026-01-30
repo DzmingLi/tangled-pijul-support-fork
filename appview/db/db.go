@@ -1181,6 +1181,30 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 		return err
 	})
 
+	orm.RunMigration(conn, logger, "remove-profile-stats-column-constraint", func(tx *sql.Tx) error {
+		_, err := tx.Exec(`
+		-- create new table without the check constraint
+		create table profile_stats_new (
+			id integer primary key autoincrement,
+			did text not null,
+			kind text not null, -- no constraint this time
+			foreign key (did) references profile(did) on delete cascade
+		);
+
+		-- copy data from old table
+		insert into profile_stats_new (id, did, kind)
+		select id, did, kind
+		from profile_stats;
+
+		-- drop old table
+		drop table profile_stats;
+
+		-- rename new table
+		alter table profile_stats_new rename to profile_stats;
+		`)
+		return err
+	})
+
 	return &DB{
 		db,
 		logger,
