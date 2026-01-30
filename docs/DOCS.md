@@ -502,6 +502,35 @@ printf "Hi from this knot!\n" > /home/git/motd
 Note that you should add a newline at the end if setting a non-empty message
 since the knot won't do this for you.
 
+## Troubleshooting
+
+If you run your own knot, you may run into some of these
+common issues. You can always join the
+[IRC](https://web.libera.chat/#tangled) or
+[Discord](https://chat.tangled.org/) if this section does
+not help.
+
+### Unable to push
+
+If you are unable to push to your knot or repository:
+
+1. First, ensure that you have added your SSH public key to
+   your account
+2. Check to see that your knot has synced the key by running
+   `knot keys`
+3. Check to see if git is supplying the correct private key
+   when pushing: `GIT_SSH_COMMAND="ssh -v" git push ...` 
+4. Check to see if `sshd` on the knot is rejecting the push
+   for some reason: `journalctl -xeu ssh` (or `sshd`,
+   depending on your machine). These logs are unavailable if
+   using docker.
+5. Check to see if the knot itself is rejecting the push,
+   depending on your setup, the logs might be in one of the
+   following paths:
+    * `/tmp/knotguard.log`
+    * `/home/git/log`
+    * `/home/git/guard.log`
+
 # Spindles
 
 ## Pipelines
@@ -1561,3 +1590,57 @@ jj config set --repo templates.commit_trailers "format_signed_off_by_trailer(sel
 Refer to the [jujutsu
 documentation](https://jj-vcs.github.io/jj/latest/config/#commit-trailers)
 for more information.
+
+# Troubleshooting guide
+
+## Login issues
+
+Owing to the distributed nature of OAuth on AT Protocol, you
+may run into issues with logging in. If you run a
+self-hosted PDS:
+
+- You may need to ensure that your PDS is timesynced using
+  NTP:
+  * Enable the `ntpd` service
+  * Run `ntpd -qg` to synchronize your clock
+- You may need to increase the default request timeout:
+  `NODE_OPTIONS="--network-family-autoselection-attempt-timeout=500"`
+
+## Empty punchcard
+
+For Tangled to register commits that you make across the
+network, you need to setup one of following:
+
+- The committer email should be a verified email associated
+  to your account. You can add and verify emails on the
+  settings page.
+- Or, the committer email should be set to your account's
+  DID: `git config user.email "did:plc:foobar". You can find
+  your account's DID on the settings page
+
+## Commit is not marked as verified
+
+Presently, Tangled only supports SSH commit signatures.
+
+To sign commits using an SSH key with git:
+
+```
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/tangled-key
+```
+
+To sign commits using an SSH key with jj, add this to your
+config:
+
+```
+[signing]
+behavior = "own"
+backend = "ssh"
+key = "~/.ssh/tangled-key"
+```
+
+## Self-hosted knot issues
+
+If you need help troubleshooting a self-hosted knot, check
+out the [knot troubleshooting
+guide](/knot-self-hosting-guide.html#troubleshooting).
