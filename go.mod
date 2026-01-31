@@ -49,7 +49,6 @@ require (
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	gitlab.com/staticnoise/goldmark-callout v0.0.0-20240609120641-6366b799e4ab
 	golang.org/x/crypto v0.40.0
-	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/image v0.31.0
 	golang.org/x/net v0.42.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
@@ -203,6 +202,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.29.0 // indirect

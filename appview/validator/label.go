@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
-	"golang.org/x/exp/slices"
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/models"
 )
