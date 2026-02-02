@@ -37,7 +37,7 @@ func dependencyStep(deps map[string][]string) *Step {
 	}
 
 	if len(customPackages) > 0 {
-		installCmd := "nix --extra-experimental-features nix-command --extra-experimental-features flakes profile install"
+		installCmd := "nix --extra-experimental-features nix-command --extra-experimental-features flakes profile add"
 		cmd := fmt.Sprintf("%s %s", installCmd, strings.Join(customPackages, " "))
 		installStep := Step{
 			command: cmd,

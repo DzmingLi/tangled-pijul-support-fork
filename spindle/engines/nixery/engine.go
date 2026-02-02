@@ -313,7 +313,10 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 			envs.AddEnv(k, v)
 		}
 	}
+
 	envs.AddEnv("HOME", homeDir)
+	existingPath := "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	envs.AddEnv("PATH", fmt.Sprintf("%s/.nix-profile/bin:/nix/var/nix/profiles/default/bin:%s", homeDir, existingPath))
 
 	mkExecResp, err := e.docker.ContainerExecCreate(ctx, addl.container, container.ExecOptions{
 		Cmd:          []string{"bash", "-c", step.Command()},
