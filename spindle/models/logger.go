@@ -9,21 +9,25 @@ import (
 	"strings"
 )
 
-type WorkflowLogger struct {
+type WorkflowLogger interface {
+	Close() error
+	DataWriter(idx int, stream string) io.Writer
+	ControlWriter(idx int, step Step, stepStatus StepStatus) io.Writer
+}
+
+type FileWorkflowLogger struct {
 	file    *os.File
 	encoder *json.Encoder
 	mask    *SecretMask
 }
 
-func NewWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*WorkflowLogger, error) {
+func NewFileWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*FileWorkflowLogger, error) {
 	path := LogFilePath(baseDir, wid)
-
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("creating log file: %w", err)
 	}
-
-	return &WorkflowLogger{
+	return &FileWorkflowLogger{
 		file:    file,
 		encoder: json.NewEncoder(file),
 		mask:    NewSecretMask(secretValues),
@@ -35,11 +39,11 @@ func LogFilePath(baseDir string, workflowID WorkflowId) string {
 	return logFilePath
 }
 
-func (l *WorkflowLogger) Close() error {
+func (l *FileWorkflowLogger) Close() error {
 	return l.file.Close()
 }
 
-func (l *WorkflowLogger) DataWriter(idx int, stream string) io.Writer {
+func (l *FileWorkflowLogger) DataWriter(idx int, stream string) io.Writer {
 	return &dataWriter{
 		logger: l,
 		idx:    idx,
@@ -47,7 +51,7 @@ func (l *WorkflowLogger) DataWriter(idx int, stream string) io.Writer {
 	}
 }
 
-func (l *WorkflowLogger) ControlWriter(idx int, step Step, stepStatus StepStatus) io.Writer {
+func (l *FileWorkflowLogger) ControlWriter(idx int, step Step, stepStatus StepStatus) io.Writer {
 	return &controlWriter{
 		logger:     l,
 		idx:        idx,
@@ -57,7 +61,7 @@ func (l *WorkflowLogger) ControlWriter(idx int, step Step, stepStatus StepStatus
 }
 
 type dataWriter struct {
-	logger *WorkflowLogger
+	logger *FileWorkflowLogger
 	idx    int
 	stream string
 }
@@ -75,7 +79,7 @@ func (w *dataWriter) Write(p []byte) (int, error) {
 }
 
 type controlWriter struct {
-	logger     *WorkflowLogger
+	logger     *FileWorkflowLogger
 	idx        int
 	step       Step
 	stepStatus StepStatus
