@@ -30,6 +30,11 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 		}
 	}
 
+	secretValues := make([]string, len(allSecrets))
+	for i, s := range allSecrets {
+		secretValues[i] = s.Value
+	}
+
 	var wg sync.WaitGroup
 	for eng, wfs := range pipeline.Workflows {
 		workflowTimeout := eng.WorkflowTimeout()
@@ -45,13 +50,22 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 					Name:       w.Name,
 				}
 
-				err := db.StatusRunning(wid, n)
+				wfLogger, err := models.NewFileWorkflowLogger(cfg.Server.LogDir, wid, secretValues)
+				if err != nil {
+					l.Warn("failed to setup step logger; logs will not be persisted", "error", err)
+					wfLogger = models.NullLogger{}
+				} else {
+					l.Info("setup step logger; logs will be persisted", "logDir", cfg.Server.LogDir, "wid", wid)
+					defer wfLogger.Close()
+				}
+
+				err = db.StatusRunning(wid, n)
 				if err != nil {
 					l.Error("failed to set workflow status to running", "wid", wid, "err", err)
 					return
 				}
 
-				err = eng.SetupWorkflow(ctx, wid, &w)
+				err = eng.SetupWorkflow(ctx, wid, &w, wfLogger)
 				if err != nil {
 					// TODO(winter): Should this always set StatusFailed?
 					// In the original, we only do in a subset of cases.
@@ -69,18 +83,6 @@ func StartWorkflows(l *slog.Logger, vault secrets.Manager, cfg *config.Config, d
 					return
 				}
 				defer eng.DestroyWorkflow(ctx, wid)
-
-				secretValues := make([]string, len(allSecrets))
-				for i, s := range allSecrets {
-					secretValues[i] = s.Value
-				}
-				wfLogger, err := models.NewWorkflowLogger(cfg.Server.LogDir, wid, secretValues)
-				if err != nil {
-					l.Warn("failed to setup step logger; logs will not be persisted", "error", err)
-					wfLogger = nil
-				} else {
-					defer wfLogger.Close()
-				}
 
 				ctx, cancel := context.WithTimeout(ctx, workflowTimeout)
 				defer cancel()

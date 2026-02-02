@@ -1,12 +1,12 @@
 package nixery
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"path"
 	"runtime"
 	"sync"
@@ -169,15 +169,28 @@ func New(ctx context.Context, cfg *config.Config) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *models.Workflow) error {
-	e.l.Info("setting up workflow", "workflow", wid)
+func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *models.Workflow, wfLogger models.WorkflowLogger) error {
+	/// -------------------------INITIAL SETUP------------------------------------------
+	l := e.l.With("workflow", wid)
+	l.Info("setting up workflow")
 
+	setupStep := Step{
+		name: "nixery image pull",
+		kind: models.StepKindSystem,
+	}
+	setupStepIdx := -1
+
+	wfLogger.ControlWriter(setupStepIdx, setupStep, models.StepStatusStart).Write([]byte{0})
+	defer wfLogger.ControlWriter(setupStepIdx, setupStep, models.StepStatusEnd).Write([]byte{0})
+
+	/// -------------------------NETWORK CREATION---------------------------------------
 	_, err := e.docker.NetworkCreate(ctx, networkName(wid), network.CreateOptions{
 		Driver: "bridge",
 	})
 	if err != nil {
 		return err
 	}
+
 	e.registerCleanup(wid, func(ctx context.Context) error {
 		if err := e.docker.NetworkRemove(ctx, networkName(wid)); err != nil {
 			return fmt.Errorf("removing network: %w", err)
@@ -185,16 +198,33 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		return nil
 	})
 
+	/// -------------------------IMAGE PULL---------------------------------------------
 	addl := wf.Data.(addlFields)
+	l.Info("pulling image", "image", addl.image)
+	fmt.Fprintf(
+		wfLogger.DataWriter(setupStepIdx, "stdout"),
+		"pulling image: %s",
+		addl.image,
+	)
 
 	reader, err := e.docker.ImagePull(ctx, addl.image, image.PullOptions{})
 	if err != nil {
-		e.l.Error("pipeline image pull failed!", "image", addl.image, "workflowId", wid, "error", err.Error())
-
+		l.Error("pipeline image pull failed!", "error", err.Error())
+		fmt.Fprintf(wfLogger.DataWriter(setupStepIdx, "stderr"), "image pull failed: %s", err)
 		return fmt.Errorf("pulling image: %w", err)
 	}
 	defer reader.Close()
-	io.Copy(os.Stdout, reader)
+
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		wfLogger.DataWriter(setupStepIdx, "stdout").Write([]byte(line))
+		l.Info("image pull progress", "stdout", line)
+	}
+
+	/// -------------------------CONTAINER CREATION-------------------------------------
+	l.Info("creating container")
+	wfLogger.DataWriter(setupStepIdx, "stdout").Write([]byte("creating container..."))
 
 	resp, err := e.docker.ContainerCreate(ctx, &container.Config{
 		Image:      addl.image,
@@ -229,8 +259,14 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		ExtraHosts:     []string{"host.docker.internal:host-gateway"},
 	}, nil, nil, "")
 	if err != nil {
+		fmt.Fprintf(
+			wfLogger.DataWriter(setupStepIdx, "stderr"),
+			"container creation failed: %s",
+			err,
+		)
 		return fmt.Errorf("creating container: %w", err)
 	}
+
 	e.registerCleanup(wid, func(ctx context.Context) error {
 		if err := e.docker.ContainerStop(ctx, resp.ID, container.StopOptions{}); err != nil {
 			return fmt.Errorf("stopping container: %w", err)
@@ -244,9 +280,12 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		if err != nil {
 			return fmt.Errorf("removing container: %w", err)
 		}
+
 		return nil
 	})
 
+	/// -------------------------CONTAINER START----------------------------------------
+	wfLogger.DataWriter(setupStepIdx, "stdout").Write([]byte("starting container..."))
 	if err := e.docker.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("starting container: %w", err)
 	}
@@ -273,6 +312,7 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 		return err
 	}
 
+	/// -----------------------------------FINISH---------------------------------------
 	execInspectResp, err := e.docker.ContainerExecInspect(ctx, mkExecResp.ID)
 	if err != nil {
 		return err
@@ -290,7 +330,7 @@ func (e *Engine) SetupWorkflow(ctx context.Context, wid models.WorkflowId, wf *m
 	return nil
 }
 
-func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.Workflow, idx int, secrets []secrets.UnlockedSecret, wfLogger *models.WorkflowLogger) error {
+func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.Workflow, idx int, secrets []secrets.UnlockedSecret, wfLogger models.WorkflowLogger) error {
 	addl := w.Data.(addlFields)
 	workflowEnvs := ConstructEnvs(w.Environment)
 	// TODO(winter): should SetupWorkflow also have secret access?
@@ -331,7 +371,7 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 	// start tailing logs in background
 	tailDone := make(chan error, 1)
 	go func() {
-		tailDone <- e.tailStep(ctx, wfLogger, mkExecResp.ID, wid, idx, step)
+		tailDone <- e.tailStep(ctx, wfLogger, mkExecResp.ID, idx)
 	}()
 
 	select {
@@ -377,7 +417,7 @@ func (e *Engine) RunStep(ctx context.Context, wid models.WorkflowId, w *models.W
 	return nil
 }
 
-func (e *Engine) tailStep(ctx context.Context, wfLogger *models.WorkflowLogger, execID string, wid models.WorkflowId, stepIdx int, step models.Step) error {
+func (e *Engine) tailStep(ctx context.Context, wfLogger models.WorkflowLogger, execID string, stepIdx int) error {
 	if wfLogger == nil {
 		return nil
 	}
