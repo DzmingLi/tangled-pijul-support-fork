@@ -143,7 +143,7 @@ index 1234567..abcdefg 100644
 +Modified content.
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -178,7 +178,7 @@ index 0000000..ce01362
 +hello
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -216,7 +216,7 @@ index 1234567..0000000
 -content to delete
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -250,7 +250,7 @@ index 1234567..abcdefg 100644
 +New line.
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -292,7 +292,7 @@ index 1234567..abcdefg 100644
 +new content
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -329,7 +329,7 @@ index 1234567..abcdefg 100644
 +Modified content.
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 
@@ -360,7 +360,7 @@ index 0000000..ce01362
 +content
 `
 
-	patchFile, err := createTempFileWithPatch(patch)
+	patchFile, err := createTemp(patch)
 	require.NoError(t, err)
 	defer os.Remove(patchFile)
 

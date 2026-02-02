@@ -180,7 +180,7 @@ func (rp *Repo) DownloadArtifact(w http.ResponseWriter, r *http.Request) {
 
 	ownerId, err := rp.idResolver.ResolveIdent(r.Context(), f.Did)
 	if err != nil {
-		l.Error("failed to resolve repo owner did", f.Did, "err", err)
+		l.Error("failed to resolve repo owner did", "did", f.Did, "err", err)
 		http.Error(w, "repository owner not found", http.StatusNotFound)
 		return
 	}
