@@ -15,13 +15,21 @@ type WorkflowLogger interface {
 	ControlWriter(idx int, step Step, stepStatus StepStatus) io.Writer
 }
 
+type NullLogger struct{}
+
+func (l NullLogger) Close() error                                { return nil }
+func (l NullLogger) DataWriter(idx int, stream string) io.Writer { return io.Discard }
+func (l NullLogger) ControlWriter(idx int, step Step, stepStatus StepStatus) io.Writer {
+	return io.Discard
+}
+
 type FileWorkflowLogger struct {
 	file    *os.File
 	encoder *json.Encoder
 	mask    *SecretMask
 }
 
-func NewFileWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (*FileWorkflowLogger, error) {
+func NewFileWorkflowLogger(baseDir string, wid WorkflowId, secretValues []string) (WorkflowLogger, error) {
 	path := LogFilePath(baseDir, wid)
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
