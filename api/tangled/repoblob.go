@@ -21,8 +21,6 @@ type RepoBlob_LastCommit struct {
 	Hash string `json:"hash" cborgen:"hash"`
 	// message: Commit message
 	Message string `json:"message" cborgen:"message"`
-	// shortHash: Short commit hash
-	ShortHash *string `json:"shortHash,omitempty" cborgen:"shortHash,omitempty"`
 	// when: Commit timestamp
 	When string `json:"when" cborgen:"when"`
 }

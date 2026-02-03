@@ -16,6 +16,7 @@ const (
 
 // RepoTree_LastCommit is a "lastCommit" in the sh.tangled.repo.tree schema.
 type RepoTree_LastCommit struct {
+	Author *RepoTree_Signature `json:"author,omitempty" cborgen:"author,omitempty"`
 	// hash: Commit hash
 	Hash string `json:"hash" cborgen:"hash"`
 	// message: Commit message
@@ -27,8 +28,9 @@ type RepoTree_LastCommit struct {
 // RepoTree_Output is the output of a sh.tangled.repo.tree call.
 type RepoTree_Output struct {
 	// dotdot: Parent directory path
-	Dotdot *string               `json:"dotdot,omitempty" cborgen:"dotdot,omitempty"`
-	Files  []*RepoTree_TreeEntry `json:"files" cborgen:"files"`
+	Dotdot     *string               `json:"dotdot,omitempty" cborgen:"dotdot,omitempty"`
+	Files      []*RepoTree_TreeEntry `json:"files" cborgen:"files"`
+	LastCommit *RepoTree_LastCommit  `json:"lastCommit,omitempty" cborgen:"lastCommit,omitempty"`
 	// parent: The parent path in the tree
 	Parent *string `json:"parent,omitempty" cborgen:"parent,omitempty"`
 	// readme: Readme for this file tree
@@ -43,6 +45,16 @@ type RepoTree_Readme struct {
 	Contents string `json:"contents" cborgen:"contents"`
 	// filename: Name of the readme file
 	Filename string `json:"filename" cborgen:"filename"`
+}
+
+// RepoTree_Signature is a "signature" in the sh.tangled.repo.tree schema.
+type RepoTree_Signature struct {
+	// email: Author email
+	Email string `json:"email" cborgen:"email"`
+	// name: Author name
+	Name string `json:"name" cborgen:"name"`
+	// when: Author timestamp
+	When string `json:"when" cborgen:"when"`
 }
 
 // RepoTree_TreeEntry is a "treeEntry" in the sh.tangled.repo.tree schema.
