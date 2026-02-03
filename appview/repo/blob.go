@@ -101,6 +101,11 @@ func (rp *Repo) Blob(w http.ResponseWriter, r *http.Request) {
 			Message: resp.LastCommit.Message,
 			When:    when,
 		}
+		if resp.LastCommit.Author != nil {
+			lastCommitInfo.Author.Name = resp.LastCommit.Author.Name
+			lastCommitInfo.Author.Email = resp.LastCommit.Author.Email
+			lastCommitInfo.Author.When, _ = time.Parse(time.RFC3339, resp.LastCommit.Author.When)
+		}
 	}
 
 	rp.pages.RepoBlob(w, pages.RepoBlobParams{

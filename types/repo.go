@@ -106,16 +106,6 @@ type RepoDefaultBranchResponse struct {
 	Branch string `json:"branch,omitempty"`
 }
 
-type RepoBlobResponse struct {
-	Contents string `json:"contents,omitempty"`
-	Ref      string `json:"ref,omitempty"`
-	Path     string `json:"path,omitempty"`
-	IsBinary bool   `json:"is_binary,omitempty"`
-
-	Lines    int    `json:"lines,omitempty"`
-	SizeHint uint64 `json:"size_hint,omitempty"`
-}
-
 type ForkStatus int
 
 const (

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"tangled.org/core/api/tangled"
+	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/pages"
 	"tangled.org/core/appview/reporesolver"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
@@ -98,11 +99,39 @@ func (rp *Repo) Tree(w http.ResponseWriter, r *http.Request) {
 	}
 	sortFiles(result.Files)
 
+	// Get email to DID mapping for commit author
+	var emails []string
+	if xrpcResp.LastCommit != nil && xrpcResp.LastCommit.Author != nil {
+		emails = append(emails, xrpcResp.LastCommit.Author.Email)
+	}
+	emailToDidMap, err := db.GetEmailToDid(rp.db, emails, true)
+	if err != nil {
+		l.Error("failed to get email to did mapping", "err", err)
+		emailToDidMap = make(map[string]string)
+	}
+
+	var lastCommitInfo *types.LastCommitInfo
+	if xrpcResp.LastCommit != nil {
+		when, _ := time.Parse(time.RFC3339, xrpcResp.LastCommit.When)
+		lastCommitInfo = &types.LastCommitInfo{
+			Hash:    plumbing.NewHash(xrpcResp.LastCommit.Hash),
+			Message: xrpcResp.LastCommit.Message,
+			When:    when,
+		}
+		if xrpcResp.LastCommit.Author != nil {
+			lastCommitInfo.Author.Name = xrpcResp.LastCommit.Author.Name
+			lastCommitInfo.Author.Email = xrpcResp.LastCommit.Author.Email
+			lastCommitInfo.Author.When, _ = time.Parse(time.RFC3339, xrpcResp.LastCommit.Author.When)
+		}
+	}
+
 	rp.pages.RepoTree(w, pages.RepoTreeParams{
 		LoggedInUser:     user,
 		BreadCrumbs:      breadcrumbs,
 		TreePath:         treePath,
 		RepoInfo:         rp.repoResolver.GetRepoInfo(r, user),
+		EmailToDid:       emailToDidMap,
+		LastCommitInfo:   lastCommitInfo,
 		RepoTreeResponse: result,
 	})
 }

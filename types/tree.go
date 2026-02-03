@@ -105,4 +105,9 @@ type LastCommitInfo struct {
 	Hash    plumbing.Hash
 	Message string
 	When    time.Time
+	Author  struct {
+		Email string
+		Name  string
+		When  time.Time
+	}
 }

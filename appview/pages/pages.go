@@ -764,13 +764,15 @@ func (p *Pages) RepoCommit(w io.Writer, params RepoCommitParams) error {
 }
 
 type RepoTreeParams struct {
-	LoggedInUser *oauth.MultiAccountUser
-	RepoInfo     repoinfo.RepoInfo
-	Active       string
-	BreadCrumbs  [][]string
-	TreePath     string
-	Raw          bool
-	HTMLReadme   template.HTML
+	LoggedInUser   *oauth.MultiAccountUser
+	RepoInfo       repoinfo.RepoInfo
+	Active         string
+	BreadCrumbs    [][]string
+	TreePath       string
+	Raw            bool
+	HTMLReadme     template.HTML
+	EmailToDid     map[string]string
+	LastCommitInfo *types.LastCommitInfo
 	types.RepoTreeResponse
 }
 

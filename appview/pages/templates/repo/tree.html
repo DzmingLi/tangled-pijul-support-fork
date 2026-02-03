@@ -52,6 +52,10 @@
       </div>
     </div>
 
+    {{ if .LastCommitInfo }}
+      {{ template "repo/fragments/lastCommitPanel" $ }}
+    {{ end }}
+
     {{ range .Files }}
       <div class="grid grid-cols-12 gap-4 items-center py-1">
         <div class="col-span-8 md:col-span-4">
