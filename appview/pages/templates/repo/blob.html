@@ -13,54 +13,6 @@
 {{ define "repoContent" }}
     {{ $linkstyle := "no-underline hover:underline" }}
 
-    {{ if .LastCommitInfo }}
-    <div class="pb-3 mb-3 border-b border-gray-200 dark:border-gray-700">
-        <div id="commit-message">
-            {{ $messageParts := splitN .LastCommitInfo.Message "\n\n" 2 }}
-            <div class="text-base">
-                <a href="/{{ .RepoInfo.FullName }}/commit/{{ .LastCommitInfo.Hash }}"
-                   class="inline no-underline hover:underline dark:text-white">
-                    {{ index $messageParts 0 }}
-                </a>
-                {{ if gt (len $messageParts) 1 }}
-                <button
-                    class="py-1/2 px-1 bg-gray-200 hover:bg-gray-400 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
-                    hx-on:click="this.parentElement.nextElementSibling.classList.toggle('hidden')">
-                    {{ i "ellipsis" "w-3 h-3" }}
-                </button>
-                {{ end }}
-            </div>
-            {{ if gt (len $messageParts) 1 }}
-            <p class="hidden mt-1 text-sm cursor-text pb-2 dark:text-gray-300">
-                {{ nl2br (index $messageParts 1) }}
-            </p>
-            {{ end }}
-        </div>
-        <div class="text-xs mt-2 text-gray-500 dark:text-gray-400 flex items-center flex-wrap">
-            {{ if .LastCommit.Author }}
-            {{ $authorDid := index .EmailToDid .LastCommit.Author.Email }}
-            <span class="flex items-center gap-1">
-                {{ if $authorDid }}
-                    {{ template "user/fragments/picHandleLink" $authorDid }}
-                {{ else }}
-                    {{ placeholderAvatar "tiny" }}
-                    <a href="mailto:{{ .LastCommit.Author.Email }}" class="no-underline hover:underline">{{ .LastCommit.Author.Name }}</a>
-                {{ end }}
-            </span>
-            <span class="px-1 select-none before:content-['\00B7']"></span>
-            {{ end }}
-            {{ template "repo/fragments/time" .LastCommitInfo.When }}
-            <span class="px-1 select-none before:content-['\00B7']"></span>
-            <span class="font-mono">
-                <a href="/{{ .RepoInfo.FullName }}/commit/{{ .LastCommitInfo.Hash.String }}"
-                   class="no-underline hover:underline text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">
-                    {{ slice .LastCommitInfo.Hash.String 0 8 }}
-                </a>
-            </span>
-        </div>
-    </div>
-    {{ end }}
-
     <div class="pb-2 mb-3 text-base border-b border-gray-200 dark:border-gray-700">
         <div class="flex flex-col md:flex-row md:justify-between gap-2">
             <div id="breadcrumbs" class="overflow-x-auto whitespace-nowrap text-gray-400 dark:text-gray-500">
@@ -106,6 +58,11 @@
             </div>
         </div>
     </div>
+
+    {{ if .LastCommitInfo }}
+      {{ template "repo/fragments/lastCommitPanel" $ }}
+    {{ end }}
+
     {{ if .BlobView.IsUnsupported }}
       <p class="text-center text-gray-400 dark:text-gray-500">
           Previews are not supported for this file type.
