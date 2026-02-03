@@ -48,7 +48,17 @@ func (g *GitRepo) FileTree(ctx context.Context, path string) ([]types.NiceTree, 
 func (g *GitRepo) makeNiceTree(ctx context.Context, subtree *object.Tree, parent string) []types.NiceTree {
 	nts := []types.NiceTree{}
 
-	times, err := g.calculateCommitTimeIn(ctx, subtree, parent, 2*time.Second)
+	entries := make([]string, len(subtree.Entries))
+	for _, e := range subtree.Entries {
+		entries = append(entries, e.Name)
+	}
+
+	lastCommitDir := lastCommitDir{
+		dir:     parent,
+		entries: entries,
+	}
+
+	times, err := g.lastCommitDirIn(ctx, lastCommitDir, 2*time.Second)
 	if err != nil {
 		return nts
 	}

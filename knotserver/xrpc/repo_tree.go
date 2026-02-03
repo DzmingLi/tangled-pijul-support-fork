@@ -9,6 +9,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/appview/pages/markup"
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/types"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
 
@@ -105,6 +106,40 @@ func (x *Xrpc) RepoTree(w http.ResponseWriter, r *http.Request) {
 			Filename: readmeFileName,
 			Contents: readmeContents,
 		},
+	}
+
+	// calculate lastCommit for the directory as a whole
+	var lastCommitTree *types.LastCommitInfo
+	for _, e := range files {
+		if e.LastCommit == nil {
+			continue
+		}
+
+		if lastCommitTree == nil {
+			lastCommitTree = e.LastCommit
+			continue
+		}
+
+		if lastCommitTree.When.After(e.LastCommit.When) {
+			lastCommitTree = e.LastCommit
+		}
+	}
+
+	if lastCommitTree != nil {
+		response.LastCommit = &tangled.RepoTree_LastCommit{
+			Hash:    lastCommitTree.Hash.String(),
+			Message: lastCommitTree.Message,
+			When:    lastCommitTree.When.Format(time.RFC3339),
+		}
+
+		// try to get author information
+		commit, err := gr.Commit(lastCommitTree.Hash)
+		if err == nil {
+			response.LastCommit.Author = &tangled.RepoTree_Signature{
+				Name:  commit.Author.Name,
+				Email: commit.Author.Email,
+			}
+		}
 	}
 
 	writeJson(w, response)

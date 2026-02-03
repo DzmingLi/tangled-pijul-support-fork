@@ -147,14 +147,12 @@ func (x *Xrpc) RepoBlob(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
-	lastCommit, err := gr.GetLastCommitForPath(ctx, treePath)
+	lastCommit, err := gr.LastCommitFile(ctx, treePath)
 	if err == nil && lastCommit != nil {
-		shortHash := lastCommit.Hash.String()[:8]
 		response.LastCommit = &tangled.RepoBlob_LastCommit{
-			Hash:      lastCommit.Hash.String(),
-			ShortHash: &shortHash,
-			Message:   lastCommit.Message,
-			When:      lastCommit.When.Format(time.RFC3339),
+			Hash:    lastCommit.Hash.String(),
+			Message: lastCommit.Message,
+			When:    lastCommit.When.Format(time.RFC3339),
 		}
 
 		// try to get author information
