@@ -128,10 +128,10 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	}
 
 	// Split stats area: left side for status/stats (80%), right side for dolly (20%)
-	statusStatsArea, dollyArea := statsArea.Split(true, 80)
+	statusArea, dollyArea := statsArea.Split(true, 80)
 
 	// Draw status and stats
-	statsBounds := statusStatsArea.Img.Bounds()
+	statsBounds := statusArea.Img.Bounds()
 	statsX := statsBounds.Min.X + 60 // left padding
 	statsY := statsBounds.Min.Y
 
@@ -157,30 +157,38 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	} else {
 		statusIcon = "git-pull-request-closed"
 		statusText = "closed"
-		statusColor = color.RGBA{128, 128, 128, 255} // gray
+		statusColor = color.RGBA{52, 58, 64, 255} // dark gray
 	}
 
-	statusIconSize := 36
+	statusTextWidth := statusArea.TextWidth(statusText, textSize)
+	badgePadding := 12
+	badgeHeight := int(textSize) + (badgePadding * 2)
+	badgeWidth := iconSize + badgePadding + statusTextWidth + (badgePadding * 2)
+	cornerRadius := 8
+	badgeX := 60
+	badgeY := 0
 
-	// Draw icon with status color
-	err = statusStatsArea.DrawLucideIcon(statusIcon, statsX, statsY+iconBaselineOffset-statusIconSize/2+5, statusIconSize, statusColor)
+	statusArea.DrawRoundedRect(badgeX, badgeY, badgeWidth, badgeHeight, cornerRadius, statusColor)
+
+	whiteColor := color.RGBA{255, 255, 255, 255}
+	iconX := statsX + badgePadding
+	iconY := statsY + (badgeHeight-iconSize)/2
+	err = statusArea.DrawLucideIcon(statusIcon, iconX, iconY, iconSize, whiteColor)
 	if err != nil {
 		log.Printf("failed to draw status icon: %v", err)
 	}
 
-	// Draw text with status color
-	textX := statsX + statusIconSize + 12
-	statusTextSize := 32.0
-	err = statusStatsArea.DrawTextAt(statusText, textX, statsY+iconBaselineOffset, statusColor, statusTextSize, ogcard.Middle, ogcard.Left)
+	textX := statsX + badgePadding + iconSize + badgePadding
+	textY := statsY + (badgeHeight-int(textSize))/2 - 5
+	err = statusArea.DrawTextAt(statusText, textX, textY, whiteColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw status text: %v", err)
 	}
 
-	statusTextWidth := len(statusText) * 20
-	currentX := statsX + statusIconSize + 12 + statusTextWidth + 40
+	currentX := statsX + badgeWidth + 50
 
 	// Draw comment count
-	err = statusStatsArea.DrawLucideIcon("message-square", currentX, statsY+iconBaselineOffset-iconSize/2+5, iconSize, iconColor)
+	err = statusArea.DrawLucideIcon("message-square", currentX, iconY, iconSize, iconColor)
 	if err != nil {
 		log.Printf("failed to draw comment icon: %v", err)
 	}
@@ -190,7 +198,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	if commentCount == 1 {
 		commentText = "1 comment"
 	}
-	err = statusStatsArea.DrawTextAt(commentText, currentX, statsY+iconBaselineOffset, iconColor, textSize, ogcard.Middle, ogcard.Left)
+	err = statusArea.DrawTextAt(commentText, currentX, textY, iconColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw comment text: %v", err)
 	}
@@ -199,7 +207,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	currentX += commentTextWidth + 40
 
 	// Draw files changed
-	err = statusStatsArea.DrawLucideIcon("file-diff", currentX, statsY+iconBaselineOffset-iconSize/2+5, iconSize, iconColor)
+	err = statusArea.DrawLucideIcon("file-diff", currentX, iconY, iconSize, iconColor)
 	if err != nil {
 		log.Printf("failed to draw file diff icon: %v", err)
 	}
@@ -209,7 +217,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	if filesChanged == 1 {
 		filesText = "1 file"
 	}
-	err = statusStatsArea.DrawTextAt(filesText, currentX, statsY+iconBaselineOffset, iconColor, textSize, ogcard.Middle, ogcard.Left)
+	err = statusArea.DrawTextAt(filesText, currentX, textY, iconColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw files text: %v", err)
 	}
@@ -220,7 +228,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	// Draw additions (green +)
 	greenColor := color.RGBA{34, 139, 34, 255}
 	additionsText := fmt.Sprintf("+%d", diffStats.Insertions)
-	err = statusStatsArea.DrawTextAt(additionsText, currentX, statsY+iconBaselineOffset, greenColor, textSize, ogcard.Middle, ogcard.Left)
+	err = statusArea.DrawTextAt(additionsText, currentX, textY, greenColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw additions text: %v", err)
 	}
@@ -231,7 +239,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	// Draw deletions (red -) right next to additions
 	redColor := color.RGBA{220, 20, 60, 255}
 	deletionsText := fmt.Sprintf("-%d", diffStats.Deletions)
-	err = statusStatsArea.DrawTextAt(deletionsText, currentX, statsY+iconBaselineOffset, redColor, textSize, ogcard.Middle, ogcard.Left)
+	err = statusArea.DrawTextAt(deletionsText, currentX, textY, redColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw deletions text: %v", err)
 	}
@@ -254,7 +262,7 @@ func (s *Pulls) drawPullSummaryCard(pull *models.Pull, repo *models.Repo, commen
 	openedDate := pull.Created.Format("Jan 2, 2006")
 	metaText := fmt.Sprintf("opened by %s · %s", authorHandle, openedDate)
 
-	err = statusStatsArea.DrawTextAt(metaText, statsX, labelY, iconColor, labelSize, ogcard.Top, ogcard.Left)
+	err = statusArea.DrawTextAt(metaText, statsX, labelY, iconColor, labelSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw metadata: %v", err)
 	}
