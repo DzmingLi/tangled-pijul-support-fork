@@ -257,6 +257,21 @@ func (c *Card) DrawTextAtWithWidth(text string, x, y int, textColor color.Color,
 	return textWidth, err
 }
 
+func (c *Card) FontHeight(sizePt float64) int {
+	ft := freetype.NewContext()
+	ft.SetDPI(72)
+	ft.SetFont(c.Font)
+	ft.SetFontSize(sizePt)
+	return ft.PointToFixed(sizePt).Ceil()
+}
+
+func (c *Card) TextWidth(text string, sizePt float64) int {
+	face := truetype.NewFace(c.Font, &truetype.Options{Size: sizePt, DPI: 72})
+	lineWidth := font.MeasureString(face, text)
+	textWidth := lineWidth.Ceil()
+	return textWidth
+}
+
 // DrawBoldText draws bold text by rendering multiple times with slight offsets
 func (c *Card) DrawBoldText(text string, x, y int, textColor color.Color, sizePt float64, valign VAlign, halign HAlign) (int, error) {
 	// Draw the text multiple times with slight offsets to create bold effect
@@ -581,4 +596,45 @@ func (c *Card) DrawCircularExternalImage(url string, x, y, size int) error {
 // DrawRect draws a rect with the given color
 func (c *Card) DrawRect(startX, startY, endX, endY int, color color.Color) {
 	draw.Draw(c.Img, image.Rect(startX, startY, endX, endY), &image.Uniform{color}, image.Point{}, draw.Src)
+}
+
+// drawRoundedRect draws a filled rounded rectangle on the given card
+func (card *Card) DrawRoundedRect(x, y, width, height, cornerRadius int, fillColor color.RGBA) {
+	cardBounds := card.Img.Bounds()
+	for py := y; py < y+height; py++ {
+		for px := x; px < x+width; px++ {
+			// calculate distance from corners
+			dx := 0
+			dy := 0
+
+			// check which corner region we're in
+			if px < x+cornerRadius && py < y+cornerRadius {
+				// top-left corner
+				dx = x + cornerRadius - px
+				dy = y + cornerRadius - py
+			} else if px >= x+width-cornerRadius && py < y+cornerRadius {
+				// top-right corner
+				dx = px - (x + width - cornerRadius - 1)
+				dy = y + cornerRadius - py
+			} else if px < x+cornerRadius && py >= y+height-cornerRadius {
+				// bottom-left corner
+				dx = x + cornerRadius - px
+				dy = py - (y + height - cornerRadius - 1)
+			} else if px >= x+width-cornerRadius && py >= y+height-cornerRadius {
+				// Bottom-right corner
+				dx = px - (x + width - cornerRadius - 1)
+				dy = py - (y + height - cornerRadius - 1)
+			}
+
+			// if we're in a corner, check if we're within the radius
+			inCorner := (dx > 0 || dy > 0)
+			withinRadius := dx*dx+dy*dy <= cornerRadius*cornerRadius
+
+			// draw pixel if not in corner, or in corner and within radius
+			// check bounds relative to the card's image bounds
+			if (!inCorner || withinRadius) && px >= 0 && px < cardBounds.Dx() && py >= 0 && py < cardBounds.Dy() {
+				card.Img.Set(px+cardBounds.Min.X, py+cardBounds.Min.Y, fillColor)
+			}
+		}
+	}
 }
