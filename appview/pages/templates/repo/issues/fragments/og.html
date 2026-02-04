@@ -1,8 +1,8 @@
-{{ define "repo/pulls/fragments/og" }}
-    {{ $title := printf "%s #%d" .Pull.Title .Pull.PullId }}
-    {{ $description := or .Pull.Body .RepoInfo.Description }}
-    {{ $url := printf "https://tangled.org/%s/pulls/%d" .RepoInfo.FullName .Pull.PullId }}
-    {{ $imageUrl := printf "https://tangled.org/%s/pulls/%d/opengraph" .RepoInfo.FullName .Pull.PullId }}
+{{ define "repo/issues/fragments/og" }}
+    {{ $title := printf "%s #%d" .Issue.Title .Issue.IssueId }}
+    {{ $description := or .Issue.Body .RepoInfo.Description }}
+    {{ $url := printf "https://tangled.org/%s/issues/%d" .RepoInfo.FullName .Issue.IssueId }}
+    {{ $imageUrl := printf "https://tangled.org/%s/issues/%d/opengraph" .RepoInfo.FullName .Issue.IssueId }}
 
     <meta property="og:title" content="{{ unescapeHtml $title }}" />
     <meta property="og:type" content="object" />
