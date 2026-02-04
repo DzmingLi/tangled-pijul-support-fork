@@ -124,10 +124,10 @@ func (rp *Issues) drawIssueSummaryCard(issue *models.Issue, repo *models.Repo, c
 	}
 
 	// Split stats area: left side for status/comments (80%), right side for dolly (20%)
-	statusCommentsArea, dollyArea := statsArea.Split(true, 80)
+	statusArea, dollyArea := statsArea.Split(true, 80)
 
 	// Draw status and comment count in status/comments area
-	statsBounds := statusCommentsArea.Img.Bounds()
+	statsBounds := statusArea.Img.Bounds()
 	statsX := statsBounds.Min.X + 60 // left padding
 	statsY := statsBounds.Min.Y
 
@@ -140,39 +140,47 @@ func (rp *Issues) drawIssueSummaryCard(issue *models.Issue, repo *models.Repo, c
 	// Draw status (open/closed) with colored icon and text
 	var statusIcon string
 	var statusText string
-	var statusBgColor color.RGBA
+	var statusColor color.RGBA
 
 	if issue.Open {
 		statusIcon = "circle-dot"
 		statusText = "open"
-		statusBgColor = color.RGBA{34, 139, 34, 255} // green
+		statusColor = color.RGBA{34, 139, 34, 255} // green
 	} else {
 		statusIcon = "ban"
 		statusText = "closed"
-		statusBgColor = color.RGBA{52, 58, 64, 255} // dark gray
+		statusColor = color.RGBA{52, 58, 64, 255} // dark gray
 	}
 
-	badgeIconSize := 36
+	statusTextWidth := statusArea.TextWidth(statusText, textSize)
+	badgePadding := 12
+	badgeHeight := int(textSize) + (badgePadding * 2)
+	badgeWidth := iconSize + badgePadding + statusTextWidth + (badgePadding * 2)
+	cornerRadius := 8
+	badgeX := 60
+	badgeY := 0
 
-	// Draw icon with status color (no background)
-	err = statusCommentsArea.DrawLucideIcon(statusIcon, statsX, statsY+iconBaselineOffset-badgeIconSize/2+5, badgeIconSize, statusBgColor)
+	statusArea.DrawRoundedRect(badgeX, badgeY, badgeWidth, badgeHeight, cornerRadius, statusColor)
+
+	whiteColor := color.RGBA{255, 255, 255, 255}
+	iconX := statsX + badgePadding
+	iconY := statsY + (badgeHeight-iconSize)/2
+	err = statusArea.DrawLucideIcon(statusIcon, iconX, iconY, iconSize, whiteColor)
 	if err != nil {
 		log.Printf("failed to draw status icon: %v", err)
 	}
 
-	// Draw text with status color (no background)
-	textX := statsX + badgeIconSize + 12
-	badgeTextSize := 32.0
-	err = statusCommentsArea.DrawTextAt(statusText, textX, statsY+iconBaselineOffset, statusBgColor, badgeTextSize, ogcard.Middle, ogcard.Left)
+	textX := statsX + badgePadding + iconSize + badgePadding
+	textY := statsY + (badgeHeight-int(textSize))/2 - 5
+	err = statusArea.DrawTextAt(statusText, textX, textY, whiteColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw status text: %v", err)
 	}
 
-	statusTextWidth := len(statusText) * 20
-	currentX := statsX + badgeIconSize + 12 + statusTextWidth + 50
+	currentX := statsX + badgeWidth + 50
 
 	// Draw comment count
-	err = statusCommentsArea.DrawLucideIcon("message-square", currentX, statsY+iconBaselineOffset-iconSize/2+5, iconSize, iconColor)
+	err = statusArea.DrawLucideIcon("message-square", currentX, iconY, iconSize, iconColor)
 	if err != nil {
 		log.Printf("failed to draw comment icon: %v", err)
 	}
@@ -182,7 +190,7 @@ func (rp *Issues) drawIssueSummaryCard(issue *models.Issue, repo *models.Repo, c
 	if commentCount == 1 {
 		commentText = "1 comment"
 	}
-	err = statusCommentsArea.DrawTextAt(commentText, currentX, statsY+iconBaselineOffset, iconColor, textSize, ogcard.Middle, ogcard.Left)
+	err = statusArea.DrawTextAt(commentText, currentX, textY, iconColor, textSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw comment text: %v", err)
 	}
@@ -205,7 +213,7 @@ func (rp *Issues) drawIssueSummaryCard(issue *models.Issue, repo *models.Repo, c
 	openedDate := issue.Created.Format("Jan 2, 2006")
 	metaText := fmt.Sprintf("opened by %s · %s", authorHandle, openedDate)
 
-	err = statusCommentsArea.DrawTextAt(metaText, statsX, labelY, iconColor, labelSize, ogcard.Top, ogcard.Left)
+	err = statusArea.DrawTextAt(metaText, statsX, labelY, iconColor, labelSize, ogcard.Top, ogcard.Left)
 	if err != nil {
 		log.Printf("failed to draw metadata: %v", err)
 	}
