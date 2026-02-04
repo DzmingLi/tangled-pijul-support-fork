@@ -199,8 +199,8 @@ func (o *OAuth) ensureTangledProfile(sessData *oauth.ClientSessionData) {
 	did := sessData.AccountDID.String()
 	l := o.Logger.With("did", did)
 
-	_, err := db.GetProfile(o.Db, did)
-	if err == nil {
+	profile, _ := db.GetProfile(o.Db, did)
+	if profile != nil {
 		l.Debug("profile already exists in DB")
 		return
 	}

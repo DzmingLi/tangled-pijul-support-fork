@@ -523,6 +523,7 @@ func (p *Pages) ForkRepo(w io.Writer, params ForkRepoParams) error {
 
 type ProfileCard struct {
 	UserDid      string
+	HasProfile   bool
 	FollowStatus models.FollowStatus
 	Punchcard    *models.Punchcard
 	Profile      *models.Profile

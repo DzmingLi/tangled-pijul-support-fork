@@ -18,6 +18,18 @@
 {{ end }}
 
 {{ define "content" }}
+  {{ if not .Card.HasProfile }}
+  <section class="bg-white dark:bg-gray-800 px-2 py-6 md:p-6 rounded w-full dark:text-white drop-shadow-sm">
+    <div class="flex items-center gap-6 p-4">
+      <img class="w-28 h-28 shrink-0 object-cover rounded-full" src="{{ profileAvatarUrl .Card.Profile "" }}" />
+      <div>
+        <p class="text-lg font-bold">{{ resolve .Card.UserDid }}</p>
+        <p class="text-gray-700 dark:text-gray-300 mt-2">This user hasn't joined Tangled yet.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Let them know we're waiting for them!</p>
+      </div>
+    </div>
+  </section>
+  {{ else }}
   {{ template "profileTabs" . }}
   <section class="bg-white dark:bg-gray-800 px-2 py-6 md:p-6 rounded w-full dark:text-white drop-shadow-sm">
     <div class="grid grid-cols-1 md:grid-cols-11 gap-4">
@@ -35,6 +47,7 @@
       {{ block "profileContent" . }} {{ end }}
     </div>
   </section>
+  {{ end }}
 {{ end }}
 
 {{ define "profileTabs" }}

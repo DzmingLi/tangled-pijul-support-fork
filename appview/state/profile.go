@@ -58,6 +58,11 @@ func (s *State) profile(r *http.Request) (*pages.ProfileCard, error) {
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
 
+	hasProfile := profile != nil
+	if !hasProfile {
+		profile = &models.Profile{Did: did}
+	}
+
 	repoCount, err := db.CountRepos(s.db, orm.FilterEq("did", did))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get repo count: %w", err)
@@ -98,6 +103,7 @@ func (s *State) profile(r *http.Request) (*pages.ProfileCard, error) {
 
 	return &pages.ProfileCard{
 		UserDid:      did,
+		HasProfile:   hasProfile,
 		Profile:      profile,
 		FollowStatus: followStatus,
 		Stats: pages.ProfileStats{
@@ -533,6 +539,9 @@ func (s *State) UpdateProfileBio(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
+	if profile == nil {
+		profile = &models.Profile{Did: user.Active.Did}
+	}
 
 	profile.Description = r.FormValue("description")
 	profile.IncludeBluesky = r.FormValue("includeBluesky") == "on"
@@ -575,6 +584,9 @@ func (s *State) UpdateProfilePins(w http.ResponseWriter, r *http.Request) {
 	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
 		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
+	}
+	if profile == nil {
+		profile = &models.Profile{Did: user.Active.Did}
 	}
 
 	i := 0
@@ -676,6 +688,9 @@ func (s *State) EditBioFragment(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
 	}
+	if profile == nil {
+		profile = &models.Profile{Did: user.Active.Did}
+	}
 
 	s.pages.EditBioFragment(w, pages.EditBioParams{
 		LoggedInUser: user,
@@ -689,6 +704,9 @@ func (s *State) EditPinsFragment(w http.ResponseWriter, r *http.Request) {
 	profile, err := db.GetProfile(s.db, user.Active.Did)
 	if err != nil {
 		log.Printf("getting profile data for %s: %s", user.Active.Did, err)
+	}
+	if profile == nil {
+		profile = &models.Profile{Did: user.Active.Did}
 	}
 
 	repos, err := db.GetRepos(s.db, 0, orm.FilterEq("did", user.Active.Did))
@@ -816,6 +834,8 @@ func (s *State) UploadProfileAvatar(w http.ResponseWriter, r *http.Request) {
 	profile, err := db.GetProfile(s.db, user.Did)
 	if err != nil {
 		l.Warn("getting profile data from DB", "err", err)
+	}
+	if profile == nil {
 		profile = &models.Profile{Did: user.Did}
 	}
 	profile.Avatar = uploadBlobResp.Blob.Ref.String()
@@ -892,6 +912,8 @@ func (s *State) RemoveProfileAvatar(w http.ResponseWriter, r *http.Request) {
 	profile, err := db.GetProfile(s.db, user.Did)
 	if err != nil {
 		l.Warn("getting profile data from DB", "err", err)
+	}
+	if profile == nil {
 		profile = &models.Profile{Did: user.Did}
 	}
 	profile.Avatar = ""

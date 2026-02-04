@@ -360,9 +360,7 @@ func GetProfile(e Execer, did string) (*models.Profile, error) {
 		did,
 	).Scan(&avatar, &profile.Description, &includeBluesky, &profile.Location, &pronouns)
 	if err == sql.ErrNoRows {
-		profile := models.Profile{}
-		profile.Did = did
-		return &profile, nil
+		return nil, nil
 	}
 
 	if err != nil {

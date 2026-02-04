@@ -126,7 +126,7 @@ func Make(ctx context.Context, config *config.Config) (*State, error) {
 		wrapper,
 		false,
 
-		// in-memory filter is inapplicalble to appview so
+		// in-memory filter is inapplicable to appview so
 		// we'll never log dids anyway.
 		false,
 	)
