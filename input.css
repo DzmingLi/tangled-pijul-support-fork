@@ -175,6 +175,15 @@
             @apply opacity-70;
         }
 
+        .prose h1:target,
+        .prose h2:target,
+        .prose h3:target,
+        .prose h4:target,
+        .prose h5:target,
+        .prose h6:target {
+            @apply bg-yellow-200/30 dark:bg-yellow-600/30;
+        }
+
         .prose a.footnote-backref {
             @apply no-underline;
         }
