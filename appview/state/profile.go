@@ -550,13 +550,8 @@ func (s *State) UpdateProfileBio(w http.ResponseWriter, r *http.Request) {
 	stat0 := r.FormValue("stat0")
 	stat1 := r.FormValue("stat1")
 
-	if stat0 != "" {
-		profile.Stats[0].Kind = models.VanityStatKind(stat0)
-	}
-
-	if stat1 != "" {
-		profile.Stats[1].Kind = models.VanityStatKind(stat1)
-	}
+	profile.Stats[0].Kind = models.ParseVanityStatKind(stat0)
+	profile.Stats[1].Kind = models.ParseVanityStatKind(stat1)
 
 	if err := db.ValidateProfile(s.db, profile); err != nil {
 		log.Println("invalid profile", err)

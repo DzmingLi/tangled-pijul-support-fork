@@ -317,7 +317,7 @@ func (i *Ingester) ingestProfile(e *jmodels.Event) error {
 		var stats [2]models.VanityStat
 		for i, s := range record.Stats {
 			if i < 2 {
-				stats[i].Kind = models.VanityStatKind(s)
+				stats[i].Kind = models.ParseVanityStatKind(s)
 			}
 		}
 

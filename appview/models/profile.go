@@ -60,7 +60,29 @@ const (
 	VanityStatClosedIssueCount VanityStatKind = "closed-issue-count"
 	VanityStatRepositoryCount  VanityStatKind = "repository-count"
 	VanityStatStarCount        VanityStatKind = "star-count"
+	VanityStatNone             VanityStatKind = ""
 )
+
+func ParseVanityStatKind(s string) VanityStatKind {
+	switch s {
+	case "merged-pull-request-count":
+		return VanityStatMergedPRCount
+	case "closed-pull-request-count":
+		return VanityStatClosedPRCount
+	case "open-pull-request-count":
+		return VanityStatOpenPRCount
+	case "open-issue-count":
+		return VanityStatOpenIssueCount
+	case "closed-issue-count":
+		return VanityStatClosedIssueCount
+	case "repository-count":
+		return VanityStatRepositoryCount
+	case "star-count":
+		return VanityStatStarCount
+	default:
+		return VanityStatNone
+	}
+}
 
 func (v VanityStatKind) String() string {
 	switch v {
@@ -78,8 +100,9 @@ func (v VanityStatKind) String() string {
 		return "Repositories"
 	case VanityStatStarCount:
 		return "Stars Received"
+	default:
+		return ""
 	}
-	return ""
 }
 
 type VanityStat struct {

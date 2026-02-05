@@ -453,6 +453,8 @@ func GetVanityStat(e Execer, did string, stat models.VanityStatKind) (uint64, er
 	case models.VanityStatStarCount:
 		query = `select count(id) from stars where subject_at like 'at://' || ? || '%'`
 		args = append(args, did)
+	case models.VanityStatNone:
+		return 0, nil
 	default:
 		return 0, fmt.Errorf("invalid vanity stat kind: %s", stat)
 	}

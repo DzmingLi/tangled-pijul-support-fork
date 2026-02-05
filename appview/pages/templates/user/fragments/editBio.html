@@ -110,7 +110,7 @@
   {{ $id := index . 0 }}
   {{ $stat := index . 1 }}
   <select class="stat-group w-full p-1 border border-gray-200 bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700 text-sm" id="stat{{$id}}" name="stat{{$id}}">
-    <option value="">choose stat</option>
+    <option value="">Choose Stat</option>
     {{ $stats := assoc
       "merged-pull-request-count" "Merged PR Count" 
       "closed-pull-request-count" "Closed PR Count" 
