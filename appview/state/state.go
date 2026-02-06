@@ -173,7 +173,8 @@ func Make(ctx context.Context, config *config.Config) (*State, error) {
 		notifiers = append(notifiers, phnotify.NewPosthogNotifier(posthog))
 	}
 	notifiers = append(notifiers, indexer)
-	notifier := notify.NewMergedNotifier(notifiers, tlog.SubLogger(logger, "notify"))
+	notifier := notify.NewMergedNotifier(notifiers)
+	notifier = notify.NewLoggingNotifier(notifier, tlog.SubLogger(logger, "notify"))
 
 	state := &State{
 		d,

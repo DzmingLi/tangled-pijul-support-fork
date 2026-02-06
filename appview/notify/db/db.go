@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"log"
 	"slices"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
@@ -11,6 +10,7 @@ import (
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/notify"
 	"tangled.org/core/idresolver"
+	"tangled.org/core/log"
 	"tangled.org/core/orm"
 	"tangled.org/core/sets"
 )
@@ -38,6 +38,8 @@ func (n *databaseNotifier) NewRepo(ctx context.Context, repo *models.Repo) {
 }
 
 func (n *databaseNotifier) NewStar(ctx context.Context, star *models.Star) {
+	l := log.FromContext(ctx)
+
 	if star.RepoAt.Collection().String() != tangled.RepoNSID {
 		// skip string stars for now
 		return
@@ -45,7 +47,7 @@ func (n *databaseNotifier) NewStar(ctx context.Context, star *models.Star) {
 	var err error
 	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(star.RepoAt)))
 	if err != nil {
-		log.Printf("NewStar: failed to get repos: %v", err)
+		l.Error("failed to get repos", "err", err)
 		return
 	}
 
@@ -59,6 +61,7 @@ func (n *databaseNotifier) NewStar(ctx context.Context, star *models.Star) {
 	var pullId *int64
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		eventType,
@@ -75,9 +78,11 @@ func (n *databaseNotifier) DeleteStar(ctx context.Context, star *models.Star) {
 }
 
 func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, mentions []syntax.DID) {
+	l := log.FromContext(ctx)
+
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
-		log.Printf("failed to fetch collaborators: %v", err)
+		l.Error("failed to fetch collaborators", "err", err)
 		return
 	}
 
@@ -101,6 +106,7 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 	var pullId *int64
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		models.NotificationTypeIssueCreated,
@@ -111,6 +117,7 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 		pullId,
 	)
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
@@ -123,13 +130,15 @@ func (n *databaseNotifier) NewIssue(ctx context.Context, issue *models.Issue, me
 }
 
 func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.IssueComment, mentions []syntax.DID) {
+	l := log.FromContext(ctx)
+
 	issues, err := db.GetIssues(n.db, orm.FilterEq("at_uri", comment.IssueAt))
 	if err != nil {
-		log.Printf("NewIssueComment: failed to get issues: %v", err)
+		l.Error("failed to get issues", "err", err)
 		return
 	}
 	if len(issues) == 0 {
-		log.Printf("NewIssueComment: no issue found for %s", comment.IssueAt)
+		l.Error("no issue found for", "err", comment.IssueAt)
 		return
 	}
 	issue := issues[0]
@@ -170,6 +179,7 @@ func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.
 	var pullId *int64
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		models.NotificationTypeIssueCommented,
@@ -180,6 +190,7 @@ func (n *databaseNotifier) NewIssueComment(ctx context.Context, comment *models.
 		pullId,
 	)
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
@@ -204,6 +215,7 @@ func (n *databaseNotifier) NewFollow(ctx context.Context, follow *models.Follow)
 	var repoId, issueId, pullId *int64
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		eventType,
@@ -220,14 +232,16 @@ func (n *databaseNotifier) DeleteFollow(ctx context.Context, follow *models.Foll
 }
 
 func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
+	l := log.FromContext(ctx)
+
 	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(pull.RepoAt)))
 	if err != nil {
-		log.Printf("NewPull: failed to get repos: %v", err)
+		l.Error("failed to get repos", "err", err)
 		return
 	}
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
-		log.Printf("failed to fetch collaborators: %v", err)
+		l.Error("failed to fetch collaborators", "err", err)
 		return
 	}
 
@@ -249,6 +263,7 @@ func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
 	pullId := &p
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		eventType,
@@ -261,18 +276,20 @@ func (n *databaseNotifier) NewPull(ctx context.Context, pull *models.Pull) {
 }
 
 func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.PullComment, mentions []syntax.DID) {
+	l := log.FromContext(ctx)
+
 	pull, err := db.GetPull(n.db,
 		syntax.ATURI(comment.RepoAt),
 		comment.PullId,
 	)
 	if err != nil {
-		log.Printf("NewPullComment: failed to get pulls: %v", err)
+		l.Error("failed to get pulls", "err", err)
 		return
 	}
 
 	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", comment.RepoAt))
 	if err != nil {
-		log.Printf("NewPullComment: failed to get repos: %v", err)
+		l.Error("failed to get repos", "err", err)
 		return
 	}
 
@@ -298,6 +315,7 @@ func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.P
 	pullId := &p
 
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		recipients,
 		eventType,
@@ -308,6 +326,7 @@ func (n *databaseNotifier) NewPullComment(ctx context.Context, comment *models.P
 		pullId,
 	)
 	n.notifyEvent(
+		ctx,
 		actorDid,
 		sets.Collect(slices.Values(mentions)),
 		models.NotificationTypeUserMentioned,
@@ -336,9 +355,11 @@ func (n *databaseNotifier) NewString(ctx context.Context, string *models.String)
 }
 
 func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, issue *models.Issue) {
+	l := log.FromContext(ctx)
+
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", issue.Repo.RepoAt()))
 	if err != nil {
-		log.Printf("failed to fetch collaborators: %v", err)
+		l.Error("failed to fetch collaborators", "err", err)
 		return
 	}
 
@@ -368,6 +389,7 @@ func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, 
 	}
 
 	n.notifyEvent(
+		ctx,
 		actor,
 		recipients,
 		eventType,
@@ -380,16 +402,18 @@ func (n *databaseNotifier) NewIssueState(ctx context.Context, actor syntax.DID, 
 }
 
 func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, pull *models.Pull) {
+	l := log.FromContext(ctx)
+
 	// Get repo details
 	repo, err := db.GetRepo(n.db, orm.FilterEq("at_uri", string(pull.RepoAt)))
 	if err != nil {
-		log.Printf("NewPullState: failed to get repos: %v", err)
+		l.Error("failed to get repos", "err", err)
 		return
 	}
 
 	collaborators, err := db.GetCollaborators(n.db, orm.FilterEq("repo_at", repo.RepoAt()))
 	if err != nil {
-		log.Printf("failed to fetch collaborators: %v", err)
+		l.Error("failed to fetch collaborators", "err", err)
 		return
 	}
 
@@ -417,13 +441,14 @@ func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, p
 	case models.PullMerged:
 		eventType = models.NotificationTypePullMerged
 	default:
-		log.Println("NewPullState: unexpected new PR state:", pull.State)
+		l.Error("unexpected new PR state", "state", pull.State)
 		return
 	}
 	p := int64(pull.ID)
 	pullId := &p
 
 	n.notifyEvent(
+		ctx,
 		actor,
 		recipients,
 		eventType,
@@ -436,6 +461,7 @@ func (n *databaseNotifier) NewPullState(ctx context.Context, actor syntax.DID, p
 }
 
 func (n *databaseNotifier) notifyEvent(
+	ctx context.Context,
 	actorDid syntax.DID,
 	recipients sets.Set[syntax.DID],
 	eventType models.NotificationType,
@@ -445,6 +471,8 @@ func (n *databaseNotifier) notifyEvent(
 	issueId *int64,
 	pullId *int64,
 ) {
+	l := log.FromContext(ctx)
+
 	// if the user is attempting to mention >maxMentions users, this is probably spam, do not mention anybody
 	if eventType == models.NotificationTypeUserMentioned && recipients.Len() > maxMentions {
 		return
@@ -494,7 +522,7 @@ func (n *databaseNotifier) notifyEvent(
 		}
 
 		if err := db.CreateNotification(tx, notif); err != nil {
-			log.Printf("notifyEvent: failed to create notification for %s: %v", recipientDid, err)
+			l.Error("failed to create notification", "recipientDid", recipientDid, "err", err)
 		}
 	}
 
