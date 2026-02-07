@@ -553,6 +553,8 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	keyword := params.Get("q")
 
+	repoInfo := s.repoResolver.GetRepoInfo(r, user)
+
 	var pulls []*models.Pull
 	searchOpts := models.PullSearchOptions{
 		Keyword: keyword,
@@ -569,6 +571,36 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 		}
 		totalPulls = int(res.Total)
 		l.Debug("searched pulls with indexer", "count", len(res.Hits))
+
+		// count matching pulls in the other states to display correct counts
+		for _, other := range []models.PullState{models.PullOpen, models.PullMerged, models.PullClosed} {
+			if other == state {
+				continue
+			}
+			countRes, err := s.indexer.Search(r.Context(), models.PullSearchOptions{
+				Keyword: keyword, RepoAt: f.RepoAt().String(), State: other,
+				Page: pagination.Page{Limit: 1},
+			})
+			if err != nil {
+				continue
+			}
+			switch other {
+			case models.PullOpen:
+				repoInfo.Stats.PullCount.Open = int(countRes.Total)
+			case models.PullMerged:
+				repoInfo.Stats.PullCount.Merged = int(countRes.Total)
+			case models.PullClosed:
+				repoInfo.Stats.PullCount.Closed = int(countRes.Total)
+			}
+		}
+		switch state {
+		case models.PullOpen:
+			repoInfo.Stats.PullCount.Open = int(res.Total)
+		case models.PullMerged:
+			repoInfo.Stats.PullCount.Merged = int(res.Total)
+		case models.PullClosed:
+			repoInfo.Stats.PullCount.Closed = int(res.Total)
+		}
 
 		pulls, err = db.GetPulls(
 			s.db,
@@ -668,7 +700,7 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 
 	s.pages.RepoPulls(w, pages.RepoPullsParams{
 		LoggedInUser: s.oauth.GetMultiAccountUser(r),
-		RepoInfo:     s.repoResolver.GetRepoInfo(r, user),
+		RepoInfo:     repoInfo,
 		Pulls:        pulls,
 		LabelDefs:    defs,
 		FilteringBy:  state,
