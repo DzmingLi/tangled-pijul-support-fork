@@ -822,6 +822,8 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 	keyword := params.Get("q")
 
+	repoInfo := rp.repoResolver.GetRepoInfo(r, user)
+
 	var issues []models.Issue
 	searchOpts := models.IssueSearchOptions{
 		Keyword: keyword,
@@ -837,6 +839,21 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 		}
 		l.Debug("searched issues with indexer", "count", len(res.Hits))
 		totalIssues = int(res.Total)
+
+		// count matching issues in the opposite state to display correct counts
+		countRes, err := rp.indexer.Search(r.Context(), models.IssueSearchOptions{
+			Keyword: keyword, RepoAt: f.RepoAt().String(), IsOpen: !isOpen,
+			Page: pagination.Page{Limit: 1},
+		})
+		if err == nil {
+			if isOpen {
+				repoInfo.Stats.IssueCount.Open = int(res.Total)
+				repoInfo.Stats.IssueCount.Closed = int(countRes.Total)
+			} else {
+				repoInfo.Stats.IssueCount.Closed = int(res.Total)
+				repoInfo.Stats.IssueCount.Open = int(countRes.Total)
+			}
+		}
 
 		issues, err = db.GetIssues(
 			rp.db,
@@ -884,7 +901,7 @@ func (rp *Issues) RepoIssues(w http.ResponseWriter, r *http.Request) {
 
 	rp.pages.RepoIssues(w, pages.RepoIssuesParams{
 		LoggedInUser:    rp.oauth.GetMultiAccountUser(r),
-		RepoInfo:        rp.repoResolver.GetRepoInfo(r, user),
+		RepoInfo:        repoInfo,
 		Issues:          issues,
 		IssueCount:      totalIssues,
 		LabelDefs:       defs,
