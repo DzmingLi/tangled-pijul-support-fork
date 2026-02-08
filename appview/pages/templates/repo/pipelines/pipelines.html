@@ -7,12 +7,41 @@
 {{ end }}
 
 {{ define "repoContent" }}
-<div class="flex justify-between items-center gap-4 mb-4">
-  <div class="text-sm text-gray-600 dark:text-gray-400">
-    {{ len .Pipelines }} pipeline run{{ if ne (len .Pipelines) 1 }}s{{ end }}
+  {{ $active := "all" }}
+  {{ if .FilteringByPush }}
+    {{ $active = "push" }}
+  {{ else if .FilteringByPR }}
+    {{ $active = "pr" }}
+  {{ end }}
+
+  {{ $all :=
+     (dict
+       "Key" "all"
+       "Value" "all"
+       "Icon" "package"
+       "Meta" "") }}
+  {{ $push :=
+     (dict
+       "Key" "push"
+       "Value" "push"
+       "Icon" "git-commit-horizontal"
+       "Meta" "") }}
+  {{ $pr :=
+     (dict
+       "Key" "pr"
+       "Value" "pull request"
+       "Icon" "git-pull-request"
+       "Meta" "") }}
+  {{ $values := list $all $push $pr }}
+
+  <div class="flex justify-between items-center gap-4">
+    <div>
+      {{ template "fragments/tabSelector" (dict "Name" "trigger" "Values" $values "Active" $active) }}
+    </div>
+    <div class="text-sm text-gray-600 dark:text-gray-400">
+      {{ len .Pipelines }} pipeline run{{ if ne (len .Pipelines) 1 }}s{{ end }}
+    </div>
   </div>
-  <!-- Future: Add filter tabs here similar to issues/pulls -->
-</div>
 {{ end }}
 
 {{ define "repoAfter" }}

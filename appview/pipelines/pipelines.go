@@ -98,10 +98,28 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Filter by trigger
+	filterTrigger := r.URL.Query().Get("trigger")
+	var filtered []models.Pipeline
+	for _, pipeline := range ps {
+		if filterTrigger == "push" && pipeline.Trigger != nil && pipeline.Trigger.IsPush() {
+			filtered = append(filtered, pipeline)
+		} else if filterTrigger == "pr" && pipeline.Trigger != nil && pipeline.Trigger.IsPullRequest() {
+			filtered = append(filtered, pipeline)
+		} else if filterTrigger == "" || filterTrigger == "all" {
+			filtered = append(filtered, pipeline)
+		}
+	}
+
+	filteringByPush := filterTrigger == "push"
+	filteringByPR := filterTrigger == "pr"
+
 	p.pages.Pipelines(w, pages.PipelinesParams{
-		LoggedInUser: user,
-		RepoInfo:     p.repoResolver.GetRepoInfo(r, user),
-		Pipelines:    ps,
+		LoggedInUser:    user,
+		RepoInfo:        p.repoResolver.GetRepoInfo(r, user),
+		Pipelines:       filtered,
+		FilteringByPush: filteringByPush,
+		FilteringByPR:   filteringByPR,
 	})
 }
 
