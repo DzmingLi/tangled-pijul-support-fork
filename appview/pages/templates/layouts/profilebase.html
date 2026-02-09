@@ -3,18 +3,30 @@
 {{ define "extrameta" }}
     {{ $handle := resolve .Card.UserDid }}
     {{ $avatarUrl := profileAvatarUrl .Card.Profile "" }}
+    {{ $description := or .Card.Profile.Description (printf "%s on Tangled" $handle) }}
+    {{ $url := printf "https://tangled.org/%s" $handle }}
+
+    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="{{ $handle }}" />
     <meta property="og:type" content="profile" />
-    <meta property="og:url" content="https://tangled.org/{{ $handle }}?tab={{ .Active }}" />
-    <meta property="og:description" content="{{ or .Card.Profile.Description $handle }}" />
+    <meta property="og:url" content="{{ $url }}" />
+    <meta property="og:description" content="{{ $description }}" />
     <meta property="og:image" content="{{ $avatarUrl }}" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
-    
+    <meta property="og:image:alt" content="{{ $handle }}'s avatar" />
+    <meta property="profile:username" content="{{ $handle }}" />
+
+    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="{{ $handle }}" />
-    <meta name="twitter:description" content="{{ or .Card.Profile.Description $handle }}" />
+    <meta name="twitter:description" content="{{ $description }}" />
     <meta name="twitter:image" content="{{ $avatarUrl }}" />
+    <meta name="twitter:image:alt" content="{{ $handle }}'s avatar" />
+
+    <!-- Additional SEO -->
+    <meta name="description" content="{{ $description }}" />
+    <link rel="canonical" href="{{ $url }}" />
 {{ end }}
 
 {{ define "content" }}

@@ -4,8 +4,21 @@
         <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-            <meta name="description" content="Social coding, but for real this time!"/>
+            <meta name="description" content="The next-generation social coding platform."/>
             <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
+
+            <!-- Open Graph defaults -->
+            <meta property="og:site_name" content="Tangled" />
+            <meta property="og:type" content="website" />
+            <meta property="og:locale" content="en_US" />
+
+
+            <!-- Keywords -->
+            <meta name="keywords" content="git, code collaboration, AT Protocol, open source, version control, social coding, code hosting" />
+
+            <!-- Author and copyright -->
+            <meta name="author" content="Tangled" />
+            <meta name="robots" content="index, follow" />
 
             <script defer src="/static/htmx.min.js"></script>
             <script defer src="/static/htmx-ext-ws.min.js"></script>
@@ -26,7 +39,7 @@
             <link rel="preload" href="/static/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
 
             <link rel="stylesheet" href="/static/tw.css?{{ cssContentHash }}" type="text/css" />
-            <title>{{ block "title" . }}{{ end }} · tangled</title>
+            <title>{{ block "title" . }}{{ end }}</title>
             {{ block "extrameta" . }}{{ end }}
         </head>
         <body class="min-h-screen flex flex-col gap-4 bg-slate-100 dark:bg-gray-900 dark:text-white transition-colors duration-200">
