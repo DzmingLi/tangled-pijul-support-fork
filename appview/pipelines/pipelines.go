@@ -86,40 +86,44 @@ func (p *Pipelines) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filterKind := r.URL.Query().Get("trigger")
+	filters := []orm.Filter{
+		orm.FilterEq("p.repo_owner", f.Did),
+		orm.FilterEq("p.repo_name", f.Name),
+		orm.FilterEq("p.knot", f.Knot),
+	}
+	switch filterKind {
+	case "push":
+		filters = append(filters, orm.FilterEq("t.kind", "push"))
+	case "pull_request":
+		filters = append(filters, orm.FilterEq("t.kind", "pull_request"))
+	default:
+		// no filters otherwise, default to "all"
+		filterKind = "all"
+	}
+
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		30,
-		orm.FilterEq("repo_owner", f.Did),
-		orm.FilterEq("repo_name", f.Name),
-		orm.FilterEq("knot", f.Knot),
+		filters...,
 	)
 	if err != nil {
 		l.Error("failed to query db", "err", err)
 		return
 	}
 
-	// Filter by trigger
-	filterTrigger := r.URL.Query().Get("trigger")
-	var filtered []models.Pipeline
-	for _, pipeline := range ps {
-		if filterTrigger == "push" && pipeline.Trigger != nil && pipeline.Trigger.IsPush() {
-			filtered = append(filtered, pipeline)
-		} else if filterTrigger == "pr" && pipeline.Trigger != nil && pipeline.Trigger.IsPullRequest() {
-			filtered = append(filtered, pipeline)
-		} else if filterTrigger == "" || filterTrigger == "all" {
-			filtered = append(filtered, pipeline)
-		}
+	total, err := db.GetTotalPipelineStatuses(p.db, filters...)
+	if err != nil {
+		l.Error("failed to query db", "err", err)
+		return
 	}
 
-	filteringByPush := filterTrigger == "push"
-	filteringByPR := filterTrigger == "pr"
-
 	p.pages.Pipelines(w, pages.PipelinesParams{
-		LoggedInUser:    user,
-		RepoInfo:        p.repoResolver.GetRepoInfo(r, user),
-		Pipelines:       filtered,
-		FilteringByPush: filteringByPush,
-		FilteringByPR:   filteringByPR,
+		LoggedInUser: user,
+		RepoInfo:     p.repoResolver.GetRepoInfo(r, user),
+		Pipelines:    ps,
+		FilterKind:   filterKind,
+		Total:        total,
 	})
 }
 
@@ -148,10 +152,10 @@ func (p *Pipelines) Workflow(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		orm.FilterEq("repo_owner", f.Did),
-		orm.FilterEq("repo_name", f.Name),
-		orm.FilterEq("knot", f.Knot),
-		orm.FilterEq("id", pipelineId),
+		orm.FilterEq("p.repo_owner", f.Did),
+		orm.FilterEq("p.repo_name", f.Name),
+		orm.FilterEq("p.knot", f.Knot),
+		orm.FilterEq("p.id", pipelineId),
 	)
 	if err != nil {
 		l.Error("failed to query db", "err", err)
@@ -215,10 +219,10 @@ func (p *Pipelines) Logs(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		p.db,
 		1,
-		orm.FilterEq("repo_owner", f.Did),
-		orm.FilterEq("repo_name", f.Name),
-		orm.FilterEq("knot", f.Knot),
-		orm.FilterEq("id", pipelineId),
+		orm.FilterEq("p.repo_owner", f.Did),
+		orm.FilterEq("p.repo_name", f.Name),
+		orm.FilterEq("p.knot", f.Knot),
+		orm.FilterEq("p.id", pipelineId),
 	)
 	if err != nil || len(ps) != 1 {
 		l.Error("pipeline query failed", "err", err, "count", len(ps))
@@ -364,10 +368,10 @@ func (p *Pipelines) Cancel(w http.ResponseWriter, r *http.Request) {
 		ps, err := db.GetPipelineStatuses(
 			p.db,
 			1,
-			orm.FilterEq("repo_owner", f.Did),
-			orm.FilterEq("repo_name", f.Name),
-			orm.FilterEq("knot", f.Knot),
-			orm.FilterEq("id", pipelineId),
+			orm.FilterEq("p.repo_owner", f.Did),
+			orm.FilterEq("p.repo_name", f.Name),
+			orm.FilterEq("p.knot", f.Knot),
+			orm.FilterEq("p.id", pipelineId),
 		)
 		if err != nil {
 			return models.Pipeline{}, err

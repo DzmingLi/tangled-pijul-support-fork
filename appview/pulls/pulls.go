@@ -214,10 +214,10 @@ func (s *Pulls) repoPullHelper(w http.ResponseWriter, r *http.Request, interdiff
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		orm.FilterEq("repo_owner", f.Did),
-		orm.FilterEq("repo_name", f.Name),
-		orm.FilterEq("knot", f.Knot),
-		orm.FilterIn("sha", shas),
+		orm.FilterEq("p.repo_owner", f.Did),
+		orm.FilterEq("p.repo_name", f.Name),
+		orm.FilterEq("p.knot", f.Knot),
+		orm.FilterIn("p.sha", shas),
 	)
 	if err != nil {
 		log.Printf("failed to fetch pipeline statuses: %s", err)
@@ -636,10 +636,10 @@ func (s *Pulls) RepoPulls(w http.ResponseWriter, r *http.Request) {
 	ps, err := db.GetPipelineStatuses(
 		s.db,
 		len(shas),
-		orm.FilterEq("repo_owner", f.Did),
-		orm.FilterEq("repo_name", f.Name),
-		orm.FilterEq("knot", f.Knot),
-		orm.FilterIn("sha", shas),
+		orm.FilterEq("p.repo_owner", f.Did),
+		orm.FilterEq("p.repo_name", f.Name),
+		orm.FilterEq("p.knot", f.Knot),
+		orm.FilterIn("p.sha", shas),
 	)
 	if err != nil {
 		log.Printf("failed to fetch pipeline statuses: %s", err)

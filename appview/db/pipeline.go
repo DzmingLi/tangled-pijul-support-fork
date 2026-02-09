@@ -170,11 +170,13 @@ func AddPipelineStatus(e Execer, status models.PipelineStatus) error {
 
 // this is a mega query, but the most useful one:
 // get N pipelines, for each one get the latest status of its N workflows
+//
+// the pipelines table is aliased to `p`
+// the triggers table is aliased to `t`
 func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.Pipeline, error) {
 	var conditions []string
 	var args []any
 	for _, filter := range filters {
-		filter.Key = "p." + filter.Key // the table is aliased in the query to `p`
 		conditions = append(conditions, filter.Condition())
 		args = append(args, filter.Arg()...)
 	}
@@ -365,4 +367,49 @@ func GetPipelineStatuses(e Execer, limit int, filters ...orm.Filter) ([]models.P
 	})
 
 	return all, nil
+}
+
+// the pipelines table is aliased to `p`
+// the triggers table is aliased to `t`
+func GetTotalPipelineStatuses(e Execer, filters ...orm.Filter) (int64, error) {
+	var conditions []string
+	var args []any
+	for _, filter := range filters {
+		conditions = append(conditions, filter.Condition())
+		args = append(args, filter.Arg()...)
+	}
+
+	whereClause := ""
+	if conditions != nil {
+		whereClause = " where " + strings.Join(conditions, " and ")
+	}
+
+	query := fmt.Sprintf(`
+		select
+			count(1)
+		from
+			pipelines p
+		join
+			triggers t ON p.trigger_id = t.id
+		%s
+	`, whereClause)
+
+	rows, err := e.Query(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var count int64
+		err := rows.Scan(&count)
+		if err != nil {
+			return 0, err
+		}
+
+		return count, nil
+	}
+
+	// unreachable
+	return 0, nil
 }

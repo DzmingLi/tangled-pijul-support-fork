@@ -1348,12 +1348,12 @@ func (p *Pages) EditLabelPanel(w io.Writer, params EditLabelPanelParams) error {
 }
 
 type PipelinesParams struct {
-	LoggedInUser    *oauth.MultiAccountUser
-	RepoInfo        repoinfo.RepoInfo
-	Pipelines       []models.Pipeline
-	Active          string
-	FilteringByPush bool
-	FilteringByPR   bool
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Pipelines    []models.Pipeline
+	Active       string
+	FilterKind   string
+	Total        int64
 }
 
 func (p *Pages) Pipelines(w io.Writer, params PipelinesParams) error {

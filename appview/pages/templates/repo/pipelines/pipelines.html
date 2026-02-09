@@ -7,12 +7,7 @@
 {{ end }}
 
 {{ define "repoContent" }}
-  {{ $active := "all" }}
-  {{ if .FilteringByPush }}
-    {{ $active = "push" }}
-  {{ else if .FilteringByPR }}
-    {{ $active = "pr" }}
-  {{ end }}
+  {{ $active := .FilterKind }}
 
   {{ $all :=
      (dict
@@ -28,7 +23,7 @@
        "Meta" "") }}
   {{ $pr :=
      (dict
-       "Key" "pr"
+       "Key" "pull_request"
        "Value" "pull request"
        "Icon" "git-pull-request"
        "Meta" "") }}
@@ -36,10 +31,10 @@
 
   <div class="flex justify-between items-center gap-4">
     <div>
-      {{ template "fragments/tabSelector" (dict "Name" "trigger" "Values" $values "Active" $active) }}
+      {{ template "fragments/tabSelector" (dict "Name" "trigger" "Values" $values "Active" .FilterKind) }}
     </div>
     <div class="text-sm text-gray-600 dark:text-gray-400">
-      {{ len .Pipelines }} pipeline run{{ if ne (len .Pipelines) 1 }}s{{ end }}
+      {{ .Total }} pipeline run{{ if ne .Total 1 }}s{{ end }}
     </div>
   </div>
 {{ end }}
@@ -52,7 +47,7 @@
     {{ end }}
   </div>
 {{ else }}
-  <div class="mt-2 py-12 flex flex-col items-center justify-center gap-6 text-center border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900">
+  <div class="mt-2 py-12 flex flex-col items-center justify-center gap-6 text-center border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800">
     <div class="flex justify-center">
       {{ i "package" "size-16 text-gray-300 dark:text-gray-700" }}
     </div>
