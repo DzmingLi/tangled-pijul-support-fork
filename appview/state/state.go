@@ -207,8 +207,15 @@ func (s *State) RobotsTxt(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Set("Cache-Control", "public, max-age=86400") // one day
 
-	robotsTxt := `User-agent: *
+	robotsTxt := `# Hello, Tanglers!
+User-agent: *
 Allow: /
+Disallow: /*/*/settings
+Disallow: /settings
+Disallow: /*/*/compare
+Disallow: /*/*/fork
+
+Crawl-delay: 1
 `
 	w.Write([]byte(robotsTxt))
 }
