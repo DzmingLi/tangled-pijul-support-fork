@@ -17,7 +17,7 @@ echo 'build-users-group = ' >> /etc/nix/nix.conf`
 
 // dependencyStep processes dependencies defined in the workflow.
 // For dependencies using a custom registry (i.e. not nixpkgs), it collects
-// all packages and adds a single 'nix profile install' step to the
+// all packages and adds a single 'nix profile add' step to the
 // beginning of the workflow's step list.
 func dependencyStep(deps map[string][]string) *Step {
 	var customPackages []string
