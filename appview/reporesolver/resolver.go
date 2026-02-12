@@ -115,6 +115,7 @@ func (rr *RepoResolver) GetRepoInfo(r *http.Request, user *oauth.MultiAccountUse
 		Topics:      repo.Topics,
 		Knot:        repo.Knot,
 		Spindle:     repo.Spindle,
+		Vcs:         repo.Vcs,
 		Stats:       *stats,
 
 		// fork repo upstream

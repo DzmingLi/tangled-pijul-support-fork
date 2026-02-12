@@ -745,6 +745,63 @@ func (p *Pages) RepoLog(w io.Writer, params RepoLogParams) error {
 	return p.executeRepo("repo/log", w, params)
 }
 
+type PijulChangeView struct {
+	Hash         string
+	Authors      []*tangled.RepoChangeList_Author
+	Message      string
+	Dependencies []string
+	Timestamp    time.Time
+	HasTimestamp bool
+}
+
+type RepoChangesParams struct {
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Active       string
+	Page         int
+	Changes      []PijulChangeView
+}
+
+func (p *Pages) RepoChanges(w io.Writer, params RepoChangesParams) error {
+	params.Active = "changes"
+	return p.executeRepo("repo/changes", w, params)
+}
+
+type RepoChangeParams struct {
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Active       string
+	Change       PijulChangeDetail
+}
+
+func (p *Pages) RepoChange(w io.Writer, params RepoChangeParams) error {
+	params.Active = "changes"
+	return p.executeRepo("repo/change", w, params)
+}
+
+type PijulChangeDetail struct {
+	Hash         string
+	Authors      []*tangled.RepoChangeGet_Author
+	Message      string
+	Dependencies []string
+	Diff         string
+	HasDiff      bool
+	DiffLines    []PijulDiffLine
+	Timestamp    time.Time
+	HasTimestamp bool
+}
+
+type PijulDiffLine struct {
+	Kind string
+	Op   string
+	Body string
+	Text string
+	OldLine int64
+	NewLine int64
+	HasOld  bool
+	HasNew  bool
+}
+
 type RepoCommitParams struct {
 	LoggedInUser *oauth.MultiAccountUser
 	RepoInfo     repoinfo.RepoInfo
@@ -1517,4 +1574,46 @@ func (p *Pages) ErrorKnot404(w io.Writer) error {
 
 func (p *Pages) Error503(w io.Writer) error {
 	return p.execute("errors/503", w, nil)
+}
+
+// Pijul Discussion pages - these are different from Git's issues/PRs
+
+type RepoDiscussionsListParams struct {
+	LoggedInUser    *oauth.MultiAccountUser
+	RepoInfo        repoinfo.RepoInfo
+	Active          string
+	Discussions     []models.Discussion
+	Filter          string
+	DiscussionCount models.DiscussionCount
+}
+
+func (p *Pages) RepoDiscussionsList(w io.Writer, params RepoDiscussionsListParams) error {
+	params.Active = "discussions"
+	return p.executeRepo("repo/pijul/discussions/list", w, params)
+}
+
+type NewDiscussionParams struct {
+	LoggedInUser *oauth.MultiAccountUser
+	RepoInfo     repoinfo.RepoInfo
+	Active       string
+}
+
+func (p *Pages) NewDiscussion(w io.Writer, params NewDiscussionParams) error {
+	params.Active = "discussions"
+	return p.executeRepo("repo/pijul/discussions/new", w, params)
+}
+
+type RepoSingleDiscussionParams struct {
+	LoggedInUser  *oauth.MultiAccountUser
+	RepoInfo      repoinfo.RepoInfo
+	Active        string
+	Discussion    *models.Discussion
+	CommentList   []models.DiscussionCommentListItem
+	CanManage     bool
+	ActivePatches []*models.DiscussionPatch
+}
+
+func (p *Pages) RepoSingleDiscussion(w io.Writer, params RepoSingleDiscussionParams) error {
+	params.Active = "discussions"
+	return p.executeRepo("repo/pijul/discussions/single", w, params)
 }

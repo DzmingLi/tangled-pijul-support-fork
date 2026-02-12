@@ -42,6 +42,71 @@ func (rp *Repo) Tree(w http.ResponseWriter, r *http.Request) {
 		Host: host,
 	}
 	repo := fmt.Sprintf("%s/%s", f.Did, f.Name)
+	if f.IsPijul() {
+		xrpcResp, err := tangled.RepoPijulTree(r.Context(), xrpcc, ref, treePath, repo)
+		if xrpcerr := xrpcclient.HandleXrpcErr(err); xrpcerr != nil {
+			l.Error("failed to call XRPC repo.pijulTree", "err", xrpcerr)
+			rp.pages.Error503(w)
+			return
+		}
+		files := make([]types.NiceTree, len(xrpcResp.Files))
+		for i, xrpcFile := range xrpcResp.Files {
+			files[i] = types.NiceTree{
+				Name: xrpcFile.Name,
+				Mode: xrpcFile.Mode,
+				Size: xrpcFile.Size,
+			}
+		}
+		result := types.RepoTreeResponse{
+			Ref:   ref,
+			Files: files,
+		}
+		if xrpcResp.Ref != nil {
+			result.Ref = *xrpcResp.Ref
+		}
+		if xrpcResp.Parent != nil {
+			result.Parent = *xrpcResp.Parent
+		}
+		if xrpcResp.Dotdot != nil {
+			result.DotDot = *xrpcResp.Dotdot
+		}
+		if xrpcResp.Readme != nil {
+			if xrpcResp.Readme.Filename != nil {
+				result.ReadmeFileName = *xrpcResp.Readme.Filename
+			}
+			if xrpcResp.Readme.Contents != nil {
+				result.Readme = *xrpcResp.Readme.Contents
+			}
+		}
+		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
+		displayRef := ref
+		if displayRef == "" {
+			displayRef = result.Ref
+		}
+		if len(result.Files) == 0 && result.Parent == treePath {
+			redirectTo := fmt.Sprintf("/%s/blob/%s/%s", ownerSlashRepo, url.PathEscape(displayRef), result.Parent)
+			http.Redirect(w, r, redirectTo, http.StatusFound)
+			return
+		}
+		user := rp.oauth.GetMultiAccountUser(r)
+		var breadcrumbs [][]string
+		breadcrumbs = append(breadcrumbs, []string{f.Name, fmt.Sprintf("/%s/tree/%s", ownerSlashRepo, url.PathEscape(displayRef))})
+		if treePath != "" {
+			for idx, elem := range strings.Split(treePath, "/") {
+				breadcrumbs = append(breadcrumbs, []string{elem, fmt.Sprintf("%s/%s", breadcrumbs[idx][1], url.PathEscape(elem))})
+			}
+		}
+		sortFiles(result.Files)
+		rp.pages.RepoTree(w, pages.RepoTreeParams{
+			LoggedInUser:     user,
+			BreadCrumbs:      breadcrumbs,
+			TreePath:         treePath,
+			RepoInfo:         rp.repoResolver.GetRepoInfo(r, user),
+			RepoTreeResponse: result,
+		})
+		return
+	}
+
 	xrpcResp, err := tangled.RepoTree(r.Context(), xrpcc, treePath, ref, repo)
 	if xrpcerr := xrpcclient.HandleXrpcErr(err); xrpcerr != nil {
 		l.Error("failed to call XRPC repo.tree", "err", xrpcerr)

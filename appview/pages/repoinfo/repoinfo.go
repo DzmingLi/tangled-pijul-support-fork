@@ -38,10 +38,19 @@ func (r RepoInfo) FullNameWithoutAt() string {
 func (r RepoInfo) GetTabs() [][]string {
 	tabs := [][]string{
 		{"overview", "/", "square-chart-gantt"},
-		{"issues", "/issues", "circle-dot"},
-		{"pulls", "/pulls", "git-pull-request"},
-		{"pipelines", "/pipelines", "layers-2"},
 	}
+
+	if r.IsPijul() {
+		// Pijul repos use changes and discussions
+		tabs = append(tabs, []string{"changes", "/changes", "logs"})
+		tabs = append(tabs, []string{"discussions", "/discussions", "message-square"})
+	} else {
+		// Git repos use separate issues and pulls
+		tabs = append(tabs, []string{"issues", "/issues", "circle-dot"})
+		tabs = append(tabs, []string{"pulls", "/pulls", "git-pull-request"})
+	}
+
+	tabs = append(tabs, []string{"pipelines", "/pipelines", "layers-2"})
 
 	if r.Roles.SettingsAllowed() {
 		tabs = append(tabs, []string{"settings", "/settings", "cog"})
@@ -64,12 +73,21 @@ type RepoInfo struct {
 	Topics      []string
 	Knot        string
 	Spindle     string
+	Vcs         string // "git" or "pijul"
 	IsStarred   bool
 	Stats       models.RepoStats
 	Roles       RolesInRepo
 	Source      *models.Repo
 	Ref         string
 	CurrentDir  string
+}
+
+func (r RepoInfo) IsGit() bool {
+	return r.Vcs == "" || r.Vcs == "git"
+}
+
+func (r RepoInfo) IsPijul() bool {
+	return r.Vcs == "pijul"
 }
 
 // each tab on a repo could have some metadata:
@@ -82,10 +100,14 @@ type RepoInfo struct {
 func (r RepoInfo) TabMetadata() map[string]any {
 	meta := make(map[string]any)
 
-	meta["pulls"] = r.Stats.PullCount.Open
-	meta["issues"] = r.Stats.IssueCount.Open
-
-	// more stuff?
+	if r.IsPijul() {
+		// Pijul repos use discussions
+		meta["discussions"] = r.Stats.DiscussionCount.Open
+	} else {
+		// Git repos use separate issues and pulls
+		meta["issues"] = r.Stats.IssueCount.Open
+		meta["pulls"] = r.Stats.PullCount.Open
+	}
 
 	return meta
 }

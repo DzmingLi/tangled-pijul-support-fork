@@ -283,7 +283,6 @@
 
               rm -f api/tangled/*
               lexgen --build-file lexicon-build-config.json lexicons
-              sed -i.bak 's/\tutil/\/\/\tutil/' api/tangled/*
               # lexgen generates incomplete Marshaler/Unmarshaler for union types
               find api/tangled/*.go -not -name "cbor_gen.go" -exec \
                 sed -i '/^func.*\(MarshalCBOR\|UnmarshalCBOR\)/,/^}/ s/^/\/\/ /' {} +

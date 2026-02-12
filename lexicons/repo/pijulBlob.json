@@ -1,0 +1,67 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.pijulBlob",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get file content from a Pijul repository",
+      "parameters": {
+        "type": "params",
+        "required": ["repo", "path"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier in format 'did:plc:.../repoName'"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Pijul channel name (defaults to main channel)"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the file within the repository"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["path", "is_binary"],
+          "properties": {
+            "contents": {
+              "type": "string",
+              "description": "File contents (empty for binary files)"
+            },
+            "is_binary": {
+              "type": "boolean",
+              "description": "Whether the file is binary"
+            },
+            "path": {
+              "type": "string",
+              "description": "File path"
+            },
+            "ref": {
+              "type": "string",
+              "description": "Channel name"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "RepoNotFound",
+          "description": "Repository not found or access denied"
+        },
+        {
+          "name": "PathNotFound",
+          "description": "File not found in repository"
+        },
+        {
+          "name": "InvalidRequest",
+          "description": "Invalid request parameters"
+        }
+      ]
+    }
+  }
+}

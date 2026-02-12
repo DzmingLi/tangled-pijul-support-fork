@@ -464,6 +464,18 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 		}
 		l = l.With("defaultBranch", defaultBranch)
 
+		vcs := strings.ToLower(strings.TrimSpace(r.FormValue("vcs")))
+		if vcs == "" {
+			vcs = "git"
+		}
+		switch vcs {
+		case "git", "pijul":
+		default:
+			s.pages.Notice(w, "repo", "Invalid repository type.")
+			return
+		}
+		l = l.With("vcs", vcs)
+
 		description := r.FormValue("description")
 
 		// ACL validation
@@ -496,6 +508,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 			Description: description,
 			Created:     time.Now(),
 			Labels:      s.config.Label.DefaultLabelDefs,
+			Vcs:         vcs,
 		}
 		record := repo.AsRecord()
 
@@ -569,6 +582,7 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 			client,
 			&tangled.RepoCreate_Input{
 				Rkey: rkey,
+				Vcs:  &vcs,
 			},
 		)
 		if err := xrpcclient.HandleXrpcErr(xe); err != nil {
@@ -591,6 +605,14 @@ func (s *State) NewRepo(w http.ResponseWriter, r *http.Request) {
 			l.Error("acl setup failed", "err", err)
 			s.pages.Notice(w, "repo", "Failed to set up repository permissions.")
 			return
+		}
+		if repo.IsPijul() {
+			err = s.enforcer.AddPijulRepoPermissions(user.Active.Did, domain, p)
+			if err != nil {
+				l.Error("pijul acl setup failed", "err", err)
+				s.pages.Notice(w, "repo", "Failed to set up repository permissions.")
+				return
+			}
 		}
 
 		err = tx.Commit()

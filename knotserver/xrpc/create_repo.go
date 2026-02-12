@@ -16,6 +16,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/hook"
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/knotserver/pijul"
 	"tangled.org/core/rbac"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
@@ -46,6 +47,17 @@ func (h *Xrpc) CreateRepo(w http.ResponseWriter, r *http.Request) {
 	var data tangled.RepoCreate_Input
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		fail(xrpcerr.GenericError(err))
+		return
+	}
+
+	vcs := "git"
+	if data.Vcs != nil && strings.TrimSpace(*data.Vcs) != "" {
+		vcs = strings.ToLower(strings.TrimSpace(*data.Vcs))
+	}
+	switch vcs {
+	case "git", "pijul":
+	default:
+		fail(xrpcerr.GenericError(fmt.Errorf("unsupported vcs: %s", vcs)))
 		return
 	}
 
@@ -84,14 +96,22 @@ func (h *Xrpc) CreateRepo(w http.ResponseWriter, r *http.Request) {
 	repoPath, _ := securejoin.SecureJoin(h.Config.Repo.ScanPath, relativeRepoPath)
 
 	if data.Source != nil && *data.Source != "" {
-		err = git.Fork(repoPath, *data.Source, h.Config)
+		if vcs == "pijul" {
+			err = pijul.Clone(*data.Source, repoPath, "")
+		} else {
+			err = git.Fork(repoPath, *data.Source, h.Config)
+		}
 		if err != nil {
 			l.Error("forking repo", "error", err.Error())
 			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
 			return
 		}
 	} else {
-		err = git.InitBare(repoPath, defaultBranch)
+		if vcs == "pijul" {
+			err = pijul.InitBare(repoPath)
+		} else {
+			err = git.InitBare(repoPath, defaultBranch)
+		}
 		if err != nil {
 			l.Error("initializing bare repo", "error", err.Error())
 			if errors.Is(err, gogit.ErrRepositoryAlreadyExists) {
@@ -110,6 +130,14 @@ func (h *Xrpc) CreateRepo(w http.ResponseWriter, r *http.Request) {
 		l.Error("adding repo permissions", "error", err.Error())
 		writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
 		return
+	}
+	if vcs == "pijul" {
+		err = h.Enforcer.AddPijulRepoPermissions(actorDid.String(), rbac.ThisServer, relativeRepoPath)
+		if err != nil {
+			l.Error("adding pijul permissions", "error", err.Error())
+			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	hook.SetupRepo(

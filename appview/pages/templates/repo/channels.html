@@ -1,0 +1,91 @@
+{{ define "title" }}
+    channels &middot; {{ .RepoInfo.FullName }}
+{{ end }}
+
+{{ define "extrameta" }}
+    {{ $title := printf "channels &middot; %s" .RepoInfo.FullName }}
+    {{ $url := printf "https://tangled.org/%s/channels" .RepoInfo.FullName }}
+
+    {{ template "repo/fragments/og" (dict "RepoInfo" .RepoInfo "Title" $title "Url" $url) }}
+{{ end }}
+
+{{ define "repoContent" }}
+<section id="channels-table" class="overflow-x-auto">
+  <h2 class="font-bold text-sm mb-4 uppercase dark:text-white">
+      Channels
+  </h2>
+
+  <!-- desktop view (hidden on small screens) -->
+  <table class="w-full border-collapse hidden md:table">
+    <thead>
+      <tr>
+        <th class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold">Name</th>
+        <th class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range $index, $channel := .Channels }}
+      <tr class="{{ if ne $index (sub (len $.Channels) 1) }}border-b border-gray-200 dark:border-gray-700{{ end }}">
+        <td class="py-3 whitespace-nowrap">
+          <a href="/{{ $.RepoInfo.FullName }}/tree/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2">
+            <span class="dark:text-white">
+              {{ .Name }}
+            </span>
+            {{ if .IsCurrent }}
+              <span class="
+                text-sm rounded
+                bg-gray-100 dark:bg-gray-700 text-black dark:text-white
+                font-mono
+                px-2 mx-1/2
+                inline-flex items-center
+                ">
+                current
+              </span>
+            {{ end }}
+          </a>
+        </td>
+        <td class="py-3 whitespace-nowrap">
+          {{ if .IsCurrent }}
+            <span class="text-green-600 dark:text-green-400 text-sm">active</span>
+          {{ else }}
+            <span class="text-gray-500 text-sm">-</span>
+          {{ end }}
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+
+  <!-- mobile view (visible only on small screens) -->
+  <div class="md:hidden">
+    {{ range $index, $channel := .Channels }}
+    <div class="relative p-2 {{ if ne $index (sub (len $.Channels) 1) }}border-b border-gray-200 dark:border-gray-700{{ end }}">
+      <div class="flex items-center justify-between">
+        <a href="/{{ $.RepoInfo.FullName }}/tree/{{ .Name | urlquery }}" class="no-underline hover:underline flex items-center gap-2">
+          <span class="dark:text-white font-medium">
+            {{ .Name }}
+          </span>
+          {{ if .IsCurrent }}
+            <span class="
+              text-xs rounded
+              bg-gray-100 dark:bg-gray-700 text-black dark:text-white
+              font-mono
+              px-2
+              inline-flex items-center
+              ">
+              current
+            </span>
+          {{ end }}
+        </a>
+      </div>
+    </div>
+    {{ end }}
+  </div>
+
+  {{ if not .Channels }}
+  <div class="text-gray-500 dark:text-gray-400 py-4">
+    No channels found in this repository.
+  </div>
+  {{ end }}
+</section>
+{{ end }}

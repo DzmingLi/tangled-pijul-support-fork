@@ -1,0 +1,90 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.changeGet",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get details of a specific Pijul change",
+      "parameters": {
+        "type": "params",
+        "required": ["repo", "hash"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier in format 'did:plc:.../repoName'"
+          },
+          "hash": {
+            "type": "string",
+            "description": "Change hash to retrieve"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["hash", "authors", "message"],
+          "properties": {
+            "hash": {
+              "type": "string",
+              "description": "Change hash (base32 encoded)"
+            },
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#author"
+              }
+            },
+            "message": {
+              "type": "string",
+              "description": "Change description"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "datetime",
+              "description": "When the change was recorded"
+            },
+            "dependencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Hashes of changes this change depends on"
+            },
+            "diff": {
+              "type": "string",
+              "description": "Raw diff content of the change"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "RepoNotFound",
+          "description": "Repository not found or access denied"
+        },
+        {
+          "name": "ChangeNotFound",
+          "description": "Change not found"
+        },
+        {
+          "name": "InvalidRequest",
+          "description": "Invalid request parameters"
+        }
+      ]
+    },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

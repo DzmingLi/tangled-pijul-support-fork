@@ -90,7 +90,7 @@ func (h *InternalHandle) Guard(w http.ResponseWriter, r *http.Request) {
 	// did:foo/repo-name or
 	// handle/repo-name or
 	// any of the above with a leading slash (/)
-	components := strings.Split(strings.TrimPrefix(strings.Trim(repo, "'"), "/"), "/")
+	components := strings.Split(strings.TrimPrefix(strings.Trim(repo, "'\""), "/"), "/")
 	l.Info("command components", "components", components)
 
 	if len(components) != 2 {
@@ -117,6 +117,14 @@ func (h *InternalHandle) Guard(w http.ResponseWriter, r *http.Request) {
 
 	if gitCommand == "git-receive-pack" {
 		ok, err := h.e.IsPushAllowed(incomingUser, rbac.ThisServer, qualifiedRepo)
+		if err != nil || !ok {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, repo)
+			return
+		}
+	}
+	if gitCommand == "pijul-protocol" {
+		ok, err := h.e.E.Enforce(incomingUser, rbac.ThisServer, qualifiedRepo, rbac.PijulApply)
 		if err != nil || !ok {
 			w.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(w, repo)

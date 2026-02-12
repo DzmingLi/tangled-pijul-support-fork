@@ -1,0 +1,120 @@
+{{ define "title" }}discussions &middot; {{ .RepoInfo.FullName }}{{ end }}
+
+{{ define "extrameta" }}
+    {{ $title := "discussions"}}
+    {{ $url := printf "https://tangled.org/%s/discussions" .RepoInfo.FullName }}
+    {{ template "repo/fragments/og" (dict "RepoInfo" .RepoInfo "Title" $title "Url" $url) }}
+{{ end }}
+
+{{ define "repoContent" }}
+  {{ $active := .Filter }}
+  {{ if eq $active "" }}
+    {{ $active = "open" }}
+  {{ end }}
+
+  {{ $open :=
+     (dict
+       "Key" "open"
+       "Value" "open"
+       "Icon" "message-circle"
+       "Meta" (string .DiscussionCount.Open)) }}
+  {{ $merged :=
+     (dict
+       "Key" "merged"
+       "Value" "merged"
+       "Icon" "git-merge"
+       "Meta" (string .DiscussionCount.Merged)) }}
+  {{ $closed :=
+     (dict
+       "Key" "closed"
+       "Value" "closed"
+       "Icon" "ban"
+       "Meta" (string .DiscussionCount.Closed)) }}
+  {{ $values := list $open $merged $closed }}
+
+  <div class="flex items-center justify-between gap-4 mb-4">
+    <div>
+      {{ template "fragments/tabSelector" (dict "Name" "filter" "Values" $values "Active" $active) }}
+    </div>
+    <a
+      href="/{{ .RepoInfo.FullName }}/discussions/new"
+      class="btn-create text-sm flex items-center justify-center gap-2 no-underline hover:no-underline hover:text-white"
+    >
+      {{ i "message-square-plus" "w-4 h-4" }}
+      <span>new discussion</span>
+    </a>
+  </div>
+  <div class="error" id="discussions"></div>
+{{ end }}
+
+{{ define "repoAfter" }}
+  <div class="mt-2">
+    {{ if .Discussions }}
+      <div class="flex flex-col gap-2">
+        {{ range .Discussions }}
+          {{ $stateBg := "bg-gray-800 dark:bg-gray-700" }}
+          {{ $stateIcon := "ban" }}
+          {{ $stateText := "closed" }}
+          {{ if .State.IsOpen }}
+            {{ $stateBg = "bg-green-600 dark:bg-green-700" }}
+            {{ $stateIcon = "message-circle" }}
+            {{ $stateText = "open" }}
+          {{ else if .State.IsMerged }}
+            {{ $stateBg = "bg-purple-600 dark:bg-purple-700" }}
+            {{ $stateIcon = "git-merge" }}
+            {{ $stateText = "merged" }}
+          {{ end }}
+
+          <div class="rounded drop-shadow-sm bg-white px-6 py-4 dark:bg-gray-800 dark:border-gray-700">
+            <div class="pb-2">
+              <a href="/{{ $.RepoInfo.FullName }}/discussions/{{ .DiscussionId }}"
+                 class="no-underline hover:underline">
+                {{ .Title | description }}
+                <span class="text-gray-500 dark:text-gray-400">#{{ .DiscussionId }}</span>
+              </a>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-1">
+              <span class="inline-flex items-center rounded px-2 py-[5px] {{ $stateBg }}">
+                {{ i $stateIcon "w-3 h-3 mr-1.5 text-white dark:text-white" }}
+                <span class="text-white dark:text-white text-sm">{{ $stateText }}</span>
+              </span>
+
+              {{ if .TargetChannel }}
+                <span class="inline-flex items-center rounded px-2 py-[5px] bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm ml-1">
+                  {{ i "git-branch" "w-3 h-3 mr-1" }}
+                  {{ .TargetChannel }}
+                </span>
+              {{ end }}
+
+              <span class="ml-1">
+                {{ template "user/fragments/picHandleLink" .Did }}
+              </span>
+
+              <span class="before:content-['·']">
+                {{ template "repo/fragments/time" .Created }}
+              </span>
+
+              {{ $patchCount := len .ActivePatches }}
+              {{ if gt $patchCount 0 }}
+                <span class="before:content-['·']">
+                  {{ $patchCount }} patch{{ if ne $patchCount 1 }}es{{ end }}
+                </span>
+              {{ end }}
+
+              {{ $commentCount := .TotalComments }}
+              {{ if gt $commentCount 0 }}
+                <span class="before:content-['·']">
+                  {{ $commentCount }} comment{{ if ne $commentCount 1 }}s{{ end }}
+                </span>
+              {{ end }}
+            </div>
+          </div>
+        {{ end }}
+      </div>
+    {{ else }}
+      <div class="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+        No discussions yet. Start a new discussion to propose changes.
+      </div>
+    {{ end }}
+  </div>
+{{ end }}

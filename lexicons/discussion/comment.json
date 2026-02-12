@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.discussion.comment",
+  "needsCbor": true,
+  "needsType": true,
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A comment on a discussion",
+      "record": {
+        "type": "object",
+        "required": ["discussion", "body", "createdAt"],
+        "properties": {
+          "discussion": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The discussion this comment belongs to"
+          },
+          "body": {
+            "type": "string",
+            "description": "Comment text"
+          },
+          "replyTo": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "If this is a reply, the parent comment's at-uri"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        }
+      }
+    }
+  }
+}

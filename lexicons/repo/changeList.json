@@ -1,0 +1,122 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.changeList",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List changes in a Pijul repository",
+      "parameters": {
+        "type": "params",
+        "required": ["repo"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier in format 'did:plc:.../repoName'"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Pijul channel name (defaults to main channel)"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of changes to return",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Pagination cursor (offset)"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["changes", "page", "per_page", "total"],
+          "properties": {
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#changeEntry"
+              }
+            },
+            "channel": {
+              "type": "string"
+            },
+            "page": {
+              "type": "integer"
+            },
+            "per_page": {
+              "type": "integer"
+            },
+            "total": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "RepoNotFound",
+          "description": "Repository not found or access denied"
+        },
+        {
+          "name": "ChannelNotFound",
+          "description": "Channel not found"
+        },
+        {
+          "name": "InvalidRequest",
+          "description": "Invalid request parameters"
+        }
+      ]
+    },
+    "changeEntry": {
+      "type": "object",
+      "required": ["hash", "authors", "message"],
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Change hash (base32 encoded)"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#author"
+          }
+        },
+        "message": {
+          "type": "string",
+          "description": "Change description"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When the change was recorded"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Hashes of changes this change depends on"
+        }
+      }
+    },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

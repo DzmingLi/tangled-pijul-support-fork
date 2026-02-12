@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -25,6 +26,19 @@ type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Prepare(query string) (*sql.Stmt, error)
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
+
+func columnExists(tx *sql.Tx, table, column string) (bool, error) {
+	query := fmt.Sprintf("select 1 from pragma_table_info('%s') where name = ? limit 1", table)
+	var one int
+	err := tx.QueryRow(query, column).Scan(&one)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func Make(ctx context.Context, dbPath string) (*DB, error) {
@@ -75,6 +89,7 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 			rkey text not null,
 			at_uri text not null unique,
 			created text not null default (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+			vcs text not null default 'git' check (vcs in ('git', 'pijul')),
 			unique(did, name, knot, rkey)
 		);
 		create table if not exists collaborators (
@@ -1175,6 +1190,13 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 	})
 
 	orm.RunMigration(conn, logger, "add-avatar-to-profile", func(tx *sql.Tx) error {
+		colExists, colErr := columnExists(tx, "profile", "avatar")
+		if colErr != nil {
+			return colErr
+		}
+		if colExists {
+			return nil
+		}
 		_, err := tx.Exec(`
 			alter table profile add column avatar text;
 		`)
@@ -1201,6 +1223,130 @@ func Make(ctx context.Context, dbPath string) (*DB, error) {
 
 		-- rename new table
 		alter table profile_stats_new rename to profile_stats;
+		`)
+		return err
+	})
+
+	// Add vcs column to repos table for pijul support
+	orm.RunMigration(conn, logger, "add-vcs-to-repos", func(tx *sql.Tx) error {
+		colExists, colErr := columnExists(tx, "repos", "vcs")
+		if colErr != nil {
+			return colErr
+		}
+		if colExists {
+			return nil
+		}
+		_, err := tx.Exec(`
+			alter table repos add column vcs text not null default 'git' check (vcs in ('git', 'pijul'));
+		`)
+		return err
+	})
+
+	// Create discussions tables for Pijul repos
+	orm.RunMigration(conn, logger, "create-discussions-tables", func(tx *sql.Tx) error {
+		_, err := tx.Exec(`
+			-- Discussions: unified discussion model for Pijul repos
+			create table if not exists discussions (
+				-- identifiers
+				id integer primary key autoincrement,
+				did text not null,
+				rkey text not null,
+				at_uri text generated always as ('at://' || did || '/' || 'sh.tangled.repo.discussion' || '/' || rkey) stored,
+
+				-- repo reference
+				repo_at text not null,
+
+				-- sequential ID per repo
+				discussion_id integer not null,
+
+				-- content
+				title text not null,
+				body text not null,
+				target_channel text not null default 'main',
+
+				-- state: 0=closed, 1=open, 2=merged
+				state integer not null default 1 check (state in (0, 1, 2)),
+
+				-- meta
+				created text not null default (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+				edited text,
+
+				-- constraints
+				unique(did, rkey),
+				unique(repo_at, discussion_id),
+				unique(at_uri),
+				foreign key (repo_at) references repos(at_uri) on delete cascade
+			);
+
+			-- Discussion patches: anyone can add patches to a discussion
+			create table if not exists discussion_patches (
+				-- identifiers
+				id integer primary key autoincrement,
+				discussion_at text not null,
+
+				-- who pushed this patch
+				pushed_by_did text not null,
+
+				-- patch content
+				patch_hash text not null,
+				patch text not null,
+
+				-- meta
+				added text not null default (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+				removed text, -- NULL means active, timestamp means removed
+
+				-- constraints
+				unique(discussion_at, patch_hash),
+				foreign key (discussion_at) references discussions(at_uri) on delete cascade
+			);
+
+			-- Discussion comments
+			create table if not exists discussion_comments (
+				-- identifiers
+				id integer primary key autoincrement,
+				did text not null,
+				rkey text,
+				at_uri text generated always as ('at://' || did || '/' || 'sh.tangled.repo.discussion.comment' || '/' || rkey) stored,
+
+				-- parent references
+				discussion_at text not null,
+				reply_to text, -- at_uri of parent comment for threading
+
+				-- content
+				body text not null,
+				created text not null default (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+				edited text,
+				deleted text,
+
+				-- constraints
+				unique(did, rkey),
+				unique(at_uri),
+				foreign key (discussion_at) references discussions(at_uri) on delete cascade
+			);
+
+			-- Discussion subscriptions: who is watching a discussion
+			create table if not exists discussion_subscriptions (
+				id integer primary key autoincrement,
+				discussion_at text not null,
+				subscriber_did text not null,
+				created text not null default (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+
+				unique(discussion_at, subscriber_did),
+				foreign key (discussion_at) references discussions(at_uri) on delete cascade
+			);
+
+			-- Sequential ID generator for discussions per repo
+			create table if not exists repo_discussion_seqs (
+				repo_at text primary key,
+				next_discussion_id integer not null default 1
+			);
+
+			-- indexes for discussions
+			create index if not exists idx_discussions_repo_at on discussions(repo_at);
+			create index if not exists idx_discussions_state on discussions(state);
+			create index if not exists idx_discussion_patches_discussion_at on discussion_patches(discussion_at);
+			create index if not exists idx_discussion_patches_pushed_by on discussion_patches(pushed_by_did);
+			create index if not exists idx_discussion_comments_discussion_at on discussion_comments(discussion_at);
 		`)
 		return err
 	})

@@ -22,12 +22,21 @@ type Repo struct {
 	Topics      []string
 	Spindle     string
 	Labels      []string
+	Vcs         string // "git" or "pijul"
 
 	// optionally, populate this when querying for reverse mappings
 	RepoStats *RepoStats
 
 	// optional
 	Source string
+}
+
+func (r *Repo) IsGit() bool {
+	return r.Vcs == "" || r.Vcs == "git"
+}
+
+func (r *Repo) IsPijul() bool {
+	return r.Vcs == "pijul"
 }
 
 func (r *Repo) AsRecord() tangled.Repo {
@@ -76,10 +85,11 @@ func (r Repo) TopicStr() string {
 }
 
 type RepoStats struct {
-	Language   string
-	StarCount  int
-	IssueCount IssueCount
-	PullCount  PullCount
+	Language        string
+	StarCount       int
+	IssueCount      IssueCount
+	PullCount       PullCount
+	DiscussionCount DiscussionCount
 }
 
 type IssueCount struct {

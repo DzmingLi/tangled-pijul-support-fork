@@ -10,7 +10,7 @@
     {{ if gt (len .BranchesTrunc) 0 }}
       <div class="flex flex-col items-center">
         <p class="text-center pt-5 text-gray-400 dark:text-gray-500">
-        This branch is empty. Other branches in this repository are populated:
+        This {{ if .RepoInfo.IsPijul }}channel{{ else }}branch{{ end }} is empty. Other {{ if .RepoInfo.IsPijul }}channels{{ else }}branches{{ end }} in this repository are populated:
         </p>
         <div class="mt-4 grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 rounded border border-gray-200 dark:border-gray-700 w-full md:w-1/2">
           {{ range $br := .BranchesTrunc }}

@@ -53,21 +53,23 @@
 {{ $name := index . 1 }}
 {{ $default := index . 2 }}
   <select name="{{$name}}" id="{{$name}}-select" class="p-1 border max-w-32 md:max-w-64 border-gray-200 bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700">
-    <optgroup label="branches ({{ len $root.Branches }})" class="bold text-sm">
+    <optgroup label="{{ if $root.RepoInfo.IsPijul }}channels{{ else }}branches{{ end }} ({{ len $root.Branches }})" class="bold text-sm">
       {{ range $root.Branches }}
         <option value="{{ .Reference.Name }}" class="py-1" {{if eq .Reference.Name $default}}selected{{end}}>
           {{ .Reference.Name }}
         </option>
       {{ end }}
     </optgroup>
-      <optgroup label="tags ({{ len $root.Tags }})" class="bold text-sm">
-        {{ range $root.Tags }}
-          <option value="{{ .Reference.Name }}" class="py-1" {{if eq .Reference.Name $default}}selected{{end}}>
-            {{ .Reference.Name }}
-          </option>
-        {{ else }}
-          <option class="py-1" disabled>no tags found</option>
-        {{ end }}
-      </optgroup>
+    {{ if not $root.RepoInfo.IsPijul }}
+    <optgroup label="tags ({{ len $root.Tags }})" class="bold text-sm">
+      {{ range $root.Tags }}
+        <option value="{{ .Reference.Name }}" class="py-1" {{if eq .Reference.Name $default}}selected{{end}}>
+          {{ .Reference.Name }}
+        </option>
+      {{ else }}
+        <option class="py-1" disabled>no tags found</option>
+      {{ end }}
+    </optgroup>
+    {{ end }}
   </select>
 {{ end }}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"tangled.org/core/appview/discussions"
 	"tangled.org/core/appview/issues"
 	"tangled.org/core/appview/knots"
 	"tangled.org/core/appview/labels"
@@ -92,6 +93,7 @@ func (s *State) UserRouter(mw *middleware.Middleware) http.Handler {
 		r.With(mw.ResolveRepo()).Route("/{repo}", func(r chi.Router) {
 			r.Use(mw.GoImport())
 			r.Mount("/", s.RepoRouter(mw))
+			r.Mount("/discussions", s.DiscussionsRouter(mw))
 			r.Mount("/issues", s.IssuesRouter(mw))
 			r.Mount("/pulls", s.PullsRouter(mw))
 			r.Mount("/pipelines", s.PipelinesRouter(mw))
@@ -281,6 +283,23 @@ func (s *State) IssuesRouter(mw *middleware.Middleware) http.Handler {
 		log.SubLogger(s.logger, "issues"),
 	)
 	return issues.Router(mw)
+}
+
+func (s *State) DiscussionsRouter(mw *middleware.Middleware) http.Handler {
+	discussions := discussions.New(
+		s.oauth,
+		s.repoResolver,
+		s.enforcer,
+		s.pages,
+		s.idResolver,
+		s.mentionsResolver,
+		s.db,
+		s.config,
+		s.notifier,
+		s.validator,
+		log.SubLogger(s.logger, "discussions"),
+	)
+	return discussions.Router(mw)
 }
 
 func (s *State) PullsRouter(mw *middleware.Middleware) http.Handler {

@@ -1,0 +1,80 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.applyChanges",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Apply Pijul changes to a repository channel. Used for merging discussions.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["repo", "channel", "changes"],
+          "properties": {
+            "repo": {
+              "type": "string",
+              "description": "Repository identifier in format 'did:plc:.../repoName'"
+            },
+            "channel": {
+              "type": "string",
+              "description": "Target channel to apply changes to"
+            },
+            "changes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of change hashes to apply (in order)"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["applied"],
+          "properties": {
+            "applied": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of successfully applied change hashes"
+            },
+            "failed": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["hash", "error"],
+                "properties": {
+                  "hash": {
+                    "type": "string"
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "List of changes that failed to apply"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest"
+        },
+        {
+          "name": "RepoNotFound"
+        },
+        {
+          "name": "ChannelNotFound"
+        },
+        {
+          "name": "ApplyFailed"
+        }
+      ]
+    }
+  }
+}

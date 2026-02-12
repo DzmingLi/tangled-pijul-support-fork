@@ -69,6 +69,7 @@
 
       <div class="space-y-2">
         {{ template "defaultBranch" . }}
+        {{ template "vcs" . }}
         {{ template "knot" . }}
       </div>
     </div>
@@ -139,6 +140,41 @@
   </div>
 {{ end }}
 
+{{ define "vcs" }}
+  <!-- Version Control -->
+  <div>
+    <label class="block text-sm font-bold uppercase dark:text-white mb-1">
+      Repository type
+    </label>
+    <div class="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 border border-gray-300 rounded p-3 space-y-2">
+      <div class="flex items-center">
+        <input
+          type="radio"
+          name="vcs"
+          value="git"
+          class="mr-2"
+          id="vcs-git"
+          checked
+        />
+        <label for="vcs-git" class="dark:text-white">git</label>
+      </div>
+      <div class="flex items-center">
+        <input
+          type="radio"
+          name="vcs"
+          value="pijul"
+          class="mr-2"
+          id="vcs-pijul"
+        />
+        <label for="vcs-pijul" class="dark:text-white">pijul</label>
+      </div>
+    </div>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      Choose the version control system for this repository.
+    </p>
+  </div>
+{{ end }}
+
 {{ define "knot" }}
   <!-- Knot Selection -->
   <div>
@@ -164,7 +200,7 @@
       {{ end }}
     </div>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-      A knot hosts repository data and handles Git operations.
+      A knot hosts repository data and handles version control operations.
       You can also <a href="/settings/knots" class="underline">register your own knot</a>.
     </p>
   </div>

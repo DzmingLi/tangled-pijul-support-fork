@@ -13,11 +13,14 @@ func (rp *Repo) Router(mw *middleware.Middleware) http.Handler {
 	r.Get("/opengraph", rp.Opengraph)
 	r.Get("/feed.atom", rp.AtomFeed)
 	r.Get("/commits/{ref}", rp.Log)
+	r.Get("/changes", rp.Changes)
+	r.Get("/changes/{ref}", rp.Changes)
 	r.Route("/tree/{ref}", func(r chi.Router) {
 		r.Get("/", rp.Index)
 		r.Get("/*", rp.Tree)
 	})
 	r.Get("/commit/{ref}", rp.Commit)
+	r.Get("/change/{hash}", rp.Change)
 	r.Get("/branches", rp.Branches)
 	r.Delete("/branches", rp.DeleteBranch)
 	r.Route("/tags", func(r chi.Router) {

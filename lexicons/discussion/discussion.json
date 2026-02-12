@@ -1,0 +1,55 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.discussion",
+  "needsCbor": true,
+  "needsType": true,
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A discussion in a Pijul repository. Anyone can add patches to discussions.",
+      "record": {
+        "type": "object",
+        "required": ["repo", "title", "createdAt"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The repository this discussion belongs to"
+          },
+          "title": {
+            "type": "string",
+            "description": "Discussion title"
+          },
+          "body": {
+            "type": "string",
+            "description": "Discussion body/description"
+          },
+          "targetChannel": {
+            "type": "string",
+            "description": "Target Pijul channel for merging patches",
+            "default": "main"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/knotserver/pijul"
 	"tangled.org/core/types"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
@@ -27,6 +28,25 @@ func (x *Xrpc) RepoLog(w http.ResponseWriter, r *http.Request) {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
 			limit = l
 		}
+	}
+
+	if vcs, _ := pijul.DetectVCS(repoPath); vcs == "pijul" {
+		if ref == "" {
+			if pr, err := pijul.PlainOpen(repoPath); err == nil {
+				if defaultChannel, err := pr.FindDefaultChannel(); err == nil {
+					ref = defaultChannel
+				}
+			}
+		}
+		writeJson(w, types.RepoLogResponse{
+			Commits: []types.Commit{},
+			Ref:     ref,
+			Page:    1,
+			PerPage: limit,
+			Total:   0,
+			Log:     true,
+		})
+		return
 	}
 
 	gr, err := git.Open(repoPath, ref)

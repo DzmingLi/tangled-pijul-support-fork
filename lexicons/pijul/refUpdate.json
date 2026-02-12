@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.pijul.refUpdate",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Pijul reference update event - emitted when changes are pushed to a channel",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["repo", "channel", "newState", "changes"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Channel that was updated"
+          },
+          "oldState": {
+            "type": "string",
+            "description": "Previous Merkle hash (empty for new channels)"
+          },
+          "newState": {
+            "type": "string",
+            "description": "New Merkle hash after update"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of change hashes that were applied"
+          },
+          "languages": {
+            "type": "object",
+            "description": "Map of language name to lines of code"
+          }
+        }
+      }
+    }
+  }
+}

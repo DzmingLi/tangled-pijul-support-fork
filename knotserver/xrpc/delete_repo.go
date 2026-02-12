@@ -12,6 +12,7 @@ import (
 	"github.com/bluesky-social/indigo/xrpc"
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"tangled.org/core/api/tangled"
+	"tangled.org/core/knotserver/pijul"
 	"tangled.org/core/rbac"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
@@ -78,6 +79,11 @@ func (x *Xrpc) DeleteRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isPijul := false
+	if vcs, _ := pijul.DetectVCS(repoPath); vcs == "pijul" {
+		isPijul = true
+	}
+
 	err = os.RemoveAll(repoPath)
 	if err != nil {
 		l.Error("deleting repo", "error", err.Error())
@@ -90,6 +96,27 @@ func (x *Xrpc) DeleteRepo(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to delete repo from enforcer", "error", err.Error())
 		writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
 		return
+	}
+	if isPijul {
+		users, err := x.Enforcer.E.GetImplicitUsersForResourceByDomain(relativeRepoPath, rbac.ThisServer)
+		if err != nil {
+			l.Error("failed to list repo users", "error", err.Error())
+			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
+			return
+		}
+		for _, u := range users {
+			did := u[0]
+			if err := x.Enforcer.RemovePijulCollaboratorPermissions(did, rbac.ThisServer, relativeRepoPath); err != nil {
+				l.Error("failed to delete pijul collaborator permissions", "error", err.Error())
+				writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
+				return
+			}
+		}
+		if err := x.Enforcer.RemovePijulRepoPermissions(did, rbac.ThisServer, relativeRepoPath); err != nil {
+			l.Error("failed to delete pijul permissions", "error", err.Error())
+			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

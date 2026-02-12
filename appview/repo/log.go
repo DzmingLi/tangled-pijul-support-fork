@@ -12,6 +12,7 @@ import (
 	"tangled.org/core/appview/db"
 	"tangled.org/core/appview/models"
 	"tangled.org/core/appview/pages"
+	"tangled.org/core/appview/reporesolver"
 	xrpcclient "tangled.org/core/appview/xrpcclient"
 	"tangled.org/core/types"
 
@@ -26,6 +27,17 @@ func (rp *Repo) Log(w http.ResponseWriter, r *http.Request) {
 	f, err := rp.repoResolver.Resolve(r)
 	if err != nil {
 		l.Error("failed to fully resolve repo", "err", err)
+		return
+	}
+	if f.IsPijul() {
+		ref := chi.URLParam(r, "ref")
+		ref, _ = url.PathUnescape(ref)
+		ownerSlashRepo := reporesolver.GetBaseRepoPath(r, f)
+		target := fmt.Sprintf("/%s/changes", ownerSlashRepo)
+		if ref != "" {
+			target = fmt.Sprintf("/%s/changes/%s", ownerSlashRepo, url.PathEscape(ref))
+		}
+		http.Redirect(w, r, target, http.StatusFound)
 		return
 	}
 

@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/sethvargo/go-envconfig"
@@ -35,7 +36,9 @@ type Git struct {
 }
 
 func (s Server) Did() syntax.DID {
-	return syntax.DID(fmt.Sprintf("did:web:%s", s.Hostname))
+	// did:web spec requires colons to be encoded as %3A
+	encoded := strings.ReplaceAll(s.Hostname, ":", "%3A")
+	return syntax.DID(fmt.Sprintf("did:web:%s", encoded))
 }
 
 type Config struct {

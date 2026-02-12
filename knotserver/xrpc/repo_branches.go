@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/knotserver/pijul"
 	"tangled.org/core/types"
 	xrpcerr "tangled.org/core/xrpc/errors"
 )
@@ -29,6 +30,34 @@ func (x *Xrpc) RepoBranches(w http.ResponseWriter, r *http.Request) {
 		offset = o
 	}
 
+	if vcs, _ := pijul.DetectVCS(repoPath); vcs == "pijul" {
+		pr, err := pijul.PlainOpen(repoPath)
+		if err != nil {
+			writeError(w, xrpcerr.RepoNotFoundError, http.StatusNoContent)
+			return
+		}
+
+		channels, err := pr.ChannelsWithOptions(&pijul.ChannelOptions{
+			Limit:  limit,
+			Offset: offset,
+		})
+		if err != nil {
+			writeError(w, xrpcerr.GenericError(err), http.StatusInternalServerError)
+			return
+		}
+
+		branches := make([]types.Branch, 0, len(channels))
+		for _, ch := range channels {
+			branches = append(branches, types.Branch{
+				Reference: types.Reference{Name: ch.Name},
+				IsDefault: ch.IsCurrent,
+			})
+		}
+
+		writeJson(w, types.RepoBranchesResponse{Branches: branches})
+		return
+	}
+
 	gr, err := git.PlainOpen(repoPath)
 	if err != nil {
 		writeError(w, xrpcerr.RepoNotFoundError, http.StatusNoContent)
@@ -40,10 +69,5 @@ func (x *Xrpc) RepoBranches(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	})
 
-	// Create response using existing types.RepoBranchesResponse
-	response := types.RepoBranchesResponse{
-		Branches: branches,
-	}
-
-	writeJson(w, response)
+	writeJson(w, types.RepoBranchesResponse{Branches: branches})
 }

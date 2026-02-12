@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.getDefaultChannel",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the default channel for a Pijul repository",
+      "parameters": {
+        "type": "params",
+        "required": ["repo"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier in format 'did:plc:.../repoName'"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["channel"],
+          "properties": {
+            "channel": {
+              "type": "string",
+              "description": "Default channel name"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "RepoNotFound",
+          "description": "Repository not found or access denied"
+        }
+      ]
+    }
+  }
+}

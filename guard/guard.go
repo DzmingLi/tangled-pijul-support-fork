@@ -105,6 +105,65 @@ func Run(ctx context.Context, cmd *cli.Command) error {
 		os.Exit(-1)
 	}
 
+	if cmdParts[0] == "pijul" {
+		if cmdParts[1] != "protocol" {
+			l.Error("access denied: invalid pijul command", "command", sshCommand)
+			fmt.Fprintln(os.Stderr, "access denied: invalid pijul command")
+			return fmt.Errorf("access denied: invalid pijul command")
+		}
+
+		repoPath, version, err := parsePijulProtocolArgs(cmdParts[2:])
+		if err != nil {
+			l.Error("invalid pijul protocol args", "command", sshCommand, "err", err)
+			fmt.Fprintln(os.Stderr, "invalid pijul protocol args")
+			return err
+		}
+		if version != "" && version != "3" {
+			l.Error("unsupported pijul protocol version", "version", version)
+			fmt.Fprintln(os.Stderr, "unsupported pijul protocol version")
+			return fmt.Errorf("unsupported pijul protocol version")
+		}
+
+		qualifiedRepoPath, err := guardAndQualifyRepo(l, endpoint, incomingUser, repoPath, "pijul-protocol")
+		if err != nil {
+			l.Error("failed to run guard", "err", err)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		fullPath, _ := securejoin.SecureJoin(gitDir, qualifiedRepoPath)
+		args := []string{"protocol", "--repository", fullPath}
+		if version != "" {
+			args = append(args, "--version", version)
+		}
+
+		l.Info("processing command",
+			"user", incomingUser,
+			"command", "pijul protocol",
+			"repo", repoPath,
+			"fullPath", fullPath,
+			"client", clientIP)
+
+		pijulCmd := exec.Command("pijul", args...)
+		pijulCmd.Stdout = os.Stdout
+		pijulCmd.Stderr = os.Stderr
+		pijulCmd.Stdin = os.Stdin
+
+		if err := pijulCmd.Run(); err != nil {
+			l.Error("command failed", "error", err)
+			fmt.Fprintf(os.Stderr, "command failed: %v\n", err)
+			return fmt.Errorf("command failed: %v", err)
+		}
+
+		l.Info("command completed",
+			"user", incomingUser,
+			"command", "pijul protocol",
+			"repo", repoPath,
+			"success", true)
+
+		return nil
+	}
+
 	gitCommand := cmdParts[0]
 	repoPath := cmdParts[1]
 
@@ -171,6 +230,36 @@ func Run(ctx context.Context, cmd *cli.Command) error {
 		"success", true)
 
 	return nil
+}
+
+func parsePijulProtocolArgs(args []string) (string, string, error) {
+	var repo string
+	var version string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--repository" || arg == "-r":
+			if i+1 >= len(args) {
+				return "", "", fmt.Errorf("missing --repository value")
+			}
+			repo = args[i+1]
+			i++
+		case strings.HasPrefix(arg, "--repository="):
+			repo = strings.TrimPrefix(arg, "--repository=")
+		case arg == "--version":
+			if i+1 >= len(args) {
+				return "", "", fmt.Errorf("missing --version value")
+			}
+			version = args[i+1]
+			i++
+		case strings.HasPrefix(arg, "--version="):
+			version = strings.TrimPrefix(arg, "--version=")
+		}
+	}
+	if repo == "" {
+		return "", "", fmt.Errorf("missing --repository")
+	}
+	return repo, version, nil
 }
 
 // runs guardAndQualifyRepo logic

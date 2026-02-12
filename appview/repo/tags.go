@@ -25,6 +25,14 @@ func (rp *Repo) Tags(w http.ResponseWriter, r *http.Request) {
 		l.Error("failed to get repo and knot", "err", err)
 		return
 	}
+	if f.IsPijul() {
+		rp.pages.Error404(w)
+		return
+	}
+	if f.IsPijul() {
+		rp.pages.Error404(w)
+		return
+	}
 	scheme := "http"
 	if !rp.config.Core.Dev {
 		scheme = "https"

@@ -24,6 +24,10 @@
             "source": {
               "type": "string",
               "description": "A source URL to clone from, populate this when forking or importing a repository."
+            },
+            "vcs": {
+              "type": "string",
+              "description": "Version control system to use for the repository (git or pijul)."
             }
           }
         }

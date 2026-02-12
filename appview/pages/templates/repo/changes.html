@@ -1,0 +1,149 @@
+{{ define "title" }}changes &middot; {{ .RepoInfo.FullName }}{{ end }}
+
+{{ define "extrameta" }}
+    {{ $title := printf "changes &middot; %s" .RepoInfo.FullName }}
+    {{ $url := printf "https://tangled.org/%s/changes" .RepoInfo.FullName }}
+
+    {{ template "repo/fragments/og" (dict "RepoInfo" .RepoInfo "Title" $title "Url" $url) }}
+{{ end }}
+
+{{ define "repoContent" }}
+<section id="change-table" class="overflow-x-auto">
+    <h2 class="font-bold text-sm mb-4 uppercase dark:text-white">
+       changes
+    </h2>
+
+    <!-- desktop view (hidden on small screens) -->
+    <div class="hidden md:flex md:flex-col divide-y divide-gray-200 dark:divide-gray-700">
+      {{ $grid := "grid grid-cols-14 gap-4" }}
+      <div class="{{ $grid }}">
+        <div class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold col-span-3">Author</div>
+        <div class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold col-span-3">Change</div>
+        <div class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold col-span-6">Message</div>
+        <div class="py-2 text-sm text-left text-gray-700 dark:text-gray-300 uppercase font-bold col-span-2 justify-self-end">Date</div>
+      </div>
+      {{ range $index, $change := .Changes }}
+        {{ $messageParts := splitN $change.Message "\n\n" 2 }}
+        <div class="{{ $grid }} py-3">
+          <div class="align-top col-span-3">
+            {{ template "pijulAttribution" $change }}
+          </div>
+          <div class="align-top font-mono flex items-start col-span-3">
+              {{ $hashStyle := "text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900" }}
+              <a href="/{{ $.RepoInfo.FullName }}/change/{{ $change.Hash }}" class="no-underline hover:underline {{ $hashStyle }} px-2 py-1/2 rounded flex items-center gap-2">
+                  {{ slice $change.Hash 0 12 }}
+              </a>
+              <div class="ml-2 inline-flex">
+                  <button class="p-1 mx-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      title="Copy hash"
+                      onclick="navigator.clipboard.writeText('{{ $change.Hash }}'); this.innerHTML=`{{ i "copy-check" "w-4 h-4" }}`; setTimeout(() => this.innerHTML=`{{ i "copy" "w-4 h-4" }}`, 1500)">
+                          {{ i "copy" "w-4 h-4" }}
+                  </button>
+              </div>
+          </div>
+          <div class="align-top col-span-6">
+            <div>
+                <a href="/{{ $.RepoInfo.FullName }}/change/{{ $change.Hash }}" class="dark:text-white no-underline hover:underline">{{ index $messageParts 0 }}</a>
+
+                {{ if gt (len $messageParts) 1 }}
+                <button class="py-1/2 px-1 bg-gray-200 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded" hx-on:click="this.parentElement.nextElementSibling.classList.toggle('hidden')">{{ i "ellipsis" "w-3 h-3" }}</button>
+                {{ end }}
+
+                {{ if $change.Dependencies }}
+                <span class="ml-2 text-xs text-gray-500" title="Depends on {{ len $change.Dependencies }} changes">
+                  {{ i "git-branch" "w-3 h-3 inline" }} {{ len $change.Dependencies }}
+                </span>
+                {{ end }}
+            </div>
+
+            {{ if gt (len $messageParts) 1 }}
+              <p class="hidden mt-1 text-sm text-gray-600 dark:text-gray-400">{{ nl2br (index $messageParts 1) }}</p>
+            {{ end }}
+          </div>
+          <div class="align-top justify-self-end text-gray-500 dark:text-gray-400 col-span-2">
+            {{ if $change.HasTimestamp }}
+              {{ template "repo/fragments/shortTimeAgo" $change.Timestamp }}
+            {{ end }}
+          </div>
+        </div>
+      {{ end }}
+    </div>
+
+    <!-- mobile view (visible only on small screens) -->
+    <div class="md:hidden">
+        {{ range $index, $change := .Changes }}
+            <div class="relative p-2 mb-2 {{ if ne $index (sub (len $.Changes) 1) }}border-b border-gray-200 dark:border-gray-700{{ end }}">
+                <div id="change-message">
+                    {{ $messageParts := splitN $change.Message "\n\n" 2 }}
+                    <div class="text-base cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div>
+                                    <a href="/{{ $.RepoInfo.FullName }}/change/{{ $change.Hash }}"
+                                       class="inline no-underline hover:underline dark:text-white">
+                                       {{ index $messageParts 0 }}
+                                    </a>
+                                    {{ if gt (len $messageParts) 1 }}
+                                        <button
+                                            class="py-1/2 px-1 bg-gray-200 hover:bg-gray-400 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
+                                            hx-on:click="this.parentElement.nextElementSibling.classList.toggle('hidden')">
+                                            {{ i "ellipsis" "w-3 h-3" }}
+                                        </button>
+                                    {{ end }}
+                                </div>
+
+                                {{ if gt (len $messageParts) 1 }}
+                                    <p class="hidden mt-1 text-sm cursor-text pb-2 dark:text-gray-300">
+                                        {{ nl2br (index $messageParts 1) }}
+                                    </p>
+                                {{ end }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-xs mt-2 text-gray-500 dark:text-gray-400 flex items-center">
+                    {{ $hashStyle := "text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900" }}
+                    <span class="font-mono">
+                        <a href="/{{ $.RepoInfo.FullName }}/change/{{ $change.Hash }}"
+                           class="no-underline hover:underline {{ $hashStyle }} px-2 py-1 rounded flex items-center gap-2">
+                           {{ slice $change.Hash 0 12 }}
+                        </a>
+                    </span>
+                    <span class="mx-2 before:content-['·'] before:select-none"></span>
+                    {{ template "pijulAttribution" $change }}
+                    {{ if $change.HasTimestamp }}
+                    <div class="inline-block px-1 select-none after:content-['·']"></div>
+                    <span>{{ template "repo/fragments/shortTime" $change.Timestamp }}</span>
+                    {{ end }}
+                </div>
+            </div>
+        {{ end }}
+    </div>
+</section>
+
+{{ end }}
+
+{{ define "pijulAttribution" }}
+  <span class="flex items-center gap-1">
+    {{ if .Authors }}
+      {{ $author := index .Authors 0 }}
+      {{ placeholderAvatar "tiny" }}
+      <span class="text-gray-700 dark:text-gray-300">
+        {{ $author.Name }}
+        {{ if gt (len .Authors) 1 }} +{{ sub (len .Authors) 1 }}{{ end }}
+      </span>
+    {{ else }}
+      {{ placeholderAvatar "tiny" }}
+      <span class="text-gray-500">unknown</span>
+    {{ end }}
+  </span>
+{{ end }}
+
+{{ define "repoAfter" }}
+  {{ $changes_len := len .Changes }}
+  <div class="flex justify-end mt-4 gap-2">
+      {{ if gt .Page 1 }}<a class="btn flex items-center gap-2 no-underline hover:no-underline dark:text-white dark:hover:bg-gray-700" hx-boost="true" onclick="window.location.href = window.location.pathname + '?page={{ sub .Page 1 }}'">{{ i "chevron-left" "w-4 h-4" }} previous</a>{{ else }}<div></div>{{ end }}
+      {{ if eq $changes_len 60 }}<a class="btn flex items-center gap-2 no-underline hover:no-underline dark:text-white dark:hover:bg-gray-700" hx-boost="true" onclick="window.location.href = window.location.pathname + '?page={{ add .Page 1 }}'">next {{ i "chevron-right" "w-4 h-4" }}</a>{{ end }}
+  </div>
+{{ end }}

@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.discussion.state",
+  "needsCbor": true,
+  "needsType": true,
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A state change event for a discussion (close, reopen, merge)",
+      "record": {
+        "type": "object",
+        "required": ["discussion", "state", "createdAt"],
+        "properties": {
+          "discussion": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The discussion this state change applies to"
+          },
+          "state": {
+            "type": "string",
+            "knownValues": ["open", "closed", "merged"],
+            "description": "The new state of the discussion"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

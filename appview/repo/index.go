@@ -169,6 +169,9 @@ func (rp *Repo) getLanguageInfo(
 	currentRef string,
 	isDefaultRef bool,
 ) ([]types.RepoLanguageDetails, error) {
+	if repo.IsPijul() {
+		return nil, nil
+	}
 	// first attempt to fetch from db
 	langs, err := db.GetRepoLanguages(
 		rp.db,
@@ -255,6 +258,14 @@ func (rp *Repo) getLanguageInfo(
 
 // buildIndexResponse creates a RepoIndexResponse by combining multiple xrpc calls in parallel
 func (rp *Repo) buildIndexResponse(ctx context.Context, xrpcc *indigoxrpc.Client, repo *models.Repo, ref string) (*types.RepoIndexResponse, error) {
+	if repo.IsPijul() {
+		return rp.buildPijulIndexResponse(ctx, xrpcc, repo, ref)
+	}
+	return rp.buildGitIndexResponse(ctx, xrpcc, repo, ref)
+}
+
+// buildGitIndexResponse builds index response for Git repositories
+func (rp *Repo) buildGitIndexResponse(ctx context.Context, xrpcc *indigoxrpc.Client, repo *models.Repo, ref string) (*types.RepoIndexResponse, error) {
 	didSlashRepo := fmt.Sprintf("%s/%s", repo.Did, repo.Name)
 
 	// first get branches to determine the ref if not specified
@@ -383,6 +394,135 @@ func (rp *Repo) buildIndexResponse(ctx context.Context, xrpcc *indigoxrpc.Client
 		Branches:       branchesResp.Branches,
 		Tags:           tagsResp.Tags,
 		TotalCommits:   logResp.Total,
+	}
+
+	return result, nil
+}
+
+// buildPijulIndexResponse builds index response for Pijul repositories
+func (rp *Repo) buildPijulIndexResponse(ctx context.Context, xrpcc *indigoxrpc.Client, repo *models.Repo, ref string) (*types.RepoIndexResponse, error) {
+	didSlashRepo := fmt.Sprintf("%s/%s", repo.Did, repo.Name)
+
+	// first get channels to determine the ref if not specified
+	channelsResp, err := tangled.RepoChannelList(ctx, xrpcc, "", 0, didSlashRepo)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call repoChannelList: %w", err)
+	}
+
+	// Convert channels to branches format for compatibility
+	var branches []types.Branch
+	for _, ch := range channelsResp.Channels {
+		isDefault := ch.Is_current != nil && *ch.Is_current
+		branches = append(branches, types.Branch{
+			Reference: types.Reference{
+				Name: ch.Name,
+			},
+			IsDefault: isDefault,
+		})
+	}
+
+	// if no ref specified, use default channel or first available
+	if ref == "" {
+		for _, ch := range channelsResp.Channels {
+			if ch.Is_current != nil && *ch.Is_current {
+				ref = ch.Name
+				break
+			}
+		}
+		// fallback to first channel
+		if ref == "" && len(channelsResp.Channels) > 0 {
+			ref = channelsResp.Channels[0].Name
+		}
+	}
+
+	// if ref is still empty, this means no channels exist (empty repo)
+	if ref == "" {
+		return &types.RepoIndexResponse{
+			IsEmpty:  true,
+			Branches: branches,
+		}, nil
+	}
+
+	// now run the remaining queries in parallel
+	var wg sync.WaitGroup
+	var errs error
+
+	var (
+		treeResp       *tangled.RepoPijulTree_Output
+		changesResp    *tangled.RepoChangeList_Output
+		readmeContent  string
+		readmeFileName string
+	)
+
+	// tree/files
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		resp, err := tangled.RepoPijulTree(ctx, xrpcc, ref, "", didSlashRepo)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to call repoPijulTree: %w", err))
+			return
+		}
+		treeResp = resp
+	}()
+
+	// changes (equivalent to commits)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		resp, err := tangled.RepoChangeList(ctx, xrpcc, ref, "", 50, didSlashRepo)
+		if err != nil {
+			errs = errors.Join(errs, fmt.Errorf("failed to call repoChangeList: %w", err))
+			return
+		}
+		changesResp = resp
+	}()
+
+	wg.Wait()
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	var files []types.NiceTree
+	if treeResp != nil && treeResp.Files != nil {
+		for _, entry := range treeResp.Files {
+			niceFile := types.NiceTree{
+				Name: entry.Name,
+				Mode: entry.Mode,
+				Size: entry.Size,
+			}
+			files = append(files, niceFile)
+		}
+	}
+
+	if treeResp != nil && treeResp.Readme != nil {
+		if treeResp.Readme.Filename != nil {
+			readmeFileName = *treeResp.Readme.Filename
+		}
+		if treeResp.Readme.Contents != nil {
+			readmeContent = *treeResp.Readme.Contents
+		}
+	}
+
+	// Convert changes to commits format for compatibility
+	var commits []types.Commit
+
+	totalChanges := 0
+	if changesResp != nil {
+		totalChanges = int(changesResp.Total)
+	}
+
+	result := &types.RepoIndexResponse{
+		IsEmpty:        false,
+		Ref:            ref,
+		Readme:         readmeContent,
+		ReadmeFileName: readmeFileName,
+		Commits:        commits,
+		Files:          files,
+		Branches:       branches,
+		Tags:           nil, // Pijul doesn't have tags
+		TotalCommits:   totalChanges,
 	}
 
 	return result, nil

@@ -790,6 +790,13 @@ func (rp *Repo) AddCollaborator(w http.ResponseWriter, r *http.Request) {
 		fail("Failed to add collaborator permissions.", err)
 		return
 	}
+	if f.IsPijul() {
+		err = rp.enforcer.AddPijulCollaboratorPermissions(collaboratorIdent.DID.String(), f.Knot, f.DidSlashRepo())
+		if err != nil {
+			fail("Failed to add collaborator permissions.", err)
+			return
+		}
+	}
 
 	err = db.AddCollaborator(tx, models.Collaborator{
 		Did:        syntax.DID(currentUser.Active.Did),
@@ -899,6 +906,9 @@ func (rp *Repo) DeleteRepo(w http.ResponseWriter, r *http.Request) {
 	for _, c := range repoCollaborators {
 		did := c[0]
 		rp.enforcer.RemoveCollaborator(did, f.Knot, f.DidSlashRepo())
+		if f.IsPijul() {
+			rp.enforcer.RemovePijulCollaboratorPermissions(did, f.Knot, f.DidSlashRepo())
+		}
 	}
 	l.Info("removed collaborators")
 
@@ -907,6 +917,13 @@ func (rp *Repo) DeleteRepo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		rp.pages.Notice(w, noticeId, "Failed to update RBAC rules")
 		return
+	}
+	if f.IsPijul() {
+		err = rp.enforcer.RemovePijulRepoPermissions(f.Did, f.Knot, f.DidSlashRepo())
+		if err != nil {
+			rp.pages.Notice(w, noticeId, "Failed to update RBAC rules")
+			return
+		}
 	}
 
 	// remove repo from db
@@ -1074,6 +1091,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 			Description: f.Description,
 			Created:     time.Now(),
 			Labels:      rp.config.Label.DefaultLabelDefs,
+			Vcs:         f.Vcs,
 		}
 		record := repo.AsRecord()
 
@@ -1150,6 +1168,7 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 			&tangled.RepoCreate_Input{
 				Rkey:   rkey,
 				Source: &forkSourceUrl,
+				Vcs:    &f.Vcs,
 			},
 		)
 		if err := xrpcclient.HandleXrpcErr(err); err != nil {
@@ -1171,6 +1190,14 @@ func (rp *Repo) ForkRepo(w http.ResponseWriter, r *http.Request) {
 			l.Error("failed to add ACLs", "err", err)
 			rp.pages.Notice(w, "repo", "Failed to set up repository permissions.")
 			return
+		}
+		if repo.IsPijul() {
+			err = rp.enforcer.AddPijulRepoPermissions(user.Active.Did, targetKnot, p)
+			if err != nil {
+				l.Error("failed to add Pijul ACLs", "err", err)
+				rp.pages.Notice(w, "repo", "Failed to set up repository permissions.")
+				return
+			}
 		}
 
 		err = tx.Commit()

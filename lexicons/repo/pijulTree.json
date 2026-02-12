@@ -1,0 +1,101 @@
+{
+  "lexicon": 1,
+  "id": "sh.tangled.repo.pijulTree",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the file tree from a Pijul repository",
+      "parameters": {
+        "type": "params",
+        "required": ["repo"],
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository identifier in format 'did:plc:.../repoName'"
+          },
+          "channel": {
+            "type": "string",
+            "description": "Pijul channel name (defaults to main channel)"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path within the repository (defaults to root)",
+            "default": ""
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["files"],
+          "properties": {
+            "ref": {
+              "type": "string",
+              "description": "Channel name"
+            },
+            "parent": {
+              "type": "string",
+              "description": "Parent path"
+            },
+            "dotdot": {
+              "type": "string",
+              "description": "Path to navigate up"
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#treeEntry"
+              }
+            },
+            "readme": {
+              "type": "ref",
+              "ref": "#readme"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "RepoNotFound",
+          "description": "Repository not found or access denied"
+        },
+        {
+          "name": "PathNotFound",
+          "description": "Path not found in repository"
+        },
+        {
+          "name": "InvalidRequest",
+          "description": "Invalid request parameters"
+        }
+      ]
+    },
+    "treeEntry": {
+      "type": "object",
+      "required": ["name", "mode", "size"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer"
+        }
+      }
+    },
+    "readme": {
+      "type": "object",
+      "properties": {
+        "filename": {
+          "type": "string"
+        },
+        "contents": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

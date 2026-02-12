@@ -18,6 +18,7 @@ import (
 	"tangled.org/core/api/tangled"
 	"tangled.org/core/knotserver/db"
 	"tangled.org/core/knotserver/git"
+	"tangled.org/core/knotserver/pijul"
 	"tangled.org/core/log"
 	"tangled.org/core/rbac"
 	"tangled.org/core/workflow"
@@ -271,6 +272,15 @@ func (h *Knot) processCollaborator(ctx context.Context, event *models.Event) err
 
 	if err := h.e.AddCollaborator(subjectId.DID.String(), rbac.ThisServer, didSlashRepo); err != nil {
 		return err
+	}
+	repoPath, err := securejoin.SecureJoin(h.c.Repo.ScanPath, didSlashRepo)
+	if err != nil {
+		return err
+	}
+	if vcs, _ := pijul.DetectVCS(repoPath); vcs == "pijul" {
+		if err := h.e.AddPijulCollaboratorPermissions(subjectId.DID.String(), rbac.ThisServer, didSlashRepo); err != nil {
+			return err
+		}
 	}
 
 	return h.fetchAndAddKeys(ctx, subjectId.DID.String())

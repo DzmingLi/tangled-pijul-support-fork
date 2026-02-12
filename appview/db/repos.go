@@ -46,7 +46,8 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 			website,
 			topics,
 			source,
-			spindle
+			spindle,
+			vcs
 		from
 			repos r
 		%s
@@ -64,7 +65,7 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 	for rows.Next() {
 		var repo models.Repo
 		var createdAt string
-		var description, website, topicStr, source, spindle sql.NullString
+		var description, website, topicStr, source, spindle, vcs sql.NullString
 
 		err := rows.Scan(
 			&repo.Id,
@@ -78,6 +79,7 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 			&topicStr,
 			&source,
 			&spindle,
+			&vcs,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute repo query: %w ", err)
@@ -100,6 +102,11 @@ func GetRepos(e Execer, limit int, filters ...orm.Filter) ([]models.Repo, error)
 		}
 		if spindle.Valid {
 			repo.Spindle = spindle.String
+		}
+		if vcs.Valid {
+			repo.Vcs = vcs.String
+		} else {
+			repo.Vcs = "git" // default
 		}
 
 		repo.RepoStats = &models.RepoStats{}
@@ -352,11 +359,12 @@ func GetRepoByAtUri(e Execer, atUri string) (*models.Repo, error) {
 	var nullableDescription sql.NullString
 	var nullableWebsite sql.NullString
 	var nullableTopicStr sql.NullString
+	var nullableVcs sql.NullString
 
-	row := e.QueryRow(`select id, did, name, knot, created, rkey, description, website, topics from repos where at_uri = ?`, atUri)
+	row := e.QueryRow(`select id, did, name, knot, created, rkey, description, website, topics, vcs from repos where at_uri = ?`, atUri)
 
 	var createdAt string
-	if err := row.Scan(&repo.Id, &repo.Did, &repo.Name, &repo.Knot, &createdAt, &repo.Rkey, &nullableDescription, &nullableWebsite, &nullableTopicStr); err != nil {
+	if err := row.Scan(&repo.Id, &repo.Did, &repo.Name, &repo.Knot, &createdAt, &repo.Rkey, &nullableDescription, &nullableWebsite, &nullableTopicStr, &nullableVcs); err != nil {
 		return nil, err
 	}
 	createdAtTime, _ := time.Parse(time.RFC3339, createdAt)
@@ -370,6 +378,11 @@ func GetRepoByAtUri(e Execer, atUri string) (*models.Repo, error) {
 	}
 	if nullableTopicStr.Valid {
 		repo.Topics = strings.Fields(nullableTopicStr.String)
+	}
+	if nullableVcs.Valid {
+		repo.Vcs = nullableVcs.String
+	} else {
+		repo.Vcs = "git"
 	}
 
 	return &repo, nil
@@ -387,11 +400,15 @@ func PutRepo(tx *sql.Tx, repo models.Repo) error {
 }
 
 func AddRepo(tx *sql.Tx, repo *models.Repo) error {
+	vcs := repo.Vcs
+	if vcs == "" {
+		vcs = "git"
+	}
 	_, err := tx.Exec(
 		`insert into repos
-		(did, name, knot, rkey, at_uri, description, website, topics, source)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		repo.Did, repo.Name, repo.Knot, repo.Rkey, repo.RepoAt().String(), repo.Description, repo.Website, repo.TopicStr(), repo.Source,
+		(did, name, knot, rkey, at_uri, description, website, topics, source, vcs)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		repo.Did, repo.Name, repo.Knot, repo.Rkey, repo.RepoAt().String(), repo.Description, repo.Website, repo.TopicStr(), repo.Source, vcs,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert repo: %w", err)

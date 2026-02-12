@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	comatproto "github.com/bluesky-social/indigo/api/atproto"
@@ -315,7 +316,9 @@ func WithTimeout(timeout time.Duration) ServiceClientOpt {
 }
 
 func (s *ServiceClientOpts) Audience() string {
-	return fmt.Sprintf("did:web:%s", s.service)
+	// did:web spec requires colons to be encoded as %3A
+	encoded := strings.ReplaceAll(s.service, ":", "%3A")
+	return fmt.Sprintf("did:web:%s", encoded)
 }
 
 func (s *ServiceClientOpts) Host() string {

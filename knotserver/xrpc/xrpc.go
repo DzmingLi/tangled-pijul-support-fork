@@ -45,6 +45,8 @@ func (x *Xrpc) Router() http.Handler {
 		r.Post("/"+tangled.RepoForkSyncNSID, x.ForkSync)
 		r.Post("/"+tangled.RepoHiddenRefNSID, x.HiddenRef)
 		r.Post("/"+tangled.RepoMergeNSID, x.Merge)
+		r.Post("/"+tangled.RepoApplyChangesNSID, x.RepoApplyChanges)
+		r.Get("/"+tangled.RepoPermissionsNSID, x.RepoPermissions)
 	})
 
 	// merge check is an open endpoint
@@ -61,12 +63,18 @@ func (x *Xrpc) Router() http.Handler {
 	r.Get("/"+tangled.RepoTagsNSID, x.RepoTags)
 	r.Get("/"+tangled.RepoTagNSID, x.RepoTag)
 	r.Get("/"+tangled.RepoBlobNSID, x.RepoBlob)
+	r.Get("/"+tangled.RepoPijulBlobNSID, x.RepoPijulBlob)
 	r.Get("/"+tangled.RepoDiffNSID, x.RepoDiff)
 	r.Get("/"+tangled.RepoCompareNSID, x.RepoCompare)
 	r.Get("/"+tangled.RepoGetDefaultBranchNSID, x.RepoGetDefaultBranch)
+	r.Get("/"+tangled.RepoGetDefaultChannelNSID, x.RepoGetDefaultChannel)
 	r.Get("/"+tangled.RepoBranchNSID, x.RepoBranch)
 	r.Get("/"+tangled.RepoArchiveNSID, x.RepoArchive)
 	r.Get("/"+tangled.RepoLanguagesNSID, x.RepoLanguages)
+	r.Get("/"+tangled.RepoChannelListNSID, x.RepoChannelList)
+	r.Get("/"+tangled.RepoChangeListNSID, x.RepoChangeList)
+	r.Get("/"+tangled.RepoChangeGetNSID, x.RepoChangeGet)
+	r.Get("/"+tangled.RepoPijulTreeNSID, x.RepoPijulTree)
 
 	// knot query endpoints (no auth required)
 	r.Get("/"+tangled.KnotListKeysNSID, x.ListKeys)

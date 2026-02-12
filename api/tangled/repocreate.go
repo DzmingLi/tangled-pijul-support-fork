@@ -22,6 +22,8 @@ type RepoCreate_Input struct {
 	Rkey string `json:"rkey" cborgen:"rkey"`
 	// source: A source URL to clone from, populate this when forking or importing a repository.
 	Source *string `json:"source,omitempty" cborgen:"source,omitempty"`
+	// vcs: Version control system to use for the repository (git or pijul).
+	Vcs *string `json:"vcs,omitempty" cborgen:"vcs,omitempty"`
 }
 
 // RepoCreate calls the XRPC method "sh.tangled.repo.create".
